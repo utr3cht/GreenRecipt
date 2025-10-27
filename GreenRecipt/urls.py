@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from core import views
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("4dmin/", admin.site.urls),
     path("receipts/", views.ReceiptListView.as_view(), name="receipt_list"),
     path("receipts/new/", views.ReceiptCreateView.as_view(), name="receipt_create"),
     path("inquiries/", views.InquiryListView.as_view(), name="inquiry_list"),
