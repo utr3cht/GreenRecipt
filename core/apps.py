@@ -7,8 +7,4 @@ class CoreConfig(AppConfig):
     name = "core"
 
     def ready(self):
-        if connection.vendor == "sqlite":
-            with connection.cursor() as c:
-                c.execute("PRAGMA journal_mode=WAL;")
-                c.execute("PRAGMA synchronous=NORMAL;")
-                c.execute("PRAGMA foreign_keys=ON;")
+        pass
