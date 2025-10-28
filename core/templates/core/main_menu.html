@@ -1,53 +1,17 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <title>GreenReceipt メインメニュー</title>
-  {% load static %}
-  <link rel="stylesheet" href="{% static 'core/main_menu.css' %}">
-</head>
-<body>
-  <div class="container">
-    <header>
-      <img src="{% static 'core/logo.png' %}" alt="GreenReceipt ロゴ" class="logo">
-    </header>
+{% extends 'base.html' %}
 
-    <main>
-      <section class="rank-box">
-        <h2>ランク</h2>
-        <div class="eco-point">200 エコポイント</div>
-      </section>
+{% block title %}
+  メインメニュー | GreenReceipt
+{% endblock %}
 
-      <div class="buttons">
-        <a href="/coupons/" class="btn">クーポン等</a>
-        <a href="/map/" class="btn">加盟店マップ</a>
-      </div>
-    </main>
+{% block content %}
+  <section class="rank-box">
+    <h2>ランク</h2>
+    <div class="eco-point">200 エコポイント</div>
+  </section>
 
-    <footer>
-      <nav class="bottom-nav">
-        <a href="/" class="nav-item">
-          <img src="{% static 'core/icon_home.png' %}" alt="ホーム">
-          <span>ホーム</span>
-        </a>
-        <a href="/result/" class="nav-item">
-          <img src="{% static 'core/icon_result.png' %}" alt="リザルト">
-          <span>リザルト</span>
-        </a>
-        <a href="/receipts/" class="nav-item">
-          <img src="{% static 'core/icon_receipt.png' %}" alt="レシート読み取り">
-          <span>レシート</span>
-        </a>
-        <a href="/reports/" class="nav-item">
-          <img src="{% static 'core/icon_ai.png' %}" alt="AIレポート">
-          <span>AIレポート</span>
-        </a>
-        <a href="/inquiries/" class="nav-item">
-          <img src="{% static 'core/icon_mail.png' %}" alt="お問い合わせ">
-          <span>お問い合わせ</span>
-        </a>
-      </nav>
-    </footer>
+  <div class="buttons">
+    <a href="/coupons/" class="btn">所持クーポン一覧</a>
+    <a href="/map/" class="btn">加盟店マップ</a>
   </div>
-</body>
-</html>
+{% endblock %}
