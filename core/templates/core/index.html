@@ -1,32 +1,13 @@
-<<<<<<< HEAD
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>GreenReceipt</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="container">
-  <img src="GreenReciptLogo_透過.png" class="logo" alt="GreenReceipt">
-  <p>〜いつもの買い物がエコ活動になる〜</p>
-  <p>初めてご利用の方はこちら</p>
-  <button onclick="location.href='register.html'">新規登録</button>
-  <p>既にアカウントをお持ちの方はこちら</p>
-  <button onclick="location.href='login.html'">ログイン</button>
-</div>
-</body>
-</html>
-=======
 {% extends 'base.html' %}
 
-{% block title %}GreenReceipt | トップ{% endblock %}
+{% block title %}
+  GreenReceipt | トップ
+{% endblock %}
 
 {% block content %}
   <p>〜いつもの買い物がエコ活動になる〜</p>
   <p>初めてご利用の方はこちら</p>
-  <button onclick="location.href='{% url 'register' %}'">新規登録</button>
+  <button onclick="location.href='{% url 'accounts:register' %}'">新規登録</button>
   <p>既にアカウントをお持ちの方はこちら</p>
-  <button onclick="location.href='{% url 'login' %}'">ログイン</button>
+  <button onclick="location.href='{% url 'accounts:login' %}'">ログイン</button>
 {% endblock %}
->>>>>>> 81a330910b3cf46c66d27ffb1cf06210268f23b6
