@@ -1,3 +1,4 @@
+/* ===== 共通スタイル ===== */
 body {
   font-family: "Segoe UI", sans-serif;
   background: linear-gradient(#c8f7c5, #9be39d);
@@ -7,11 +8,10 @@ body {
 }
 
 .container {
+  width: 100%;
   max-width: 420px;
   margin: 0 auto;
   background: #f6fff6;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -22,17 +22,17 @@ header {
 }
 
 .logo {
-  width: 180px;
+  width: 160px;
   height: auto;
 }
 
 .rank-box {
   background: white;
   border-radius: 20px;
-  margin: 20px auto;
-  width: 80%;
+  margin: 10px auto;
+  width: 85%;
   padding: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .rank-box h2 {
@@ -50,15 +50,15 @@ header {
 }
 
 .buttons {
-  margin: 30px 0;
+  margin: 20px 0;
   display: grid;
-  gap: 15px;
+  gap: 12px;
   justify-content: center;
 }
 
 .btn {
   display: inline-block;
-  width: 70%;
+  width: 75%;
   padding: 12px;
   background: #fff;
   border: 2px solid #2e7d32;
@@ -68,6 +68,7 @@ header {
   font-weight: bold;
   transition: 0.2s;
 }
+
 .btn:hover {
   background: #c8e6c9;
 }
@@ -82,7 +83,7 @@ footer {
   align-items: center;
   background: #ffffff;
   border-top: 2px solid #cfd8dc;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .nav-item {
@@ -91,11 +92,74 @@ footer {
   align-items: center;
   color: #388e3c;
   text-decoration: none;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .nav-item img {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   margin-bottom: 3px;
+}
+
+/* ===== スマホ最適化（～767px） ===== */
+@media (max-width: 767px) {
+  body {
+    background: #f6fff6; /* 背景の余白を除去 */
+  }
+  .container {
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: linear-gradient(#c8f7c5, #9be39d);
+  }
+}
+
+/* ===== デスクトップ版（768px以上） ===== */
+@media (min-width: 768px) {
+  body {
+    background: linear-gradient(to right, #c8f7c5, #9be39d);
+  }
+
+  .container {
+    max-width: 900px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  }
+
+  main {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding: 40px;
+  }
+
+  .rank-box {
+    width: 45%;
+    height: 220px;
+  }
+
+  .buttons {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .btn {
+    width: 80%;
+    font-size: 18px;
+  }
+
+  footer .bottom-nav {
+    justify-content: center;
+    gap: 40px;
+    font-size: 14px;
+  }
+
+  .nav-item img {
+    width: 36px;
+    height: 36px;
+  }
 }
