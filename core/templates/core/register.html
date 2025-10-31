@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}新規登録 | GreenReceipt{% endblock %}
+
+{% block content %}
+  <form method="post" action="{% url 'register_confirm' %}">
+    {% csrf_token %}
+    <label>メールアドレス</label><br>
+    <input type="email" name="email" required><br>
+
+    <label>ユーザー名</label><br>
+    <input type="text" name="username" required><br>
+
+    <label>生年月日</label><br>
+    <input type="date" name="birthday"><br>
+
+    <label>性別</label><br>
+    <select name="gender">
+      <option value="">選択してください</option>
+      <option value="男性">男性</option>
+      <option value="女性">女性</option>
+      <option value="回答しない">回答しない</option>
+    </select><br>
+
+    <label>パスワード</label><br>
+    <input type="password" name="password" required><br>
+
+    <label>パスワード(確認)</label><br>
+    <input type="password" name="password_confirm" required><br><br>
+
+    <button type="submit">確認</button>
+  </form>
+{% endblock %}

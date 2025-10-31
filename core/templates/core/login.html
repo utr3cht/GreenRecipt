@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}ログイン | GreenReceipt{% endblock %}
+
+{% block content %}
+  <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <label>メールアドレス</label><br>
+    <input type="email" name="email" required><br>
+    <label>パスワード</label><br>
+    <input type="password" name="password" required><br><br>
+    <button type="button" onclick="location.href='{% url 'index' %}'">戻る</button>
+    <button type="submit">ログイン</button>
+  </form>
+{% endblock %}
