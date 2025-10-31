@@ -1,16 +1,15 @@
-<!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <title>登録確認 - GreenReceipt</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div class="container">
-      <img src="GreenReciptLogo_透過.png" class="logo" alt="GreenReceipt" />
+{% extends 'base.html' %}
 
-      <button onclick="location.href='register.html'">戻る</button>
-      <button onclick="alert('登録が完了しました'); location.href='index.html';">新規登録</button>
-    </div>
-  </body>
-</html>
+{% block title %}
+  登録確認 | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <p>メールアドレス：{{ email }}</p>
+  <p>ユーザー名：{{ username }}</p>
+  <p>生年月日：{{ birthday }}</p>
+  <p>性別：{{ gender }}</p>
+
+  <button type="button" onclick="location.href='{% url 'accounts:register' %}'">戻る</button>
+  <button type="submit" onclick="location.href='{% url 'accounts:register_complete' %}'">新規登録</button>
+{% endblock %}

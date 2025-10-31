@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-  <form method="post" action="{% url 'register_confirm' %}">
+  <form method="post" action="{% url 'accounts:register_confirm' %}">
     {% csrf_token %}
     <label>メールアドレス</label><br />
     <input type="email" name="email" required /><br />

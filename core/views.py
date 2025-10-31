@@ -8,14 +8,20 @@ def main_menu(request):
 def index(request):
     return render(request, "core/index.html")
 
-# ログイン画面
-def login_view(request):
-    return render(request, "core/login.html")
+def coupon_list(request):
+    return render(request, "core/coupon_list.html")
 
-# 新規登録画面
-def register(request):
-    return render(request, "core/register.html")
+def store_map(request):
+    return render(request, "core/store_map.html")
 
-# 登録確認画面
-def register_confirm(request):
-    return render(request, "core/register_confirm.html")
+def result(request):
+    return render(request, "core/result.html")
+
+def scan(request):
+    return render(request, "core/scan.html")
+
+def ai_report(request):
+    return render(request, "core/ai_report.html")
+
+def inquiry(request):
+    return render(request, "core/inquiry.html")

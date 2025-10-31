@@ -11,7 +11,7 @@
   </section>
 
   <div class="buttons">
-    <a href="/coupons/" class="btn">所持クーポン一覧</a>
-    <a href="/map/" class="btn">加盟店マップ</a>
+    <a href="{% url 'core:coupon_list' %}" class="btn">所持クーポン一覧</a>
+    <a href="{% url 'core:store_map' %}" class="btn">加盟店マップ</a>
   </div>
 {% endblock %}
