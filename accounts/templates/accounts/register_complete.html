@@ -1,7 +1,25 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>登録完了 | GreenReceipt</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <main>
+      <form>
+        <div style="text-align:center;">
+          <img src="{% static 'core/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;" />
+        </div>
 
-{% block content %}
-<h1>登録完了</h1>
-<p>ユーザー登録が完了しました。</p>
-<a href="{% url 'accounts:login' %}">ログイン</a>
-{% endblock %}
+        <h1 style="text-align:center; color:#2e7d32;">登録完了</h1>
+        <p style="text-align:center;">ユーザー登録が完了しました。</p>
+
+        <div style="text-align:center; margin-top:20px;">
+          <button type="button" onclick="location.href='{% url 'accounts:login' %}'">ログイン</button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

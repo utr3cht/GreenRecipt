@@ -1,15 +1,28 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>登録確認 | GreenReceipt</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <main>
+      <form>
+        <div style="text-align:center;">
+          <img src="{% static 'core/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;" />
+        </div>
 
-{% block title %}
-  登録確認 | GreenReceipt
-{% endblock %}
+        <p>メールアドレス：{{ email }}</p>
+        <p>ユーザー名：{{ username }}</p>
+        <p>生年月日：{{ birthday }}</p>
+        <p>性別：{{ gender }}</p>
 
-{% block content %}
-  <p>メールアドレス：{{ email }}</p>
-  <p>ユーザー名：{{ username }}</p>
-  <p>生年月日：{{ birthday }}</p>
-  <p>性別：{{ gender }}</p>
-
-  <button type="button" onclick="location.href='{% url 'accounts:register' %}'">戻る</button>
-  <button type="submit" onclick="location.href='{% url 'accounts:register_complete' %}'">新規登録</button>
-{% endblock %}
+        <div style="text-align:center;">
+          <button type="button" onclick="location.href='{% url 'accounts:register' %}'">戻る</button>
+          <button type="button" onclick="location.href='{% url 'accounts:register_complete' %}'">新規登録</button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

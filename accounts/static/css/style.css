@@ -1,0 +1,92 @@
+/* ===== ログイン・登録画面共通スタイル ===== */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f6fff6;
+  padding: 20px;
+}
+
+form {
+  width: 90%;
+  max-width: 380px;
+  background: white;
+  border-radius: 16px;
+  padding: 25px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+form label {
+  font-weight: bold;
+  color: #2e7d32;
+  display: block;
+  margin-top: 10px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+button {
+  width: 48%;
+  padding: 10px;
+  margin: 15px 1%;
+  border: 2px solid #2e7d32;
+  border-radius: 8px;
+  background: #fff;
+  color: #2e7d32;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #c8e6c9;
+}
+
+main p {
+  font-size: 15px;
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+/* ===== スマホ最適化（～767px） ===== */
+@media (max-width: 767px) {
+  main {
+    background: linear-gradient(#c8f7c5, #9be39d);
+    padding: 20px 10px;
+  }
+  form {
+    width: 95%;
+    padding: 20px 15px;
+    box-shadow: none;
+  }
+  button {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
+
+/* ===== デスクトップ版（768px以上） ===== */
+@media (min-width: 768px) {
+  main {
+    background: linear-gradient(to right, #c8f7c5, #9be39d);
+  }
+  form {
+    width: 420px;
+  }
+}

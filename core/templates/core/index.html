@@ -1,13 +1,26 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>GreenReceipt | トップ</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/index.css' %}" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" class="logo" />
 
-{% block title %}
-  GreenReceipt | トップ
-{% endblock %}
+      <p class="catchcopy">〜いつもの買い物がエコ活動になる〜</p>
 
-{% block content %}
-  <p>〜いつもの買い物がエコ活動になる〜</p>
-  <p>初めてご利用の方はこちら</p>
-  <button onclick="location.href='{% url 'accounts:register' %}'">新規登録</button>
-  <p>既にアカウントをお持ちの方はこちら</p>
-  <button onclick="location.href='{% url 'accounts:login' %}'">ログイン</button>
-{% endblock %}
+      <div class="section">
+        <p>初めてご利用の方はこちら</p>
+        <button onclick="location.href='{% url 'accounts:register' %}'">新規登録</button>
+      </div>
+
+      <div class="section">
+        <p>既にアカウントをお持ちの方はこちら</p>
+        <button onclick="location.href='{% url 'accounts:login' %}'">ログイン</button>
+      </div>
+    </div>
+  </body>
+</html>
