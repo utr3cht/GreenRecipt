@@ -4,10 +4,12 @@ body {
   text-align: center;
   margin: 0;
   padding: 0;
+  min-height: 100vh;
 }
 
 .container {
-  width: 360px;
+  width: 90%;
+  max-width: 360px;
   margin: 70px auto;
   padding: 20px;
   border-radius: 10px;
@@ -23,25 +25,44 @@ input[type="email"],
 input[type="password"],
 input[type="date"],
 select {
-  width: 80%;
-  padding: 6px;
-  margin: 5px 0;
+  width: 90%;
+  padding: 10px;
+  margin: 6px 0;
   border: 1px solid #777;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: 5px;
+  font-size: 16px;
 }
 
 button {
-  width: 120px;
-  padding: 6px;
-  margin: 8px;
+  width: 130px;
+  padding: 10px;
+  margin: 10px;
   border: 1px solid #444;
-  border-radius: 5px;
+  border-radius: 6px;
   background-color: #fff;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 button:hover {
   background-color: #d3ffd3;
+}
+
+/* --- スマホ専用調整 --- */
+@media screen and (max-width: 600px) {
+  .container {
+    width: 95%;
+    margin-top: 40px;
+    padding: 10px;
+  }
+  .logo {
+    width: 200px;
+  }
+  input, button {
+    font-size: 15px;
+  }
+  button {
+    width: 100px;
+    padding: 8px;
+  }
 }
