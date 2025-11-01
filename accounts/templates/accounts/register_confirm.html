@@ -1,28 +1,33 @@
-<!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <title>登録確認 | GreenReceipt</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
-  </head>
-  <body>
-    <main>
-      <form>
-        <div style="text-align:center;">
-          <img src="{% static 'core/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;" />
-        </div>
+{% extends 'accounts/base.html' %}
+{% load static %}
 
-        <p>メールアドレス：{{ email }}</p>
-        <p>ユーザー名：{{ username }}</p>
-        <p>生年月日：{{ birthday }}</p>
-        <p>性別：{{ gender }}</p>
+{% block title %}登録内容の確認 | GreenReceipt{% endblock %}
 
-        <div style="text-align:center;">
-          <button type="button" onclick="location.href='{% url 'accounts:register' %}'">戻る</button>
-          <button type="button" onclick="location.href='{% url 'accounts:register_complete' %}'">新規登録</button>
-        </div>
-      </form>
-    </main>
-  </body>
-</html>
+{% block content %}
+<form method="post" action="{% url 'accounts:register_confirm' %}" class="full">
+  {% csrf_token %}
+
+  <div style="text-align:center;">
+    <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;">
+  </div>
+
+  <h2 style="text-align:center; color:#2e7d32;">登録内容の確認</h2>
+
+  <p><strong>ユーザー名：</strong>{{ form_data.username }}</p>
+  <p><strong>メールアドレス：</strong>{{ form_data.email }}</p>
+  <p><strong>生年月日：</strong>{{ form_data.birthday }}</p>
+  {% if form_data.gender %}<p><strong>性別：</strong>{{ form_data.gender }}</p>{% endif %}
+
+  <input type="hidden" name="username" value="{{ form_data.username }}">
+  <input type="hidden" name="email" value="{{ form_data.email }}">
+  <input type="hidden" name="birthday" value="{{ form_data.birthday }}">
+  <input type="hidden" name="gender" value="{{ form_data.gender }}">
+  <input type="hidden" name="password" value="{{ form_data.password }}">
+  <input type="hidden" name="password_confirm" value="{{ form_data.password_confirm }}">
+
+  <div class="actions" style="text-align:center;">
+    <button type="button" onclick="location.href='{% url 'accounts:register' %}'">戻る</button>
+    <button type="submit">登録</button>
+  </div>
+</form>
+{% endblock %}

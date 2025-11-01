@@ -1,30 +1,41 @@
-<!DOCTYPE html>
-<html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <title>ログイン - GreenReceipt</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
-  </head>
-  <body>
-    <main>
-      <form method="post" action="{% url 'accounts:login' %}">
-        {% csrf_token %}
-        <div style="text-align:center;">
-          <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;" />
-        </div>
+{% extends 'accounts/base.html' %}
+{% load static %}
 
-        <label for="email">メールアドレス</label>
-        <input type="email" id="email" name="email" required />
+{% block title %}ログイン | GreenReceipt{% endblock %}
 
-        <label for="password">パスワード</label>
-        <input type="password" id="password" name="password" required />
+{% block content %}
+  <form method="post" action="{% url 'accounts:login' %}" class="full">
+    {% csrf_token %}
+    <div style="text-align:center;">
+      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;">
+    </div>
 
-        <div style="text-align:center;">
-          <button type="button" onclick="location.href='{% url 'core:index' %}'">戻る</button>
-          <button type="submit">ログイン</button>
-        </div>
-      </form>
-    </main>
-  </body>
-</html>
+
+
+    <div class="form-container">
+      <p>
+        <label for="id_username">ユーザー名:</label>
+        {{ form.username }}
+      </p>
+      <p>
+        <label for="id_password">パスワード:</label>
+        {{ form.password }}
+      </p>
+    </div>
+    
+        {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="actions">
+      <button type="button" onclick="location.href='{% url 'core:index' %}'">戻る</button>
+      <button type="submit">ログイン</button>
+    </div>
+    <div style="text-align:center; margin-top: 1rem;">
+      <a href="{% url 'password_reset' %}">パスワードを忘れましたか？</a>
+    </div>
+  </form>
+{% endblock %}

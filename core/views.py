@@ -1,8 +1,15 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 
 # メインメニュー
+@login_required
 def main_menu(request):
-    return render(request, "core/main_menu.html")
+    user = request.user
+    context = {
+        'rank': user.rank,
+        'current_points': user.current_points,
+    }
+    return render(request, "core/main_menu.html", context)
 
 # トップ（最初の画面）
 def index(request):

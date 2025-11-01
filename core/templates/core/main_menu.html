@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}
   メインメニュー | GreenReceipt
@@ -6,8 +6,8 @@
 
 {% block content %}
   <section class="rank-box">
-    <h2>ランク</h2>
-    <div class="eco-point">200 エコポイント</div>
+    <h2>{{ rank }}</h2>
+    <div class="eco-point">{{ current_points }} エコポイント</div>
   </section>
 
   <div class="buttons">

@@ -1,0 +1,133 @@
+/* ===== ベース ===== */
+* { box-sizing: border-box; }
+html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+body {
+  font-family: "Segoe UI","メイリオ",sans-serif;
+  text-align: center;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+}
+
+/* 背景 */
+@media (max-width: 767px){
+  html, body { background: linear-gradient(#c8f7c5, #9be39d); min-height: 100svh; }
+}
+@media (min-width: 768px){
+  html, body { background: linear-gradient(to right, #c8f7c5, #9be39d); }
+}
+
+/* ===== トップ等の小カード ===== */
+.wrapper{
+  background:#f6fff6; border-radius:15px; padding:40px 20px;
+  box-shadow:0 0 10px rgba(0,0,0,.15); width:320px; margin:auto; max-width:100%;
+}
+.logo{ width:220px; height:auto; margin-bottom:15px; }
+.catchcopy{ font-weight:500; color:#2e7d32; margin-bottom:30px; }
+.section{ margin:25px 0; }
+
+/* ===== メインメニュー ===== */
+.container{
+  width:100%; max-width:420px; margin:0 auto;
+  background:#f6fff6; min-height:100vh; display:flex; flex-direction:column;
+  padding-bottom: calc(var(--nav-h, 64px) + env(safe-area-inset-bottom));
+}
+header{ padding:10px; }
+.logo.small{ width:160px; height:auto; }
+
+/* ランクとボタン */
+.rank-box{
+  background:#fff; border-radius:20px; margin:10px auto; width:85%;
+  padding:15px; box-shadow:0 2px 5px rgba(0,0,0,.1);
+}
+.rank-box h2{ margin:0; color:#2e7d32; }
+.eco-point{ background:#e8f5e9; border-radius:10px; margin-top:10px; padding:10px; font-weight:bold; color:#388e3c; }
+.buttons{ margin:20px 0; display:grid; gap:12px; justify-content:center; }
+
+/* ボタン共通 */
+button, .btn{
+  display:inline-block; background:#fff; color:#2e7d32; border:2px solid #2e7d32;
+  border-radius:8px; font-weight:bold; cursor:pointer; transition:.2s;
+}
+button{ padding:10px 40px; }
+.btn{ width:75%; padding:12px; border-radius:10px; text-decoration:none; }
+button:hover, .btn:hover{ background:#c8e6c9; }
+
+/* ===== 下部ナビ固定 ===== */
+:root { --nav-h: 64px; }
+footer{ margin-top:auto; }
+.bottom-nav{
+  position: fixed; left: 0; right: 0; bottom: 0;
+  height: var(--nav-h);
+  background:#fff; border-top:1px solid #cfd8dc;
+  display:flex; justify-content:space-around; align-items:center;
+  padding: 6px max(12px, env(safe-area-inset-left))
+           max(6px,  env(safe-area-inset-bottom))
+           max(12px, env(safe-area-inset-right));
+  box-shadow: 0 -2px 8px rgba(0,0,0,.06);
+  z-index: 1000;
+  width: auto; /* 100vwは使わない（横スクロール防止） */
+}
+.nav-item{ display:flex; flex-direction:column; align-items:center; color:#388e3c; text-decoration:none; font-size:11px; }
+.nav-item img{ width:26px; height:26px; margin-bottom:3px; }
+
+/* ===== フォーム共通（登録・ログイン等） ===== */
+main{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:100%; height:100%; padding:20px;
+}
+form{
+  width:90%; max-width:380px; margin:auto;
+  background:#fff; border-radius:16px; padding:25px 20px;
+  box-shadow:0 2px 8px rgba(0,0,0,.1); text-align:left;
+}
+form label{ font-weight:700; color:#2e7d32; display:block; margin-top:10px; }
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], select{
+  width:100%; padding:10px; margin-top:4px;
+  border:1px solid #cfd8dc; border-radius:8px; font-size:15px;
+}
+form .actions{ text-align:center; }
+form .actions button{ width:48%; margin:15px 1%; }
+main p{ font-size:15px; color:#2e7d32; font-weight:500; }
+
+/* ===== モバイル（～767px） ===== */
+@media (max-width: 767px){
+  .container{ max-width:none; border-radius:0; box-shadow:none; background:linear-gradient(#c8f7c5,#9be39d); }
+  /* フォーム全面化（必要ページで .full を付与） */
+  form.full, .wrapper.full{
+    width:100%; max-width:none; min-height:100svh;
+    margin:0; border-radius:0; box-shadow:none;
+    padding:max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; justify-content:center;
+  }
+  button, .btn{ width:100%; }
+}
+
+/* ===== デスクトップ（768px～） ===== */
+@media (min-width: 768px){
+  .container{ max-width:900px; border-radius:12px; box-shadow:0 0 15px rgba(0,0,0,.1); }
+  main{ padding:40px; }
+  .rank-box{ width:45%; height:220px; }
+  .buttons{ width:45%; display:flex; flex-direction:column; align-items:center; gap:20px; }
+  .btn{ width:80%; font-size:18px; }
+  .bottom-nav{ justify-content:center; gap:40px; }
+  .nav-item img{ width:36px; height:36px; }
+  form{ width:420px; }
+}
+
+/* ===== 横スクロール保険 ===== */
+img, video, canvas { max-width: 100%; height: auto; display: block; }
+.container, .wrapper, main, form { max-width: 100%; }
+
+.alert-danger, .errorlist {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+  padding: .75rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  border-radius: .25rem;
+}
+.errorlist {
+  list-style: none;
+  padding-left: 0;
+}

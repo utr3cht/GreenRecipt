@@ -25,12 +25,13 @@ SECRET_KEY = 'django-insecure-xira!$zs_cp!gnq=_(97t0@w6m(6h6$sy4c8h^)j&p6g%r_$--
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 # Application definition
 
 INSTALLED_APPS = [
+    'accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
-    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [
@@ -125,3 +125,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_REDIRECT_URL = '/menu/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+LOGIN_URL = '/'

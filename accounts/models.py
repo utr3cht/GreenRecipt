@@ -1,8 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils.translation import gettext_lazy as _
 
 
 class CustomUser(AbstractUser):
+    username = models.CharField(
+        "ユーザー名",
+        max_length=50,
+        unique=True,
+        help_text=(
+            "必須。50文字以下。文字、数字、および @/./+/-/_ のみ使用できます。"
+        ),
+        validators=[AbstractUser.username_validator],
+        error_messages={
+            "unique": _("A user with that username already exists."),
+        },
+    )
     ROLE_CHOICES = (
         ('system', 'システム管理者'),
         ('admin', '管理者'),
@@ -12,7 +25,7 @@ class CustomUser(AbstractUser):
     current_points = models.IntegerField(default=0, verbose_name='ポイント')
     rank = models.CharField(max_length=10, default='seed', verbose_name='ランク')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='アカウント更新日時')
-    birthday = models.DateField(verbose_name='生年月日')
+    birthday = models.DateField(verbose_name='生年月日', null=True, blank=True)
     purchased_amount = models.IntegerField(default=0, verbose_name='購入点数')
     lastmonth_point = models.IntegerField(default=0, verbose_name='先月獲得ポイント')
     current_coupons = models.ManyToManyField(

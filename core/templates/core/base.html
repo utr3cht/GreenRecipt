@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}GreenReceipt{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-container">
+          <div class="logo-container">
+            <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" class="logo" />
+          </div>
+
+          <div class="user-info desktop-only">
+            {% if user.is_authenticated %}
+              <span class="welcome">ようこそ、{{ user.username }}さん</span>
+              <a href="{% url 'accounts:profile_edit' %}" class="logout-button btn">プロフィール編集</a>
+              <form method="post" action="{% url 'accounts:logout' %}" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">ログアウト</button>
+              </form>
+            {% endif %}
+          </div>
+
+          <div class="hamburger-menu mobile-only">
+            <span class="welcome">ようこそ、{{ user.username }}さん</span>
+            <button class="hamburger-icon" onclick="toggleMenu()">&#9776;</button>
+            <div class="menu-items" id="menu-items">
+              {% if user.is_authenticated %}
+                <button type="button" class="logout-button"onclick="location.href='{% url 'accounts:profile_edit' %}'">プロフィール編集</button>
+                <form method="post" action="{% url 'accounts:logout' %}" class="logout-form">
+                  {% csrf_token %}
+                  <button type="submit" class="logout-button">ログアウト</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <script>
+        function toggleMenu() {
+          const m = document.getElementById("menu-items");
+          m.style.display = (m.style.display === "block") ? "none" : "block";
+        }
+      </script>
+
+      <main>
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer>
+        <nav class="bottom-nav">
+          <a href="/menu/" class="nav-item">
+            <img src="{% static 'img/home.png' %}" alt="ホーム"><span>ホーム</span>
+          </a>
+          <a href="/result/" class="nav-item">
+            <img src="{% static 'img/result.png' %}" alt="読み取り履歴"><span>読み取り履歴</span>
+          </a>
+          <a href="/receipts/" class="nav-item">
+            <img src="{% static 'img/scan.png' %}" alt="スキャン"><span>スキャン</span>
+          </a>
+          <a href="/reports/" class="nav-item">
+            <img src="{% static 'img/report.png' %}" alt="AIレポート"><span>AIレポート</span>
+          </a>
+          <a href="/inquiries/" class="nav-item">
+            <img src="{% static 'img/mail.png' %}" alt="お問い合わせ"><span>お問い合わせ</span>
+          </a>
+        </nav>
+      </footer>
+    </div>
+  </body>
+</html>

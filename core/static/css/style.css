@@ -1,92 +1,178 @@
-/* ===== ログイン・登録画面共通スタイル ===== */
-main {
-  flex: 1;
+/* ===== ベース ===== */
+* { box-sizing: border-box; }
+html, body { height:100%; width:100%; margin:0; padding:0; overflow-x:hidden; }
+body {
+  font-family:"Segoe UI","メイリオ",sans-serif;
+  text-align:center;
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh;
+}
+
+/* 背景 */
+@media (max-width:767px){ html,body{ background:linear-gradient(#c8f7c5,#9be39d); min-height:100svh; } }
+@media (min-width:768px){ html,body{ background:linear-gradient(to right,#c8f7c5,#9be39d); } }
+
+/* ===== コンテナ ===== */
+.container{
+  width:100%; max-width:420px; margin:0 auto;
+  background:#f6fff6; min-height:100vh; display:flex; flex-direction:column;
+  padding-bottom:calc(var(--nav-h,64px) + env(safe-area-inset-bottom));
+}
+
+/* ===== ヘッダー（コンテナ右端に寄せる） ===== */
+header{ padding:10px; }
+.header-container{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.logo-container{ flex-shrink:0; }
+.logo{ width:100px; height:auto; margin:0; }
+.logo.small{ width:160px; height:auto; }
+
+/* PCではユーザー情報を右寄せ表示 */
+.user-info.desktop-only{ display:none; }
+@media (min-width:768px){
+  .container{ max-width:900px; border-radius:12px; box-shadow:0 0 15px rgba(0,0,0,.1); }
+  .user-info.desktop-only{ display:flex; align-items:center; gap:10px; margin-left:auto; }
+}
+
+/* モバイルのハンバーガー */
+.hamburger-menu.mobile-only{ display:block; position:relative; }
+@media (min-width:768px){ .hamburger-menu.mobile-only{ display:none; } }
+.hamburger-icon{ background:none; border:none; font-size:24px; cursor:pointer; }
+.menu-items{
+  display:none; position:absolute; top:42px; right:0;
+  background:#fff; border:1px solid #ccc; border-radius:5px; padding:10px; z-index:100;
+}
+.menu-items a,.menu-items button{
+  display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:none; color:#333; text-decoration:none;
+}
+.menu-items button{ cursor:pointer; }
+
+/* ===== メニュー部品 ===== */
+.rank-box{
+  background:#fff; border-radius:20px; margin:10px auto; width:60%;
+  padding:15px; box-shadow:0 2px 5px rgba(0,0,0,.1);
+}
+.rank-box h2{ margin:0; color:#2e7d32; }
+.eco-point{ background:#e8f5e9; border-radius:10px; margin-top:10px; padding:10px; font-weight:bold; color:#388e3c; }
+.buttons{ margin:20px 0; display:grid; gap:12px; justify-content:center; }
+
+/* トップ等カード */
+.wrapper{
+  background:#f6fff6; border-radius:15px; padding:40px 20px;
+  box-shadow:0 0 10px rgba(0,0,0,.15); width:320px; margin:auto; max-width:100%;
+}
+.catchcopy{ font-weight:500; color:#2e7d32; margin-bottom:30px; }
+.section{ margin:25px 0; }
+
+/* ===== ボタン ===== */
+button,.btn{
+  display:inline-block; background:#fff; color:#2e7d32; border:2px solid #2e7d32;
+  border-radius:8px; font-weight:bold; cursor:pointer; transition:.2s;
+}
+button{ padding:10px 40px; }
+.btn{ width:100%; padding:12px; border-radius:10px; text-decoration:none; }
+button:hover,.btn:hover{ background:#c8e6c9; }
+.logout-button{ padding:4px 8px; font-size:.8em; white-space:nowrap; }
+
+/* ===== 下部ナビ固定 ===== */
+:root{ --nav-h:64px; }
+footer{ margin-top:auto; }
+.bottom-nav{
+  position:fixed; left:0; right:0; bottom:0;
+  height:var(--nav-h); background:#fff; border-top:1px solid #cfd8dc;
+  display:flex; justify-content:space-around; align-items:center;
+  padding:6px max(12px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right));
+  box-shadow:0 -2px 8px rgba(0,0,0,.06); z-index:1000; width:auto;
+}
+.nav-item{ display:flex; flex-direction:column; align-items:center; color:#388e3c; text-decoration:none; font-size:11px; }
+.nav-item img{ width:26px; height:26px; margin-bottom:3px; }
+
+/* ===== main / form ===== */
+main{ display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; padding:20px; }
+form{
+  width:90%; max-width:380px; margin:auto; background:#fff; border-radius:16px;
+  padding:25px 20px; box-shadow:0 2px 8px rgba(0,0,0,.1); text-align:left;
+}
+form label{ font-weight:700; color:#2e7d32; display:block; margin-top:10px; }
+input[type="text"],input[type="email"],input[type="password"],input[type="date"],select{
+  width:100%; padding:10px; margin-top:4px; border:1px solid #cfd8dc; border-radius:8px; font-size:15px;
+}
+form .actions{ text-align:center; }
+form .actions button{ width:48%; margin:15px 1%; }
+main p{ font-size:15px; color:#2e7d32; font-weight:500; }
+
+/* パスワード可視化 */
+.password-container{ position:relative; }
+.password-container input{ padding-right:72px; }
+.toggle-password{
+  position:absolute; top:50%; right:10px; transform:translateY(-50%);
+  width:auto !important; height:auto; padding:6px 8px; font-size:12px; line-height:1;
+  border:0; background:transparent; color:#2e7d32; cursor:pointer; z-index:1;
+}
+
+/* ===== モバイル ===== */
+@media (max-width:767px){
+  .container{ max-width:none; border-radius:0; box-shadow:none; background:linear-gradient(#c8f7c5,#9be39d); }
+  .actions button,.btn{ width:100%; }
+  form.full,.wrapper.full{
+    width:100%; max-width:none; min-height:100svh; margin:0; border-radius:0; box-shadow:none;
+    padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; justify-content:center;
+  }
+}
+
+/* ===== 横スクロール保険 ===== */
+img,video,canvas{ max-width:100%; height:auto; display:block; }
+.container,.wrapper,main,form{ max-width:100%; }
+
+/* ===== ユーティリティ ===== */
+.logout-form{ background:none; padding:0; margin:0; box-shadow:none; border:none; display:inline; }
+.welcome{ white-space:nowrap; }
+
+header .logo {
+  width: 180px;   /* モバイル */
+  height: auto;
+}
+
+@media (min-width: 768px){
+  header .logo {
+    width: 260px; /* デスクトップ */
+  }
+}
+.hamburger-menu {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  background: #f6fff6;
-  padding: 20px;
+  gap: 8px;
+  margin-left: auto;
+  max-width: 65vw;           /* 右側ブロックの上限幅 */
 }
 
-form {
-  width: 90%;
-  max-width: 380px;
-  background: white;
-  border-radius: 16px;
-  padding: 25px 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  text-align: left;
+.hamburger-menu .welcome {
+  flex: 1 1 auto;
+  min-width: 0;              /* 省略記号が効く前提 */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* 長文は…で省略 */
+  white-space: nowrap;
+  font-size: 14px;
 }
 
-form label {
-  font-weight: bold;
-  color: #2e7d32;
-  display: block;
-  margin-top: 10px;
+.hamburger-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="date"],
-select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 4px;
-  border: 1px solid #cfd8dc;
-  border-radius: 8px;
-  font-size: 15px;
-  box-sizing: border-box;
-}
-
-button {
-  width: 48%;
-  padding: 10px;
-  margin: 15px 1%;
-  border: 2px solid #2e7d32;
-  border-radius: 8px;
-  background: #fff;
-  color: #2e7d32;
-  font-weight: bold;
-  font-size: 15px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-button:hover {
-  background: #c8e6c9;
-}
-
-main p {
-  font-size: 15px;
-  color: #2e7d32;
-  font-weight: 500;
-}
-
-/* ===== スマホ最適化（～767px） ===== */
-@media (max-width: 767px) {
-  main {
-    background: linear-gradient(#c8f7c5, #9be39d);
-    padding: 20px 10px;
-  }
-  form {
-    width: 95%;
-    padding: 20px 15px;
-    box-shadow: none;
-  }
-  button {
-    width: 100%;
-    margin-top: 10px;
+/* デスクトップでも安全側に */
+@media (min-width:768px){
+  .user-info.desktop-only .welcome{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 28ch;
   }
 }
 
-/* ===== デスクトップ版（768px以上） ===== */
-@media (min-width: 768px) {
-  main {
-    background: linear-gradient(to right, #c8f7c5, #9be39d);
-  }
-  form {
-    width: 420px;
-  }
-}
+
+
+
