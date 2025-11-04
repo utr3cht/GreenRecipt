@@ -45,6 +45,8 @@ class Inquiry(models.Model):
     body_text = models.TextField(verbose_name='内容')
     image = models.ImageField(
         upload_to='inquiries/', null=True, blank=True, verbose_name='添付画像')
+    is_replied = models.BooleanField(default=False, verbose_name='返信済み')
+    reply_message = models.TextField(blank=True, verbose_name='返信内容')
 
     def __str__(self):
         return self.subject

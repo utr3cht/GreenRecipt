@@ -1,5 +1,68 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
+
+{% block title %}
+  お問い合わせダッシュボード | GreenReceipt
+{% endblock %}
 
 {% block content %}
-<h1>お問い合わせダッシュボード</h1>
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      <h1>お問い合わせダッシュボード</h1>
+
+      {% if inquiries %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>ユーザー</th>
+                <th>件名</th>
+                <th>メールアドレス</th>
+                <th>内容</th>
+                <th>添付画像</th>
+                <th>作成日時</th>
+                <th>ステータス</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inquiry in inquiries %}
+                <tr data-href="{% url 'core:inquiry_detail' inquiry.id %}">
+                  <td>{{ inquiry.id }}</td>
+                  <td>
+                    {% if inquiry.user %}
+                      {{ inquiry.user.username }}
+                    {% else %}
+                      ゲスト
+                    {% endif %}
+                  </td>
+                  <td>{{ inquiry.subject }}</td>
+                  <td>{{ inquiry.reply_to_email }}</td>
+                  <td>{{ inquiry.body_text|truncatechars:40 }}</td>
+                  <td>
+                    {% if inquiry.image %}
+                      <a href="{{ inquiry.image.url }}" target="_blank" onclick="event.stopPropagation();">表示</a>
+                    {% else %}
+                      なし
+                    {% endif %}
+                  </td>
+                  <td>{{ inquiry.created_at|date:'Y年n月j日 H:i' }}</td>
+                  <td>{{ inquiry.is_replied|yesno:"完了,未完了" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">現在、お問い合わせはありません。</div>
+      {% endif %}
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('tr[data-href]').forEach((row) => {
+        row.addEventListener('click', () => (location.href = row.dataset.href))
+      })
+    })
+  </script>
 {% endblock %}

@@ -1,6 +1,9 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import InquiryForm
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core.mail import send_mail
+from django.conf import settings
+from .forms import InquiryForm, ReplyForm
 from .models import Inquiry
 
 # メインメニュー
@@ -59,3 +62,39 @@ def inquiry_create(request):
 
 def inquiry_complete(request):
     return render(request, "core/inquiry_complete.html")
+
+@staff_member_required
+def admin_inquiry_dashboard(request):
+    inquiries = Inquiry.objects.all().order_by('-id')
+    context = {
+        'inquiries': inquiries
+    }
+    return render(request, 'admin/inquiry_dashboard.html', context)
+
+@staff_member_required
+def inquiry_detail(request, inquiry_id):
+    inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+    if request.method == 'POST':
+        form = ReplyForm(request.POST)
+        if form.is_valid():
+            subject = form.cleaned_data['subject']
+            message = form.cleaned_data['message']
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [inquiry.reply_to_email],
+            )
+            inquiry.is_replied = True
+            inquiry.reply_message = message
+            inquiry.save()
+            # Redirect or show a success message
+            return redirect('core:admin_inquiry_dashboard')
+    else:
+        form = ReplyForm(initial={'subject': f'Re: {inquiry.subject}'})
+
+    context = {
+        'inquiry': inquiry,
+        'form': form
+    }
+    return render(request, 'admin/inquiry_detail.html', context)
