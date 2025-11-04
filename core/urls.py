@@ -14,4 +14,6 @@ urlpatterns = [
     path("inquiries/", views.inquiry, name="inquiry"),
     path("inquiries/create/", views.inquiry_create, name="inquiry_create"),
     path("inquiries/complete/", views.inquiry_complete, name="inquiry_complete"),
+    path("staff/inquiries/dashboard/", views.admin_inquiry_dashboard, name="admin_inquiry_dashboard"),
+    path("staff/inquiries/<int:inquiry_id>/", views.inquiry_detail, name="inquiry_detail"),
 ]
