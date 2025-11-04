@@ -86,7 +86,7 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
   border:1px solid #cfd8dc; border-radius:8px; font-size:15px;
 }
 form .actions{ text-align:center; }
-form .actions button{ width:48%; margin:15px 1%; }
+form .actions button{ margin:15px 1%; }
 main p{ font-size:15px; color:#2e7d32; font-weight:500; }
 
 /* ===== モバイル（～767px） ===== */
@@ -131,3 +131,24 @@ img, video, canvas { max-width: 100%; height: auto; display: block; }
   list-style: none;
   padding-left: 0;
 }
+
+/* ===== パスワード表示、非表示 ===== */
+    .password-container {
+      position: relative;
+    }
+    .password-container input {
+      padding-right: 60px; /* Make space for the button */
+    }
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-size: 0.8em; /* Slightly smaller font size */
+      color: #007bff; /* A more prominent color */
+      padding: 0 5px; /* Add some padding */
+      z-index: 10; /* Ensure it's above the input */
+    }

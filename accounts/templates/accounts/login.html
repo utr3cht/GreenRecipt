@@ -19,7 +19,10 @@
       </p>
       <p>
         <label for="id_password">パスワード:</label>
-        {{ form.password }}
+        <div class="password-container">
+          {{ form.password }}
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility(this, 'id_password')" title="パスワードの表示/非表示を切り替える">表示</button>
+        </div>
       </p>
     </div>
     
@@ -30,6 +33,21 @@
         {% endfor %}
       </div>
     {% endif %}
+
+<!--パスワード表示、非表示-->
+    <script>
+      function togglePasswordVisibility(button, fieldId) {
+        var passwordField = document.getElementById(fieldId);
+        if (passwordField.type === "password") {
+          passwordField.type = "text";
+          button.textContent = "非表示";
+        } else {
+          passwordField.type = "password";
+          button.textContent = "表示";
+        }
+      }
+    </script>
+    
     <div class="actions">
       <button type="button" onclick="location.href='{% url 'core:index' %}'">戻る</button>
       <button type="submit">ログイン</button>
