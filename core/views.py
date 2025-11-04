@@ -98,3 +98,7 @@ def inquiry_detail(request, inquiry_id):
         'form': form
     }
     return render(request, 'admin/inquiry_detail.html', context)
+
+@login_required
+def store_help(request):
+    return render(request, "store_admin/help.html")
