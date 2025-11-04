@@ -43,6 +43,8 @@ class Inquiry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
     subject = models.CharField(max_length=100, verbose_name='件名')
     body_text = models.TextField(verbose_name='内容')
+    image = models.ImageField(
+        upload_to='inquiries/', null=True, blank=True, verbose_name='添付画像')
 
     def __str__(self):
         return self.subject

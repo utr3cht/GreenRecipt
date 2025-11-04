@@ -1,5 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from .forms import InquiryForm
+from .models import Inquiry
 
 # メインメニュー
 @login_required
@@ -31,8 +33,29 @@ def ai_report(request):
     return render(request, "core/ai_report.html")
 
 def inquiry(request):
-    return render(request, "core/inquiry.html")
+    if request.method == "POST":
+        form = InquiryForm(request.POST, request.FILES)
+        if form.is_valid():
+            context = {"form": form}
+            return render(request, "core/inquiry_confirm.html", context)
+    else:
+        form = InquiryForm()
+    context = {"form": form}
+    return render(request, "core/inquiry.html", context)
 
-@login_required
-def store_help(request):
-    return render(request, "store_admin/help.html")
+
+def inquiry_create(request):
+    if request.method == "POST":
+        form = InquiryForm(request.POST, request.FILES)
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            if request.user.is_authenticated:
+                inquiry.user = request.user
+            inquiry.save()
+            return redirect("core:inquiry_complete")
+    # フォームが無効な場合やGETリクエストの場合は入力画面に戻す
+    return redirect("core:inquiry")
+
+
+def inquiry_complete(request):
+    return render(request, "core/inquiry_complete.html")

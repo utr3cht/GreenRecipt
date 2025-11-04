@@ -13,4 +13,6 @@ urlpatterns = [
     path("reports/", views.ai_report, name="ai_report"),
     path("inquiries/", views.inquiry, name="inquiry"),
     path('store/help/', views.store_help, name='store_help'),
+    path("inquiries/create/", views.inquiry_create, name="inquiry_create"),
+    path("inquiries/complete/", views.inquiry_complete, name="inquiry_complete"),
 ]

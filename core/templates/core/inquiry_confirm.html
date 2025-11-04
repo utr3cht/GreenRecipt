@@ -1,5 +1,37 @@
 {% extends 'core/base.html' %}
 
+{% block title %}お問い合わせ内容確認 | GreenRecipt{% endblock %}
+
 {% block content %}
-<h1>お問い合わせ内容確認</h1>
+<div class="container mt-5">
+    <h1 class="mb-4">お問い合わせ内容確認</h1>
+    <p>以下の内容でよろしいですか？</p>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">件名</h5>
+            <p class="card-text">{{ form.subject.value }}</p>
+
+            <h5 class="card-title">お問い合わせ内容</h5>
+            <p class="card-text">{{ form.body_text.value|linebreaksbr }}</p>
+
+            <h5 class="card-title">返信先メールアドレス</h5>
+            <p class="card-text">{{ form.reply_to_email.value }}</p>
+
+            {% if form.image.value %}
+                <h5 class="card-title">添付画像</h5>
+                <p class="card-text">画像が添付されています。</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post" action="{% url 'core:inquiry_create' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+            <input type="hidden" name="{{ field.name }}" value="{{ field.value|default_if_none:'' }}">
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">送信する</button>
+        <a href="{% url 'core:inquiry' %}" class="btn btn-secondary">修正する</a>
+    </form>
+</div>
 {% endblock %}

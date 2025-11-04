@@ -1,5 +1,14 @@
 {% extends 'core/base.html' %}
 
+{% block title %}お問い合わせ | GreenRecipt{% endblock %}
+
 {% block content %}
-<h1>お問い合わせ</h1>
+<div class="container mt-5">
+    <h1 class="mb-4">お問い合わせフォーム</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">入力内容を確認する</button>
+    </form>
+</div>
 {% endblock %}
