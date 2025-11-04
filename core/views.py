@@ -32,3 +32,7 @@ def ai_report(request):
 
 def inquiry(request):
     return render(request, "core/inquiry.html")
+
+@login_required
+def store_help(request):
+    return render(request, "store_admin/help.html")

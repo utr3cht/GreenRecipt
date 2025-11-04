@@ -12,4 +12,5 @@ urlpatterns = [
     path("receipts/", views.scan, name="scan"),
     path("reports/", views.ai_report, name="ai_report"),
     path("inquiries/", views.inquiry, name="inquiry"),
+    path('store/help/', views.store_help, name='store_help'),
 ]
