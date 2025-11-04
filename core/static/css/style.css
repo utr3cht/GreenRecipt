@@ -2,10 +2,10 @@
 * { box-sizing: border-box; }
 html, body { height:100%; width:100%; margin:0; padding:0; overflow-x:hidden; }
 body {
-  font-family:"Segoe UI","メイリオ",sans-serif;
-  text-align:center;
-  display:flex; align-items:center; justify-content:center;
-  min-height:100vh;
+  font-family: "Segoe UI", "メイリオ", sans-serif;
+  text-align: center;
+  min-height: 100vh;
+  display: block;
 }
 
 /* 背景 */
@@ -13,10 +13,16 @@ body {
 @media (min-width:768px){ html,body{ background:linear-gradient(to right,#c8f7c5,#9be39d); } }
 
 /* ===== コンテナ ===== */
-.container{
-  width:100%; max-width:420px; margin:0 auto;
-  background:#f6fff6; min-height:100vh; display:flex; flex-direction:column;
-  padding-bottom:calc(var(--nav-h,64px) + env(safe-area-inset-bottom));
+.container {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  background: #f6fff6;
+  min-height: 100vh;
+  display: flex; 
+  flex-direction: column;
+  justify-content: center; /* 中央寄せ維持 */
+  padding-bottom: calc(var(--nav-h, 64px) + env(safe-area-inset-bottom));
 }
 
 /* ===== ヘッダー（コンテナ右端に寄せる） ===== */

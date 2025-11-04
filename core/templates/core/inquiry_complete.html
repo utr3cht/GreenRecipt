@@ -1,5 +1,14 @@
 {% extends 'core/base.html' %}
 
+{% block title %}お問い合わせ完了 | GreenRecipt{% endblock %}
+
 {% block content %}
-<h1>お問い合わせ受付完了</h1>
+<div class="container mt-5">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">お問い合わせありがとうございます！</h4>
+        <p>お問い合わせを受け付けました。内容を確認の上、担当者よりご連絡させていただきます。</p>
+        <hr>
+        <p class="mb-0">トップページに戻るには<a href="{% url 'core:index' %}">こちら</a>をクリックしてください。</p>
+    </div>
+</div>
 {% endblock %}
