@@ -3,8 +3,25 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm
+
 from .forms import InquiryForm, ReplyForm
 from .models import Inquiry
+
+def admin_login(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            if user.role in ['admin', 'store']:
+                login(request, user)
+                return redirect('core:staff_index')
+            else:
+                form.add_error(None, "管理者または店舗アカウントでログインしてください。")
+    else:
+        form = AuthenticationForm()
+    return render(request, 'admin/staff_login.html', {'form': form})
 
 # メインメニュー
 @login_required
@@ -102,3 +119,7 @@ def inquiry_detail(request, inquiry_id):
 @login_required
 def store_help(request):
     return render(request, "store_admin/help.html")
+
+@staff_member_required
+def staff_index(request):
+    return render(request, "admin/staff_index.html")

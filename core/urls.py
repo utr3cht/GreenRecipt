@@ -5,6 +5,7 @@ app_name = 'core'
 
 urlpatterns = [
     path("", views.index, name="index"),
+    path("staff/index",views.staff_index,name="staff_index"),
     path("menu/", views.main_menu, name="main_menu"),
     path("coupons/", views.coupon_list, name="coupon_list"),
     path("map/", views.store_map, name="store_map"),
@@ -15,6 +16,7 @@ urlpatterns = [
     path('store/help/', views.store_help, name='store_help'),
     path("inquiries/create/", views.inquiry_create, name="inquiry_create"),
     path("inquiries/complete/", views.inquiry_complete, name="inquiry_complete"),
+    path("staff/login/",views.admin_login,name="admin_login"),
     path("staff/inquiries/dashboard/", views.admin_inquiry_dashboard, name="admin_inquiry_dashboard"),
     path("staff/inquiries/<int:inquiry_id>/", views.inquiry_detail, name="inquiry_detail"),
 ]

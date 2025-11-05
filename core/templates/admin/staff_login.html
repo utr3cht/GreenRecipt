@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+
+{% block title %}スタッフ・管理者ログイン | GreenRecipt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h2>スタッフ・管理者ログイン</h2>
+                </div>
+                <div class="card-body">
+                    {% if form.errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <p>IDまたはパスワードが正しくありません。入力内容をご確認ください。</p>
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    <form method="post" action="{% url 'core:admin_login' %}">
+                        {% csrf_token %}
+                        <p>
+                            <label for="id_username">ユーザーID:</label>
+                            {{ form.username }}
+                        </p>
+                        <p>
+                            <label for="id_password">パスワード:</label>
+                            <div class="password-container">
+                                {{ form.password }}
+                                <button type="button" class="toggle-password" onclick="togglePasswordVisibility(this, 'id_password')" title="パスワードの表示/非表示を切り替える">表示</button>
+                            </div>
+                        </p>
+                        <button type="submit" class="btn btn-primary w-100">ログイン</button>
+                    </form>
+                    <div style="text-align:center; margin-top: 1rem;">
+                      <a href="{% url 'password_reset' %}">パスワードを忘れましたか？</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  function togglePasswordVisibility(button, fieldId) {
+    var passwordField = document.getElementById(fieldId);
+    if (passwordField.type === "password") {
+      passwordField.type = "text";
+      button.textContent = "非表示";
+    } else {
+      passwordField.type = "password";
+      button.textContent = "表示";
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}スタッフ専用ページ | GreenRecipt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h1>スタッフ専用ページ</h1>
+                </div>
+                <div class="card-body">
+                    <p>ここは管理者および店舗スタッフ専用のページです。</p>
+                    <hr>
+                    <p>以下の機能にアクセスできます。</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <a href="{% url 'core:admin_inquiry_dashboard' %}">お問い合わせ一覧</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'core:store_help' %}">ヘルプFAQ</a>
+                        </li>
+                        <!-- 今後、店舗向けの機能などをここに追加できます -->
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'core:main_menu' %}" class="btn btn-secondary">メインメニューに戻る</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
