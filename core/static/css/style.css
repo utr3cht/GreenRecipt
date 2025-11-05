@@ -49,7 +49,7 @@ header { padding: 10px; }
   gap: 10px;
 }
 .logo-container { flex-shrink: 0; }
-.logo { width: 100px; height: auto; margin: 0; }
+.logo {height: auto; margin: 0; }
 .logo.small { width: 160px; height: auto; }
 
 /* PC表示 */
@@ -155,7 +155,7 @@ button, .btn {
 }
 button { padding: 10px 40px; }
 .btn {
-  width: 40%;
+  width: 100%;
   padding: 12px;
   border-radius: 10px;
   text-decoration: none;
