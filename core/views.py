@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 
 from .forms import InquiryForm, ReplyForm
+from .models import Inquiry, Store
 from .models import Store, Inquiry
 
 
@@ -156,4 +157,9 @@ def staff_index(request):
 
 @staff_member_required
 def store_list(request):
-    return render(request, "admin/store_list.html")
+    stores = Store.objects.all()
+    context = {
+        'stores': stores,
+    }
+    return render(request, "admin/store_list.html", context)
+

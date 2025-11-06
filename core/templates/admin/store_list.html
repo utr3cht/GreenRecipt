@@ -1,5 +1,24 @@
 {% extends 'admin/admin_base.html' %}
 
 {% block content %}
-<h1>加盟店舗一覧</h1>
+<style>
+    .header-with-button {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem; /* Adjust as needed */
+    }
+</style>
+<div class="header-with-button">
+    <h1>加盟店舗一覧</h1>
+    <button class="btn btn-primary">新規加盟店舗登録</button>
+</div>
+
+<ul class="list-group list-group-flush">
+    {% for store in stores %}
+    <li class="list-group-item">
+        {{ store.store_name }}
+    </li>
+    {% endfor %}
+</ul>
 {% endblock %}
