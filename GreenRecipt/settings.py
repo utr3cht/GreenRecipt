@@ -22,6 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-xira!$zs_cp!gnq=_(97t0@w6m(6h6$sy4c8h^)j&p6g%r_$--'
 
+# Google Maps API Key (replace with your actual key)
+GOOGLE_MAPS_API_KEY = 'AIzaSyCU_xWohKWQomFS5W9DQZt0ELigHsYyeE0'
+# Set to True to enable Google Maps geocoding
+GOOGLE_MAPS_GEOCODING_ENABLED = True
+# Max Google Maps geocoding calls per command run
+GOOGLE_MAPS_GEOCODING_LIMIT_PER_RUN = 100
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -39,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [

@@ -16,6 +16,9 @@ class CustomUser(AbstractUser):
             "unique": _("A user with that username already exists."),
         },
     )
+    email = models.EmailField(_("email address"), unique=True)
+    is_verified = models.BooleanField(default=False, verbose_name='メール認証済み')
+    verification_token = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name='認証トークン')
     ROLE_CHOICES = (
         ('system', 'システム管理者'),
         ('admin', '管理者'),

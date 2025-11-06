@@ -1,6 +1,10 @@
 # core/models.py
 from django.db import models
 from django.conf import settings
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+import time
+import googlemaps
 
 
 class Store(models.Model):
@@ -9,9 +13,47 @@ class Store(models.Model):
     tel = models.CharField(max_length=32, blank=True, verbose_name='電話番号')
     address = models.CharField(max_length=255, verbose_name='住所')
     open_hours = models.CharField(max_length=20, verbose_name='営業時間')
+    lat = models.FloatField(verbose_name='緯度', default=0.0)
+    lng = models.FloatField(verbose_name='経度', default=0.0)
 
     def __str__(self):
         return self.store_name
+
+    def save(self, *args, **kwargs):
+        if self.address and self.lat == 0.0 and self.lng == 0.0:
+            geolocated = False
+            # Try Nominatim first
+            geolocator = Nominatim(user_agent="GreenRecipt_Geocoder")
+            try:
+                encoded_address = self.address.encode('utf-8').decode('utf-8')
+                location = geolocator.geocode(encoded_address, timeout=10, language='ja')
+                if location:
+                    self.lat = location.latitude
+                    self.lng = location.longitude
+                    geolocated = True
+                    print(f"Nominatim geocoded store {self.store_name}: {self.address} -> ({self.lat}, {self.lng})")
+                else:
+                    print(f"Nominatim could not geocode address for store {self.store_name}: {self.address}")
+            except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
+                print(f"Nominatim geocoding failed for store {self.store_name}: {self.address} - {e}")
+            time.sleep(1) # Be kind to the Nominatim service
+
+            # If Nominatim failed and Google Maps geocoding is enabled, try Google Maps
+            if not geolocated and settings.GOOGLE_MAPS_GEOCODING_ENABLED and settings.GOOGLE_MAPS_API_KEY and settings.GOOGLE_MAPS_API_KEY != 'YOUR_GOOGLE_MAPS_API_KEY':
+                try:
+                    gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+                    geocode_result = gmaps.geocode(self.address, language='ja')
+                    if geocode_result:
+                        self.lat = geocode_result[0]['geometry']['location']['lat']
+                        self.lng = geocode_result[0]['geometry']['location']['lng']
+                        geolocated = True
+                        print(f"Google Maps geocoded store {self.store_name}: {self.address} -> ({self.lat}, {self.lng})")
+                    else:
+                        print(f"Google Maps could not geocode address for store {self.store_name}: {self.address}")
+                except Exception as e:
+                    print(f"Google Maps geocoding failed for store {self.store_name}: {self.address} - {e}")
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = '加盟店'

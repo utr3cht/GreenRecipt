@@ -1,29 +1,45 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib.admin.views.decorators import staff_member_required
-from django.core.mail import send_mail
+# Django Imports
 from django.conf import settings
-from django.contrib.auth import login, logout
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.admin.views.decorators import staff_member_required
+from django.core import serializers
+from django.core.mail import send_mail
+from django.shortcuts import render, redirect, get_object_or_404
 
 from .forms import InquiryForm, ReplyForm
-from .models import Inquiry
+from .models import Store, Inquiry
 
+
+# --- 認証関連ビュー ---
 def admin_login(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+            # 'admin' または 'store' ロールを持つユーザーのみログインを許可
             if user.role in ['admin', 'store']:
                 login(request, user)
                 return redirect('core:staff_index')
             else:
                 form.add_error(None, "管理者または店舗アカウントでログインしてください。")
+    # GETリクエストまたはフォームが無効な場合
     else:
         form = AuthenticationForm()
     return render(request, 'admin/staff_login.html', {'form': form})
 
-# メインメニュー
+# --- 一般ユーザー向けビュー ---
+
+# トップ（最初の画面）
+
+
+def index(request):
+    if request.user.is_authenticated:
+        return redirect('core:main_menu')
+    return render(request, "core/index.html")
+
+
 @login_required
 def main_menu(request):
     user = request.user
@@ -33,24 +49,30 @@ def main_menu(request):
     }
     return render(request, "core/main_menu.html", context)
 
-# トップ（最初の画面）
-def index(request):
-    return render(request, "core/index.html")
 
 def coupon_list(request):
     return render(request, "core/coupon_list.html")
 
+
 def store_map(request):
-    return render(request, "core/store_map.html")
+    stores = Store.objects.all()
+    stores_json = serializers.serialize('json', stores)
+    return render(request, 'core/store_map.html', {'stores_json': stores_json})
+
 
 def result(request):
     return render(request, "core/result.html")
 
+
 def scan(request):
     return render(request, "core/scan.html")
 
+
 def ai_report(request):
     return render(request, "core/ai_report.html")
+
+
+# --- 問い合わせ関連ビュー ---
 
 def inquiry(request):
     if request.method == "POST":
@@ -80,6 +102,16 @@ def inquiry_create(request):
 def inquiry_complete(request):
     return render(request, "core/inquiry_complete.html")
 
+
+# --- 店舗スタッフ向けビュー ---
+
+@login_required
+def store_help(request):
+    return render(request, "store_admin/help.html")
+
+
+# --- 管理者向けビュー ---
+
 @staff_member_required
 def admin_inquiry_dashboard(request):
     inquiries = Inquiry.objects.all().order_by('-id')
@@ -87,6 +119,7 @@ def admin_inquiry_dashboard(request):
         'inquiries': inquiries
     }
     return render(request, 'admin/inquiry_dashboard.html', context)
+
 
 @staff_member_required
 def inquiry_detail(request, inquiry_id):
@@ -116,9 +149,6 @@ def inquiry_detail(request, inquiry_id):
     }
     return render(request, 'admin/inquiry_detail.html', context)
 
-@login_required
-def store_help(request):
-    return render(request, "store_admin/help.html")
 
 @staff_member_required
 def staff_index(request):

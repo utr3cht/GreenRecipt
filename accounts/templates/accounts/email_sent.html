@@ -1,0 +1,16 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}
+  メールを送信しました | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <form class="full">
+    <div style="text-align:center;">
+      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;" />
+    </div>
+    <p>ご登録ありがとうございます。アカウントを有効にするためのリンクをメールアドレスに送信しました。</p>
+    <p>メールをご確認ください。</p>
+  </form>
+{% endblock %}
