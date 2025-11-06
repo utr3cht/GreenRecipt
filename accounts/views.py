@@ -1,10 +1,17 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView, PasswordChangeDoneView
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, FormView, TemplateView
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+import uuid
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser
@@ -43,11 +50,28 @@ class RegisterConfirmView(TemplateView):
 
         form = CustomUserCreationForm(form_data)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user.is_verified = False
+            user.verification_token = str(uuid.uuid4())
+            user.save()
+
+            current_site = get_current_site(self.request)
+            mail_subject = 'GreenRecipt: アカウントを有効にしてください'
+            message = render_to_string('accounts/account_verification_email.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': user.verification_token,
+            })
+            to_email = form.cleaned_data.get('email')
+            email = EmailMessage(
+                mail_subject, message, to=[to_email]
+            )
+            email.send()
+
             del request.session['form_data']
-            return redirect('accounts:register_complete')
+            return redirect('accounts:email_sent')
         else:
-            # If the form is somehow invalid, redirect back to the registration form
             return redirect('accounts:register')
 
 
@@ -65,11 +89,17 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
 
+from django.contrib import messages
+
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
 
     def form_valid(self, form):
         user = form.get_user()
+        if not user.is_verified:
+            messages.error(self.request, 'メールアドレスが認証されていません。メールをご確認ください。')
+            return self.form_invalid(form)
+        return super().form_valid(form)
         if user.role == 'user' or user.is_superuser:
             login(self.request, user)
             return redirect(self.get_success_url())
@@ -88,3 +118,25 @@ class MyPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
 
 class MyPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
     template_name = 'accounts/password_change_done.html'
+
+
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse
+
+class ActivateAccountView(TemplateView):
+    def get(self, request, uidb64, token, *args, **kwargs):
+        User = get_user_model()
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User._default_manager.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and user.verification_token == token:
+            user.is_verified = True
+            user.verification_token = None # Clear the token after successful verification
+            user.save()
+            return redirect('accounts:verification_complete') # Or a specific success page
+        else:
+            return render(request, 'accounts/activation_invalid.html')

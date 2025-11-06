@@ -1,0 +1,16 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}認証完了 | GreenReceipt{% endblock %}
+
+{% block content %}
+  <form class="full">
+    <div style="text-align:center;">
+      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;">
+    </div>
+    <p>メールアドレスの認証が完了しました。これでログインできます。</p>
+    <div class="actions">
+      <button type="button" onclick="location.href='{% url 'accounts:login' %}'">ログインページへ</button>
+    </div>
+  </form>
+{% endblock %}

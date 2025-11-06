@@ -1,0 +1,17 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}認証エラー | GreenReceipt{% endblock %}
+
+{% block content %}
+  <form class="full">
+    <div style="text-align:center;">
+      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;">
+    </div>
+    <p>この認証リンクは無効です。すでに使用されているか、有効期限が切れています。</p>
+    <div class="actions">
+      <button type="button" onclick="location.href='{% url 'accounts:register' %}'">再登録する</button>
+      <button type="button" onclick="location.href='{% url 'accounts:login' %}'">ログインページへ</button>
+    </div>
+  </form>
+{% endblock %}

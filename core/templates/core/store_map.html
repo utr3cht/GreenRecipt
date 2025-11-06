@@ -1,5 +1,146 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<h1>加盟店マップ</h1>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+    .popup-content {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .store-name {
+      font-weight: bold;
+      color: #007b3a;
+    }
+  </style>
+
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+    // --- 初期地図設定 ---
+    var map = L.map('map').setView([36.555, 139.882], 15)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map)
+    
+    let currentMarker = null
+    let currentCircle = null
+    let currentPosition = null
+    
+    function showCurrentLocation(lat, lon, accuracy) {
+      if (currentMarker) map.removeLayer(currentMarker)
+      if (currentCircle) map.removeLayer(currentCircle)
+    
+      const icon = L.divIcon({
+        html: '<div style="width:18px;height:18px;background:#007b3a;border:2px solid white;border-radius:50%;box-shadow:0 0 6px #007b3a;"></div>',
+        className: ''
+      })
+    
+      currentMarker = L.marker([lat, lon], { icon: icon }).addTo(map)
+      currentCircle = L.circle([lat, lon], {
+        radius: accuracy,
+        color: '#007b3a',
+        fillColor: '#00ff88',
+        fillOpacity: 0.15
+      }).addTo(map)
+    }
+    
+    function moveToCurrentLocation() {
+      if (currentPosition) {
+        map.flyTo(currentPosition, 17, { animate: true, duration: 0.3 })
+      } else {
+        alert('現在地を取得中です。少しお待ちください。')
+      }
+    }
+    
+    // --- 現在地追跡 ---
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(
+        function (pos) {
+          const lat = pos.coords.latitude
+          const lon = pos.coords.longitude
+          const acc = pos.coords.accuracy
+          if (!currentPosition || Math.abs(currentPosition[0] - lat) > 0.00005 || Math.abs(currentPosition[1] - lon) > 0.00005) {
+            currentPosition = [lat, lon]
+            showCurrentLocation(lat, lon, acc)
+          }
+        },
+        function (err) {
+          console.warn('位置情報取得エラー:', err)
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 }
+      )
+    } else {
+      alert('このブラウザは位置情報に対応していません。')
+    }
+    
+    // --- 📍ボタン ---
+    const locateControl = L.control({ position: 'topleft' })
+    locateControl.onAdd = function () {
+      const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+      div.innerHTML = '<a href="#" title="現在地へ移動" style="font-size:18px;line-height:26px;">📍</a>'
+      div.style.background = 'white'
+      div.style.textAlign = 'center'
+      div.style.cursor = 'pointer'
+      L.DomEvent.disableClickPropagation(div)
+      L.DomEvent.on(div, 'click', function (e) {
+        e.preventDefault()
+        moveToCurrentLocation()
+      })
+      return div
+    }
+    locateControl.addTo(map)
+    
+    // --- 店舗マーカー ---
+    var stores = []
+    try {
+      stores = JSON.parse('{{ stores_json|default:"[]"|safe }}')
+    } catch (e) {
+      console.warn('stores_json parse error:', e)
+    }
+    
+    stores.forEach(function (obj) {
+      var s = obj.fields
+      // lat / lng 両方が有効な場合のみ
+      if (s.lat && s.lng && s.lat !== 0 && s.lng !== 0) {
+        var popup = `
+              <div class="popup-content">
+                <div class="store-name">${s.store_name}</div>
+                カテゴリ：${s.category}<br>
+                住所：${s.address}<br>
+                電話：${s.tel || '－'}<br>
+                営業時間：${s.open_hours || '－'}
+              </div>`
+        L.marker([s.lat, s.lng]).addTo(map).bindPopup(popup)
+      }
+    })
+    
+    // --- 初回位置取得 ---
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          const lat = pos.coords.latitude
+          const lon = pos.coords.longitude
+          currentPosition = [lat, lon]
+          showCurrentLocation(lat, lon, pos.coords.accuracy)
+        },
+        function (err) {
+          console.warn('初回位置取得エラー:', err)
+        },
+        { enableHighAccuracy: true, timeout: 3000 }
+      )
+    }
+  </script>
 {% endblock %}

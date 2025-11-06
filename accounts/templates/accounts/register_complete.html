@@ -1,9 +1,14 @@
 {% extends 'accounts/base.html' %}
 
-{% block title %}登録完了 | GreenReceipt{% endblock %}
+{% block title %}
+  登録完了 | GreenReceipt
+{% endblock %}
 
 {% block content %}
-  <h2>登録が完了しました</h2>
+  <h2>登録はまだ完了していません</h2>
   <p>ご登録いただきありがとうございます。</p>
-  <p><a href="{% url 'accounts:login' %}">ログインページへ</a></p>
+  <p>ご入力いただいたメールアドレス宛に認証メールを送信しました</p>
+  <p>
+    <a href="{% url 'accounts:login' %}">ログインページへ</a>
+  </p>
 {% endblock %}
