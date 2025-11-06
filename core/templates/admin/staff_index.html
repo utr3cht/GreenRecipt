@@ -16,9 +16,11 @@
                     <hr>
                     <p>以下の機能にアクセスできます。</p>
                     <ul class="list-group list-group-flush">
+                        {% if user.role == 'admin' or user.is_superuser %}
                         <li class="list-group-item">
                             <a href="/store/list/">加盟店舗一覧</a>
                         </li>
+                        {% endif %}
                         <li class="list-group-item">
                             <a href="{% url 'core:admin_inquiry_dashboard' %}">お問い合わせ一覧</a>
                         </li>

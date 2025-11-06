@@ -68,6 +68,15 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
 
+    def form_valid(self, form):
+        user = form.get_user()
+        if user.role == 'user' or user.is_superuser:
+            login(self.request, user)
+            return redirect(self.get_success_url())
+        else:
+            form.add_error(None, "ユーザーアカウントでログインしてください。")
+            return self.form_invalid(form)
+
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('accounts:login')
