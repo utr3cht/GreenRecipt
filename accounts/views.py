@@ -99,13 +99,10 @@ class CustomLoginView(LoginView):
         if not user.is_verified:
             messages.error(self.request, 'メールアドレスが認証されていません。メールをご確認ください。')
             return self.form_invalid(form)
+        
+        # If the user is verified, proceed with the default login behavior
+        # The super().form_valid(form) method handles logging in the user and redirecting.
         return super().form_valid(form)
-        if user.role == 'user' or user.is_superuser:
-            login(self.request, user)
-            return redirect(self.get_success_url())
-        else:
-            form.add_error(None, "ユーザーアカウントでログインしてください。")
-            return self.form_invalid(form)
 
 
 class CustomLogoutView(LogoutView):
