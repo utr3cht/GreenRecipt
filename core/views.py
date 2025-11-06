@@ -7,7 +7,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 
 from .forms import InquiryForm, ReplyForm
-from .models import Inquiry
+from .models import Inquiry, Store
 
 def admin_login(request):
     if request.method == 'POST':
@@ -126,4 +126,9 @@ def staff_index(request):
 
 @staff_member_required
 def store_list(request):
-    return render(request, "admin/store_list.html")
+    stores = Store.objects.all()
+    context = {
+        'stores': stores,
+    }
+    return render(request, "admin/store_list.html", context)
+
