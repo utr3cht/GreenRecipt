@@ -123,3 +123,7 @@ def store_help(request):
 @staff_member_required
 def staff_index(request):
     return render(request, "admin/staff_index.html")
+
+@staff_member_required
+def store_list(request):
+    return render(request, "admin/store_list.html")

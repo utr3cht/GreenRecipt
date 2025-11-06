@@ -19,4 +19,5 @@ urlpatterns = [
     path("staff/login/",views.admin_login,name="admin_login"),
     path("staff/inquiries/dashboard/", views.admin_inquiry_dashboard, name="admin_inquiry_dashboard"),
     path("staff/inquiries/<int:inquiry_id>/", views.inquiry_detail, name="inquiry_detail"),
+    path("store/list/",views.store_list,name='store_list'),
 ]
