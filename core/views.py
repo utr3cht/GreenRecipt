@@ -153,3 +153,7 @@ def inquiry_detail(request, inquiry_id):
 @staff_member_required
 def staff_index(request):
     return render(request, "admin/staff_index.html")
+
+@staff_member_required
+def store_list(request):
+    return render(request, "admin/store_list.html")

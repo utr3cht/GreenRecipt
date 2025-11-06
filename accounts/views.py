@@ -100,6 +100,12 @@ class CustomLoginView(LoginView):
             messages.error(self.request, 'メールアドレスが認証されていません。メールをご確認ください。')
             return self.form_invalid(form)
         return super().form_valid(form)
+        if user.role == 'user' or user.is_superuser:
+            login(self.request, user)
+            return redirect(self.get_success_url())
+        else:
+            form.add_error(None, "ユーザーアカウントでログインしてください。")
+            return self.form_invalid(form)
 
 
 class CustomLogoutView(LogoutView):

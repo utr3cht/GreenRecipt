@@ -1,4 +1,4 @@
-{% extends "core/base.html" %}
+{% extends "admin/admin_base.html" %}
 
 {% block title %}スタッフ・管理者ログイン | GreenRecipt{% endblock %}
 
@@ -17,7 +17,7 @@
                             {{ form.non_field_errors }}
                         </div>
                     {% endif %}
-                    <form method="post" action="{% url 'core:admin_login' %}">
+                    <form method="post" action="{% url 'core:staff_login' %}">
                         {% csrf_token %}
                         <p>
                             <label for="id_username">ユーザーID:</label>

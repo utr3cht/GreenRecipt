@@ -16,7 +16,8 @@ urlpatterns = [
     path('store/help/', views.store_help, name='store_help'),
     path("inquiries/create/", views.inquiry_create, name="inquiry_create"),
     path("inquiries/complete/", views.inquiry_complete, name="inquiry_complete"),
-    path("staff/login/",views.admin_login,name="admin_login"),
+    path("staff/login/",views.admin_login,name="staff_login"),
     path("staff/inquiries/dashboard/", views.admin_inquiry_dashboard, name="admin_inquiry_dashboard"),
     path("staff/inquiries/<int:inquiry_id>/", views.inquiry_detail, name="inquiry_detail"),
+    path("store/list/",views.store_list,name='store_list'),
 ]
