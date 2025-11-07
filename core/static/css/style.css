@@ -299,7 +299,6 @@ header .logo {
 .hamburger-icon { flex: 0 0 auto; width: 44px; height: 44px; }
 @media (min-width: 768px) {
   .user-info.desktop-only .welcome {
-    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 28ch;
