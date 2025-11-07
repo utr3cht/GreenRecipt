@@ -15,14 +15,42 @@
         <li class="list-group-item">
             <a href="#">新規加盟店舗登録</a>
         </li>
+        <li class="list-group-item">
+            <a href="{% url 'core:staff_index' %}">戻る</a>
+        </li>
     </ul>
 </div>
 
-<ul class="list-group list-group-flush">
-    {% for store in stores %}
-    <li class="list-group-item">
-        {{ store.store_name }}
-    </li>
-    {% endfor %}
-</ul>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>店舗名</th>
+                <th>カテゴリ</th>
+                <th>電話番号</th>
+                <th>住所</th>
+                <th>営業時間</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for store in stores %}
+            <tr data-href="{% url 'core:store_detail' store.id %}">
+                <td>{{ store.store_name }}</td>
+                <td>{{ store.category }}</td>
+                <td>{{ store.tel }}</td>
+                <td>{{ store.address }}</td>
+                <td>{{ store.open_hours }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('tr[data-href]').forEach((row) => {
+        row.addEventListener('click', () => (location.href = row.dataset.href))
+      })
+    })
+</script>
 {% endblock %}
