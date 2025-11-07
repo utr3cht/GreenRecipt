@@ -1,3 +1,7 @@
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+from django.utils.http import urlsafe_base64_decode
+from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView, PasswordChangeDoneView
 from django.shortcuts import redirect, render
@@ -13,7 +17,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from .forms import CustomUserCreationForm, CustomUserChangeForm
+from .forms import CustomUserCreationForm, CustomUserChangeForm, CustomAuthenticationForm
 from .models import CustomUser
 
 
@@ -93,16 +97,7 @@ from django.contrib import messages
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
-
-    def form_valid(self, form):
-        user = form.get_user()
-        if not user.is_verified:
-            messages.error(self.request, 'メールアドレスが認証されていません。メールをご確認ください。')
-            return self.form_invalid(form)
-        
-        # If the user is verified, proceed with the default login behavior
-        # The super().form_valid(form) method handles logging in the user and redirecting.
-        return super().form_valid(form)
+    form_class = CustomAuthenticationForm
 
 
 class CustomLogoutView(LogoutView):
@@ -113,13 +108,10 @@ class MyPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     template_name = 'accounts/password_change.html'
     success_url = reverse_lazy('accounts:password_change_done')
 
+
 class MyPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
     template_name = 'accounts/password_change_done.html'
 
-
-from django.utils.http import urlsafe_base64_decode
-from django.contrib.auth import get_user_model
-from django.http import HttpResponse
 
 class ActivateAccountView(TemplateView):
     def get(self, request, uidb64, token, *args, **kwargs):
@@ -132,8 +124,9 @@ class ActivateAccountView(TemplateView):
 
         if user is not None and user.verification_token == token:
             user.is_verified = True
-            user.verification_token = None # Clear the token after successful verification
+            user.verification_token = None  # Clear the token after successful verification
             user.save()
-            return redirect('accounts:verification_complete') # Or a specific success page
+            # Or a specific success page
+            return redirect('accounts:verification_complete')
         else:
             return render(request, 'accounts/activation_invalid.html')
