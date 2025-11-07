@@ -108,7 +108,7 @@ def inquiry_complete(request):
 
 @login_required
 def store_help(request):
-    return render(request, "store_admin/help.html")
+    return render(request, "admin/help.html")
 
 
 # --- 管理者向けビュー ---
