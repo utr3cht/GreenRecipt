@@ -16,7 +16,13 @@
           </div>
           <div class="user-info desktop-only">
             {% if user.is_authenticated %}
-              <span class="welcome">管理者ページ</span>
+              <span class="welcome">
+                {% if user.role == 'store' %}
+                    店舗ページ
+                {% else %}
+                    管理者ページ
+                {% endif %}
+              </span>
               <form method="post" action="{% url 'accounts:logout' %}" class="logout-form">
                 {% csrf_token %}
                 <button type="submit" class="logout-button">ログアウト</button>

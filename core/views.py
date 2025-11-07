@@ -163,3 +163,12 @@ def store_list(request):
     }
     return render(request, "admin/store_list.html", context)
 
+
+@staff_member_required
+def store_detail(request, store_id):
+    store = get_object_or_404(Store, id=store_id)
+    context = {
+        'store': store
+    }
+    return render(request, 'admin/store_detail.html', context)
+
