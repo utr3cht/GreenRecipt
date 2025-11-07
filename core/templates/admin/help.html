@@ -7,7 +7,14 @@
 <link rel="stylesheet" href="{% static 'css/help.css' %}">
 
 <div class="full">
-  <h2 style="text-align:center; margin-bottom: 2rem;">ヘルプ・FAQ</h2>
+  <div class="header-with-button">
+    <h1>ヘルプ・FAQ</h1>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+            <a href="{% url 'core:staff_index' %}">戻る</a>
+        </li>
+    </ul>
+  </div>
 
   <!-- ヘルプ -->
   <section class="help-section">
@@ -81,9 +88,7 @@
     </div>
   </section>
 
-  <div class="actions" style="margin-top: 2rem;">
-    <button type="button" onclick="history.back()">戻る</button>
-  </div>
+
 </div>
 
 <script src="{% static 'js/accordion.js' %}"></script>
