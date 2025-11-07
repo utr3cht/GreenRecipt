@@ -28,7 +28,7 @@
             </thead>
             <tbody>
                 {% for store in stores %}
-                <tr data-href="{% url 'core:store_detail' store.id %}">
+                <tr data-href="{% url 'core:store_detail' store.store_id %}">
                     <td>{{ store.store_name }}</td>
                     <td>{{ store.category }}</td>
                     <td>{{ store.tel }}</td>

@@ -166,7 +166,7 @@ def store_list(request):
 
 @staff_member_required
 def store_detail(request, store_id):
-    store = get_object_or_404(Store, id=store_id)
+    store = get_object_or_404(Store, store_id=store_id)
     context = {
         'store': store
     }
