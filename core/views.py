@@ -151,8 +151,10 @@ def inquiry_detail(request, inquiry_id):
     return render(request, 'admin/inquiry_detail.html', context)
 
 
-@staff_member_required
+@login_required
 def staff_index(request):
+    if request.user.role not in ['admin', 'store']:
+        return redirect('core:index')  # Or some other appropriate redirect
     return render(request, "admin/staff_index.html")
 
 @staff_member_required
