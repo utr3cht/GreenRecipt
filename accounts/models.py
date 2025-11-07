@@ -38,6 +38,11 @@ class CustomUser(AbstractUser):
     store = models.ForeignKey(
         'core.Store', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='所属店舗')
 
+    new_email = models.EmailField(_("new email address"), blank=True, null=True)
+    email_change_token = models.CharField(
+        max_length=100, blank=True, null=True, unique=True, verbose_name='メール変更認証トークン'
+    )
+
     class Meta:
         verbose_name = 'ユーザー'
         verbose_name_plural = 'ユーザー'

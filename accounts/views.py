@@ -1,3 +1,4 @@
+from django.http import HttpResponseRedirect
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.utils.http import urlsafe_base64_decode
@@ -92,8 +93,39 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
     def get_object(self, queryset=None):
         return self.request.user
 
+    def form_valid(self, form):
+        # データベースから直接、変更前のユーザー情報を取得
+        original_email = CustomUser.objects.get(pk=self.request.user.pk).email
+        
+        new_email_from_form = form.cleaned_data.get('email')
 
-from django.contrib import messages
+        # 「新しいメール」と「DBにある元のメール」を比較
+        if new_email_from_form and new_email_from_form != original_email:
+            # --- メールアドレス変更時の処理 ---
+            user_instance = form.save(commit=False)
+            user_instance.email = original_email # emailは元の値に戻す
+            user_instance.new_email = new_email_from_form # 新しいemailは一時保管場所へ
+            user_instance.email_change_token = str(uuid.uuid4())
+            user_instance.save()
+
+            # 確認メールを送信
+            current_site = get_current_site(self.request)
+            mail_subject = 'GreenRecipt: メールアドレスの変更を認証してください'
+            message = render_to_string('accounts/email_change_verification_email.html', {
+                'user': user_instance,
+                'domain': current_site.domain,
+                'token': user_instance.email_change_token,
+            })
+            email = EmailMessage(mail_subject, message, to=[user_instance.new_email])
+            email.send()
+
+            messages.success(self.request, '新しいメールアドレスに確認メールを送信しました。メールをご確認の上、変更を完了してください。')
+            return HttpResponseRedirect(self.get_success_url())
+        
+        else:
+            # --- メールアドレスが変更されていない時の処理 ---
+            return super().form_valid(form)
+
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -130,3 +162,20 @@ class ActivateAccountView(TemplateView):
             return redirect('accounts:verification_complete')
         else:
             return render(request, 'accounts/activation_invalid.html')
+
+class EmailChangeConfirmView(TemplateView):
+    template_name = 'accounts/email_change_complete.html'
+
+    def get(self, request, *args, **kwargs):
+        token = self.kwargs.get('token')
+        try:
+            user = CustomUser.objects.get(email_change_token=token)
+        except CustomUser.DoesNotExist:
+            return render(request, 'accounts/email_change_invalid.html')
+
+        user.email = user.new_email
+        user.new_email = None
+        user.email_change_token = None
+        user.save()
+
+        return super().get(request, *args, **kwargs)
