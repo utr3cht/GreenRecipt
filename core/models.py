@@ -8,6 +8,7 @@ import googlemaps
 
 
 class Store(models.Model):
+    store_id = models.AutoField(primary_key=True, verbose_name='店舗ID')
     store_name = models.CharField(max_length=64, verbose_name='店舗名')
     category = models.CharField(max_length=64, verbose_name='カテゴリ')
     tel = models.CharField(max_length=32, blank=True, verbose_name='電話番号')

@@ -1,0 +1,9 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}メールアドレス変更完了 | GreenReceipt{% endblock %}
+
+{% block content %}
+  <h1>メールアドレスの変更が完了しました</h1>
+  <p>新しいメールアドレスが有効になりました。</p>
+  <a href="{% url 'core:main_menu' %}">メインメニューに戻る</a>
+{% endblock %}

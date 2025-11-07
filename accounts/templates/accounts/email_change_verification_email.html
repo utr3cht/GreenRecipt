@@ -1,0 +1,12 @@
+{% autoescape off %}
+{{ user.username }}様
+
+GreenReciptをご利用いただきありがとうございます。
+
+以下のリンクをクリックして、メールアドレスの変更を完了してください。
+http://{{ domain }}{% url 'accounts:email_change_confirm' token=token %}
+
+もしこのメールにお心当たりがない場合は、お手数ですがこのメールを破棄してください。
+
+GreenReciptチーム
+{% endautoescape %}

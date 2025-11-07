@@ -1,0 +1,9 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}無効なリンク | GreenReceipt{% endblock %}
+
+{% block content %}
+  <h1>無効なリンクです</h1>
+  <p>このメールアドレス変更リンクは無効か、または既に使用されています。</p>
+  <a href="{% url 'core:main_menu' %}">メインメニューに戻る</a>
+{% endblock %}
