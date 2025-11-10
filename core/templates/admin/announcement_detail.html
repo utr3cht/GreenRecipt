@@ -1,0 +1,25 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}
+  {{ announcement.title }} | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      <h1>{{ announcement.title }}</h1>
+      <p class="text-muted">{{ announcement.created_at|date:"Y/m/d H:i" }}</p>
+      <hr>
+      
+      {% if announcement.image %}
+        <img src="{{ announcement.image.url }}" class="img-fluid mb-3" alt="{{ announcement.title }}">
+      {% endif %}
+      
+      <div class="announcement-content">
+        {{ announcement.content|linebreaksbr }}
+      </div>
+
+      <a href="{% url 'core:staff_index' %}" class="btn btn-secondary mt-3">戻る</a>
+    </div>
+  </main>
+{% endblock %}

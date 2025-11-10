@@ -1,0 +1,44 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}
+  お知らせ一覧 | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>お知らせ一覧</h1>
+        <a href="{% url 'core:announcement_create' %}" class="btn btn-primary">新規作成</a>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>記事名</th>
+                <th>作成日時</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for announcement in announcements %}
+              <tr>
+                <td><a href="{% url 'core:announcement_detail' announcement.id %}">{{ announcement.title }}</a></td>
+                <td>{{ announcement.created_at|date:"Y/m/d H:i" }}</td>
+                <td>
+                  <a href="{% url 'core:announcement_update' announcement.id %}" class="btn btn-secondary btn-sm btn-action">編集</a>
+                  <a href="{% url 'core:announcement_delete' announcement.id %}" class="btn btn-danger btn-sm btn-action">削除</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <a href="{% url 'core:staff_index' %}" class="btn btn-secondary mt-3">戻る</a>
+    </div>
+  </main>
+{% endblock %}

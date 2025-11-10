@@ -128,3 +128,18 @@ class Report(models.Model):
     class Meta:
         verbose_name = 'AIレポート'
         verbose_name_plural = 'AIレポート'
+
+
+class Announcement(models.Model):
+    title = models.CharField(max_length=100, verbose_name='記事名')
+    content = models.TextField(verbose_name='内容')
+    image = models.ImageField(
+        upload_to='announcements/', null=True, blank=True, verbose_name='画像')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'お知らせ'
+        verbose_name_plural = 'お知らせ'

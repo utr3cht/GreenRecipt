@@ -1,0 +1,25 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}
+  新規お知らせ作成 | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      <h1>新規お知らせ作成</h1>
+      
+      <div class="card mb-4">
+        <div class="card-body">
+          <form method="post" action="." enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">作成する</button>
+          </form>
+        </div>
+      </div>
+
+      <a href="{% url 'core:announcement_list' %}" class="btn btn-secondary mt-3">一覧に戻る</a>
+    </div>
+  </main>
+{% endblock %}
