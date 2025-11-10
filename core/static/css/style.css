@@ -153,6 +153,8 @@ button, .btn {
   cursor: pointer;
   transition: .2s;
 }
+
+
 button { padding: 10px 40px; }
 .btn {
   width: 100%;
@@ -161,11 +163,17 @@ button { padding: 10px 40px; }
   text-decoration: none;
 }
 
+.btn-action {
+  min-width: 80px;
+  text-align: center;
+}
+
 .staff_btn {
   /*width: 100%;*/
   padding: 12px;
   border-radius: 10px;
   text-decoration: none;
+  font-weight: bold;
 }
 button:hover, .btn:hover { background: #c8e6c9; }
 .logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; }
@@ -463,6 +471,8 @@ main.inquiry-main {
   cursor: pointer;
   transition: 0.2s;
 }
+
+
 .reply-form .btn-primary:hover { background: #388e3c; }
 .btn-secondary {
   display: inline-block;

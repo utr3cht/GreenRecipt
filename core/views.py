@@ -8,6 +8,8 @@ from django.core import serializers
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 
+from .forms import InquiryForm, ReplyForm, AnnouncementForm
+from .models import Inquiry, Store, Announcement
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from django.contrib import messages
@@ -183,6 +185,64 @@ def staff_inquiry_complete(request):
 # --- 管理者向けビュー ---
 
 @staff_member_required
+def announcement_list(request):
+    if request.user.role != 'admin':
+        return redirect('core:staff_index')
+    announcements = Announcement.objects.all().order_by('-created_at')
+    context = {'announcements': announcements}
+    return render(request, 'admin/announcement_list.html', context)
+
+@staff_member_required
+def announcement_create(request):
+    if request.user.role != 'admin':
+        return redirect('core:staff_index')
+    if request.method == 'POST':
+        form = AnnouncementForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('core:announcement_list')
+    else:
+        form = AnnouncementForm()
+    context = {'form': form}
+    return render(request, 'admin/announcement_create.html', context)
+
+@staff_member_required
+def announcement_update(request, announcement_id):
+    if request.user.role != 'admin':
+        return redirect('core:staff_index')
+    announcement = get_object_or_404(Announcement, pk=announcement_id)
+    if request.method == 'POST':
+        form = AnnouncementForm(request.POST, request.FILES, instance=announcement)
+        if form.is_valid():
+            form.save()
+            return redirect('core:announcement_list')
+    else:
+        form = AnnouncementForm(instance=announcement)
+    context = {'form': form}
+    return render(request, 'admin/announcement_update.html', context)
+
+@staff_member_required
+def announcement_delete(request, announcement_id):
+    if request.user.role != 'admin':
+        return redirect('core:staff_index')
+    announcement = get_object_or_404(Announcement, pk=announcement_id)
+    announcement.delete()
+    return redirect('core:announcement_list')
+
+
+@staff_member_required
+def announcement_detail(request, announcement_id):
+    if request.user.role not in ['admin', 'store']:
+        return redirect('core:staff_index')
+    
+    announcement = get_object_or_404(Announcement, pk=announcement_id)
+    context = {
+        'announcement': announcement,
+    }
+    return render(request, 'admin/announcement_detail.html', context)
+
+
+@staff_member_required
 def admin_inquiry_dashboard(request):
     inquiries = Inquiry.objects.all().order_by('-id')
     context = {
@@ -223,8 +283,13 @@ def inquiry_detail(request, inquiry_id):
 @login_required
 def staff_index(request):
     if request.user.role not in ['admin', 'store']:
-        return redirect('core:index')  # Or some other appropriate redirect
-    return render(request, "admin/staff_index.html")
+        return redirect('core:index')
+    
+    announcements = Announcement.objects.all().order_by('-created_at')
+    context = {
+        'announcements': announcements,
+    }
+    return render(request, "admin/staff_index.html", context)
 
 @staff_member_required
 def store_list(request):

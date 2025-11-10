@@ -1,4 +1,17 @@
 from django import forms
+from .models import Receipt, Inquiry, Store, Announcement
+
+
+class StoreForm(forms.ModelForm):
+    class Meta:
+        model = Store
+        fields = ['store_name', 'category', 'tel', 'address', 'open_hours']
+
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ['title', 'content', 'image']
 from .models import Receipt, Inquiry, Store
 
 
