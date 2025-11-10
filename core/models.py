@@ -10,10 +10,17 @@ import googlemaps
 class Store(models.Model):
     store_id = models.AutoField(primary_key=True, verbose_name='店舗ID')
     store_name = models.CharField(max_length=64, verbose_name='店舗名')
-    category = models.CharField(max_length=64, verbose_name='カテゴリ')
+    CATEGORY_CHOICES = [
+        ('restaurant', '飲食店'),
+        ('retail', '小売店'),
+        ('service', 'サービス業'),
+        ('other', 'その他'),
+    ]
+    category = models.CharField(max_length=64, choices=CATEGORY_CHOICES, verbose_name='カテゴリ')
     tel = models.CharField(max_length=32, blank=True, verbose_name='電話番号')
     address = models.CharField(max_length=255, verbose_name='住所')
-    open_hours = models.CharField(max_length=20, verbose_name='営業時間')
+    open_time = models.TimeField(verbose_name='開店時間', null=True, blank=True)
+    close_time = models.TimeField(verbose_name='閉店時間', null=True, blank=True)
     lat = models.FloatField(verbose_name='緯度', default=0.0)
     lng = models.FloatField(verbose_name='経度', default=0.0)
 

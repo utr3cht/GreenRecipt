@@ -1,0 +1,17 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}
+  店舗アカウント登録
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <h1>{{ store.store_name }} - 新規アカウント登録</h1>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn">登録</button>
+    </form>
+    <a href="{% url 'core:store_edit' store.store_id %}" class="btn">キャンセル</a>
+  </div>
+{% endblock %}

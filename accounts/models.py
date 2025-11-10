@@ -18,9 +18,9 @@ class CustomUser(AbstractUser):
     )
     email = models.EmailField(_("email address"), unique=True)
     is_verified = models.BooleanField(default=False, verbose_name='メール認証済み')
-    verification_token = models.CharField(max_length=100, blank=True, null=True, unique=True, verbose_name='認証トークン')
+    verification_token = models.CharField(
+        max_length=100, blank=True, null=True, unique=True, verbose_name='認証トークン')
     ROLE_CHOICES = (
-        ('system', 'システム管理者'),
         ('admin', '管理者'),
         ('store', '店舗'),
         ('user', '一般ユーザー'),
@@ -38,10 +38,15 @@ class CustomUser(AbstractUser):
     store = models.ForeignKey(
         'core.Store', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='所属店舗')
 
-    new_email = models.EmailField(_("new email address"), blank=True, null=True)
+    new_email = models.EmailField(
+        _("new email address"), blank=True, null=True)
     email_change_token = models.CharField(
         max_length=100, blank=True, null=True, unique=True, verbose_name='メール変更認証トークン'
     )
+
+    def save(self, *args, **kwargs):
+        self.is_staff = self.role in ['admin', 'system']
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'ユーザー'

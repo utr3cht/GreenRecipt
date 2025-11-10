@@ -7,7 +7,7 @@
         <h1>加盟店舗一覧</h1>
         <ul class="list-group list-group-flush">
             <li class="list-group-item">
-                <a href="#">新規加盟店舗登録</a>
+                <a href="{% url 'core:store_create' %}">新規加盟店舗登録</a>
             </li>
             <li class="list-group-item">
                 <a href="{% url 'core:staff_index' %}">戻る</a>
@@ -23,17 +23,19 @@
                     <th>カテゴリ</th>
                     <th>電話番号</th>
                     <th>住所</th>
-                    <th>営業時間</th>
+                    <th>開店時間</th>
+                    <th>閉店時間</th>
                 </tr>
             </thead>
             <tbody>
                 {% for store in stores %}
                 <tr data-href="{% url 'core:store_detail' store.store_id %}">
                     <td>{{ store.store_name }}</td>
-                    <td>{{ store.category }}</td>
+                    <td>{{ store.get_category_display }}</td>
                     <td>{{ store.tel }}</td>
                     <td>{{ store.address }}</td>
-                    <td>{{ store.open_hours }}</td>
+                    <td>{{ store.open_time|time:"H:i" }}</td>
+                    <td>{{ store.close_time|time:"H:i" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

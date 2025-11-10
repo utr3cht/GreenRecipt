@@ -1,0 +1,43 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}
+  店舗編集
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <h1>店舗編集</h1>
+    
+    <form method="post">
+      {% csrf_token %}
+      <h2>店舗情報</h2>
+      {{ form.as_p }}
+      <button type="submit" class="btn">更新</button>
+    </form>
+    
+    <hr>
+
+    <h2>店舗アカウント一覧</h2>
+    {% if store_users %}
+      <ul>
+        {% for user in store_users %}
+          <li>
+            {{ user.username }} ({{ user.email }})
+            <form method="post" action="{% url 'core:store_delete_user' user.id %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('本当にこのアカウントを削除しますか？');">削除</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>この店舗に登録されているアカウントはありません。</p>
+    {% endif %}
+
+    <a href="{% url 'core:store_add_user' store.store_id %}" class="btn">新規店舗アカウント登録</a>
+    
+    <hr>
+
+    <a href="{% url 'core:store_detail' store.store_id %}" class="btn">キャンセル</a>
+  </div>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Receipt, Inquiry
+from .models import Receipt, Inquiry, Store
 
 
 class ReceiptForm(forms.ModelForm):
@@ -16,4 +16,9 @@ class InquiryForm(forms.ModelForm):
 class ReplyForm(forms.Form):
     subject = forms.CharField(label='件名', max_length=100)
     message = forms.CharField(label='メッセージ', widget=forms.Textarea)
+
+class StoreForm(forms.ModelForm):
+    class Meta:
+        model = Store
+        fields = ['store_name', 'category', 'tel', 'address', 'open_time', 'close_time']
 
