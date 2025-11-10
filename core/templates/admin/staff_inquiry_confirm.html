@@ -1,0 +1,49 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}
+  お問い合わせ内容確認 | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <main class="inquiry-main">
+    <div class="inquiry-confirm-container">
+      <h1>お問い合わせ内容確認</h1>
+      <p class="confirm-message">以下の内容でよろしいですか？</p>
+
+      <div class="inquiry-confirm-card">
+        <div class="confirm-item">
+          <h2>件名</h2>
+          <p>{{ form.subject.value }}</p>
+        </div>
+
+        <div class="confirm-item">
+          <h2>お問い合わせ内容</h2>
+          <p>{{ form.body_text.value|linebreaksbr }}</p>
+        </div>
+
+        <div class="confirm-item">
+          <h2>返信先メールアドレス</h2>
+          <p>{{ form.reply_to_email.value }}</p>
+        </div>
+
+        {% if form.image.value %}
+          <div class="confirm-item">
+            <h2>添付画像</h2>
+            <p>画像が添付されています。</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <form method="post" action="{% url 'core:staff_inquiry_create' %}" enctype="multipart/form-data" class="confirm-form">
+        {% csrf_token %}
+        {% for field in form %}
+          <input type="hidden" name="{{ field.name }}" value="{{ field.value|default_if_none:'' }}" />
+        {% endfor %}
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">送信する</button>
+          <button type="button" class="btn btn-secondary" onclick="history.back()">修正する</button>
+        </div>
+      </form>
+    </div>
+  </main>
+{% endblock %}

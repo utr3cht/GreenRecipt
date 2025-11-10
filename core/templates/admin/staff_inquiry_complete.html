@@ -1,0 +1,15 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}お問い合わせ完了 | GreenRecipt{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">お問い合わせありがとうございます！</h4>
+        <p>お問い合わせを受け付けました。内容を確認の上、担当者よりご連絡させていただきます。</p>
+        <hr>
+        <a href="{% url 'core:staff_index' %}" class="btn btn-primary mt-3">スタッフ専用ページに戻る</a>
+
+    </div>
+</div>
+{% endblock %}

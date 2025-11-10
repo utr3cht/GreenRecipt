@@ -160,6 +160,13 @@ button { padding: 10px 40px; }
   border-radius: 10px;
   text-decoration: none;
 }
+
+.staff_btn {
+  /*width: 100%;*/
+  padding: 12px;
+  border-radius: 10px;
+  text-decoration: none;
+}
 button:hover, .btn:hover { background: #c8e6c9; }
 .logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; }
 
