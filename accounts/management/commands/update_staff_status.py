@@ -8,7 +8,7 @@ class Command(BaseCommand):
         updated_count = 0
         users = CustomUser.objects.all()
         for user in users:
-            new_is_staff = user.role in ['admin', 'system']
+            new_is_staff = user.role in ['admin', 'system', 'store']
             if user.is_staff != new_is_staff:
                 user.is_staff = new_is_staff
                 user.save(update_fields=['is_staff'])

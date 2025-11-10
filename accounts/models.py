@@ -45,7 +45,8 @@ class CustomUser(AbstractUser):
     )
 
     def save(self, *args, **kwargs):
-        self.is_staff = self.role in ['admin', 'system']
+        if not self.is_superuser:
+            self.is_staff = self.role in ['admin', 'system', 'store']
         super().save(*args, **kwargs)
 
     class Meta:

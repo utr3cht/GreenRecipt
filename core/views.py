@@ -7,17 +7,18 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.core import serializers
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages # Added messages import
 
-from .forms import InquiryForm, ReplyForm, AnnouncementForm
-from .models import Inquiry, Store, Announcement
+# Forms
+from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm
+from accounts.forms import StoreUserCreationForm # From accounts app
+
+# Models
+from .models import Inquiry, Store, Announcement # Assuming Announcement model exists
+from accounts.models import CustomUser # From accounts app
+
 import json
 from django.core.serializers.json import DjangoJSONEncoder
-from django.contrib import messages
-from accounts.models import CustomUser
-from accounts.forms import StoreUserCreationForm
-from .forms import InquiryForm, ReplyForm, StoreForm
-from .models import Inquiry, Store
-from .models import Store, Inquiry
 
 
 # --- 認証関連ビュー ---
