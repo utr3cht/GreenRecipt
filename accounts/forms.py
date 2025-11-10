@@ -43,3 +43,8 @@ class CustomAuthenticationForm(AuthenticationForm):
                 "メールアドレスが認証されていません。メールをご確認ください。",
                 code='unverified_email'
             )
+
+class StoreUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = CustomUser
+        fields = ('username', 'email',)

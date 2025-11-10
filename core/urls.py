@@ -30,5 +30,9 @@ urlpatterns = [
     path("staff/inquiries/<int:inquiry_id>/", views.inquiry_detail, name="inquiry_detail"),
     path("store/list/",views.store_list,name='store_list'),
     path("staff/stores/<int:store_id>/", views.store_detail, name="store_detail"),
+    path("staff/stores/create/", views.store_create, name="store_create"),
+    path("staff/stores/<int:store_id>/edit/", views.store_edit, name="store_edit"),
+    path("staff/stores/<int:store_id>/add_user/", views.store_add_user, name="store_add_user"),
+    path("staff/users/<int:user_id>/delete/", views.store_delete_user, name="store_delete_user"),
 
 ]

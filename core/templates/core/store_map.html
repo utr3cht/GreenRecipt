@@ -111,17 +111,20 @@
       console.warn('stores_json parse error:', e)
     }
     
-    stores.forEach(function (obj) {
-      var s = obj.fields
+    stores.forEach(function (s) {
       // lat / lng 両方が有効な場合のみ
       if (s.lat && s.lng && s.lat !== 0 && s.lng !== 0) {
+        var open_time = s.open_time ? s.open_time.substring(0, 5) : '';
+        var close_time = s.close_time ? s.close_time.substring(0, 5) : '';
+        var hours = (open_time && close_time) ? `${open_time} - ${close_time}` : '－';
+
         var popup = `
               <div class="popup-content">
                 <div class="store-name">${s.store_name}</div>
                 カテゴリ：${s.category}<br>
                 住所：${s.address}<br>
                 電話：${s.tel || '－'}<br>
-                営業時間：${s.open_hours || '－'}
+                営業時間：${hours}
               </div>`
         L.marker([s.lat, s.lng]).addTo(map).bindPopup(popup)
       }

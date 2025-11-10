@@ -178,6 +178,12 @@ button { padding: 10px 40px; }
 button:hover, .btn:hover { background: #c8e6c9; }
 .logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; }
 
+.btn-sm {
+  padding: 5px 10px; /* Smaller padding */
+  font-size: 0.8em;  /* Smaller font size */
+  width: auto;       /* Override 100% width from .btn */
+}
+
 /* ===== 下部ナビ ===== */
 :root { --nav-h: 64px; }
 footer { margin-top: auto; }

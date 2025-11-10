@@ -13,14 +13,16 @@
         <div class="card-body">
           <h5 class="card-title">店舗情報</h5>
           <ul class="list-group list-group-flush">
-            <li class="list-group-item"><strong>カテゴリ:</strong> {{ store.category }}</li>
+            <li class="list-group-item"><strong>カテゴリ:</strong> {{ store.get_category_display }}</li>
             <li class="list-group-item"><strong>電話番号:</strong> {{ store.tel }}</li>
             <li class="list-group-item"><strong>住所:</strong> {{ store.address }}</li>
-            <li class="list-group-item"><strong>営業時間:</strong> {{ store.open_hours }}</li>
+            <li class="list-group-item"><strong>開店時間:</strong> {{ store.open_time|time:"H:i" }}</li>
+            <li class="list-group-item"><strong>閉店時間:</strong> {{ store.close_time|time:"H:i" }}</li>
           </ul>
         </div>
       </div>
 
+      <a href="{% url 'core:store_edit' store.store_id %}" class="btn btn-secondary mt-3">編集</a>
       <a href="{% url 'core:store_list' %}" class="btn btn-primary mt-3">店舗一覧に戻る</a>
 
     </div>

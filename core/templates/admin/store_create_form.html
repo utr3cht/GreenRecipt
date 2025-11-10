@@ -1,0 +1,26 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}
+  店舗登録
+{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <h1>店舗登録</h1>
+    <form method="post">
+      {% csrf_token %}
+      
+      <h2>店舗情報</h2>
+      {{ store_form.as_p }}
+
+      <hr>
+
+      <h2>店舗アカウント登録</h2>
+      <p>店舗と同時に新しいアカウントを登録します。</p>
+      {{ user_form.as_p }}
+
+      <button type="submit" class="btn">登録</button>
+    </form>
+    <a href="{% url 'core:store_list' %}" class="btn">キャンセル</a>
+  </div>
+{% endblock %}
