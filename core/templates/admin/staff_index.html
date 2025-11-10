@@ -20,10 +20,15 @@
                         <li class="list-group-item">
                             <a href="/store/list/">加盟店舗一覧</a>
                         </li>
-                        {% endif %}
                         <li class="list-group-item">
                             <a href="{% url 'core:admin_inquiry_dashboard' %}">お問い合わせ一覧</a>
                         </li>
+                        {% endif %}
+                        {% if user.role == 'store' %}
+                        <li class="list-group-item">
+                            <a href="{% url 'core:staff_inquiry' %}">お問い合わせを送信する</a>
+                        </li>
+                        {% endif %}
                         <li class="list-group-item">
                             <a href="{% url 'core:store_help' %}">ヘルプFAQ</a>
                         </li>

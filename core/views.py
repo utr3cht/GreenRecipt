@@ -137,6 +137,49 @@ def store_help(request):
     return render(request, "admin/help.html")
 
 
+@login_required
+def staff_inquiry(request):
+    if request.user.role not in ['admin', 'store']:
+        return redirect('core:index')
+
+    if request.method == "POST":
+        form = InquiryForm(request.POST, request.FILES)
+        if form.is_valid():
+            context = {"form": form}
+            return render(request, "admin/staff_inquiry_confirm.html", context)
+    else:
+        form = InquiryForm()
+        # もしユーザーが店舗スタッフなら、返信先メールアドレスを自動入力
+        if request.user.role == 'store' and request.user.email:
+            form.fields['reply_to_email'].initial = request.user.email
+
+    context = {"form": form}
+    return render(request, "admin/staff_inquiry.html", context)
+
+
+@login_required
+def staff_inquiry_create(request):
+    if request.user.role not in ['admin', 'store']:
+        return redirect('core:index')
+
+    if request.method == "POST":
+        form = InquiryForm(request.POST, request.FILES)
+        if form.is_valid():
+            inquiry = form.save(commit=False)
+            inquiry.user = request.user
+            inquiry.save()
+            return redirect("core:staff_inquiry_complete")
+    
+    return redirect("core:staff_inquiry")
+
+
+@login_required
+def staff_inquiry_complete(request):
+    if request.user.role not in ['admin', 'store']:
+        return redirect('core:index')
+    return render(request, "admin/staff_inquiry_complete.html")
+
+
 # --- 管理者向けビュー ---
 
 @staff_member_required
