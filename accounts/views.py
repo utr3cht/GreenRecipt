@@ -131,6 +131,13 @@ class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
     form_class = CustomAuthenticationForm
 
+    def get_success_url(self):
+        user = self.request.user
+        if user.role in ['admin', 'store']:
+            return reverse_lazy('core:staff_index')
+        else:
+            return reverse_lazy('core:main_menu')
+
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('accounts:login')

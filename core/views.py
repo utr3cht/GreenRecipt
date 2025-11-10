@@ -1,6 +1,6 @@
 # Django Imports
 from django.conf import settings
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.admin.views.decorators import staff_member_required
@@ -30,6 +30,12 @@ def admin_login(request):
         form = AuthenticationForm()
     return render(request, 'admin/staff_login.html', {'form': form})
 
+
+def staff_logout(request):
+    logout(request)
+    return redirect('core:staff_login')
+
+
 # --- 一般ユーザー向けビュー ---
 
 # トップ（最初の画面）
@@ -37,7 +43,10 @@ def admin_login(request):
 
 def index(request):
     if request.user.is_authenticated:
-        return redirect('core:main_menu')
+        if request.user.role in ['admin', 'store']:
+            return redirect('core:staff_index')
+        else:
+            return redirect('core:main_menu')
     return render(request, "core/index.html")
 
 
