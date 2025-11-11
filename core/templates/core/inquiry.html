@@ -9,11 +9,11 @@
     <div class="inquiry-form-container">
       <h1>お問い合わせフォーム</h1>
 
-      <form method="post" enctype="multipart/form-data" class="inquiry-form">
+      <form method="post" enctype="multipart/form-data" class="inquiry-form" onsubmit="return confirm('この内容で送信してもよろしいですか？');">
         {% csrf_token %}
         {{ form.as_p }}
         <div class="actions">
-          <button type="submit" class="btn btn-primary">入力内容を確認する</button>
+          <button type="submit" class="btn btn-primary">送信する</button>
         </div>
       </form>
     </div>

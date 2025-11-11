@@ -29,7 +29,7 @@
                 <td>{{ announcement.created_at|date:"Y/m/d H:i" }}</td>
                 <td>
                   <a href="{% url 'core:announcement_update' announcement.id %}" class="btn btn-secondary btn-sm btn-action">編集</a>
-                  <a href="{% url 'core:announcement_delete' announcement.id %}" class="btn btn-danger btn-sm btn-action">削除</a>
+                  <a href="{% url 'core:announcement_delete' announcement.id %}" class="btn btn-danger btn-sm btn-action" onclick="return confirm('「{{ announcement.title }}」を本当に削除してもよろしいですか？');">削除</a>
                 </td>
               </tr>
               {% endfor %}

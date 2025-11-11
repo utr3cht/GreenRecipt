@@ -108,25 +108,15 @@ def inquiry(request):
     if request.method == "POST":
         form = InquiryForm(request.POST, request.FILES)
         if form.is_valid():
-            context = {"form": form}
-            return render(request, "core/inquiry_confirm.html", context)
-    else:
-        form = InquiryForm()
-    context = {"form": form}
-    return render(request, "core/inquiry.html", context)
-
-
-def inquiry_create(request):
-    if request.method == "POST":
-        form = InquiryForm(request.POST, request.FILES)
-        if form.is_valid():
             inquiry = form.save(commit=False)
             if request.user.is_authenticated:
                 inquiry.user = request.user
             inquiry.save()
             return redirect("core:inquiry_complete")
-    # フォームが無効な場合やGETリクエストの場合は入力画面に戻す
-    return redirect("core:inquiry")
+    else:
+        form = InquiryForm()
+    context = {"form": form}
+    return render(request, "core/inquiry.html", context)
 
 
 def inquiry_complete(request):
@@ -148,8 +138,10 @@ def staff_inquiry(request):
     if request.method == "POST":
         form = InquiryForm(request.POST, request.FILES)
         if form.is_valid():
-            context = {"form": form}
-            return render(request, "admin/staff_inquiry_confirm.html", context)
+            inquiry = form.save(commit=False)
+            inquiry.user = request.user
+            inquiry.save()
+            return redirect("core:staff_inquiry_complete")
     else:
         form = InquiryForm()
         # もしユーザーが店舗スタッフなら、返信先メールアドレスを自動入力

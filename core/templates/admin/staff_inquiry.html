@@ -9,11 +9,11 @@
     <div class="inquiry-form-container">
       <h1>お問い合わせフォーム</h1>
 
-      <form method="post" enctype="multipart/form-data" class="inquiry-form">
+      <form method="post" enctype="multipart/form-data" class="inquiry-form" onsubmit="return confirm('この内容で送信してもよろしいですか？');">
         {% csrf_token %}
         {{ form.as_p }}
         <div class="actions d-flex justify-content-around">
-          <button type="submit" class="staff_btn btn-primary w-50">入力内容を確認する</button>
+          <button type="submit" class="staff_btn btn-primary w-50">送信する</button>
           <a href="{% url 'core:staff_index' %}" class="staff_btn btn-secondary w-50">スタッフ専用ページに戻る</a>
         </div>
       </form>

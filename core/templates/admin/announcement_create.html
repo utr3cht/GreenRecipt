@@ -11,7 +11,7 @@
       
       <div class="card mb-4">
         <div class="card-body">
-          <form method="post" action="." enctype="multipart/form-data">
+          <form method="post" action="." enctype="multipart/form-data" onsubmit="return confirm('この内容でお知らせを作成してもよろしいですか？');">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary">作成する</button>
