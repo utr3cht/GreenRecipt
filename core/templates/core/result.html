@@ -1,5 +1,66 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<h1>リザルト</h1>
+<div class="result-container">
+  <h1>スキャン結果</h1>
+
+  <div class="receipt-details">
+    <div class="receipt-image-container">
+      <img src="{{ receipt.image_url }}" alt="レシート画像" class="receipt-image">
+    </div>
+    <div class="ocr-result">
+      <pre>{{ receipt.ocr_text }}</pre>
+    </div>
+  </div>
+
+  <a href="{% url 'core:receipt_history' %}" class="btn">履歴一覧へ</a>
+  <a href="{% url 'core:scan' %}" class="btn">もう一度スキャンする</a>
+</div>
+
+<style>
+.result-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+}
+.receipt-details {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  text-align: left;
+}
+.receipt-image-container {
+  flex: 1;
+}
+.receipt-image {
+  width: 100%;
+  border: 1px solid #eee;
+  border-radius: 5px;
+}
+.ocr-result {
+  flex: 1;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+.ocr-result pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-left: 10px;
+}
+</style>
 {% endblock %}

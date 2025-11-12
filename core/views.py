@@ -9,13 +9,14 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages # Added messages import
 from django.core.files.storage import FileSystemStorage
+from yomitoku.document_analyzer import DocumentAnalyzer
+import cv2
 
 # Forms
 from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm
-from accounts.forms import StoreUserCreationForm # From accounts app
 
 # Models
-from .models import Inquiry, Store, Announcement # Assuming Announcement model exists
+from .models import Inquiry, Store, Announcement, Receipt # Assuming Announcement model exists
 from accounts.models import CustomUser # From accounts app
 
 import json
@@ -91,8 +92,20 @@ def store_map(request):
     return render(request, 'core/store_map.html', {'stores_json': stores_json})
 
 
-def result(request):
-    return render(request, "core/result.html")
+def receipt_detail(request, receipt_id):
+    receipt = get_object_or_404(Receipt, pk=receipt_id, user=request.user)
+    context = {
+        'receipt': receipt,
+    }
+    return render(request, "core/result.html", context)
+
+@login_required
+def receipt_history(request):
+    receipts = Receipt.objects.filter(user=request.user).order_by('-scanned_at')
+    context = {
+        'receipts': receipts,
+    }
+    return render(request, "core/receipt_history.html", context)
 
 
 @login_required
@@ -100,13 +113,44 @@ def scan(request):
     if request.method == 'POST':
         image_file = request.FILES.get('receipt_image')
         if image_file:
-            # ファイルを保存する
             fs = FileSystemStorage()
-            # receipts ディレクトリに保存
+            # ファイルを保存
             filename = fs.save('receipts/' + image_file.name, image_file)
+            # 保存したファイルの絶対パスとURLを取得
+            image_path = fs.path(filename)
+            image_url = fs.url(filename)
+
+            # yomitokuでOCR処理
+            try:
+                # DocumentAnalyzerのインスタンスを作成
+                analyzer = DocumentAnalyzer()
+                # 画像を読み込む
+                img = cv2.imread(image_path)
+                # 解析を実行
+                results, _, _ = analyzer(img)
+                
+                # 結果からテキストを抽出
+                ocr_text = ""
+                if results and hasattr(results, 'paragraphs'):
+                    for paragraph in results.paragraphs:
+                        ocr_text += paragraph.contents + "\n"
+                
+                if not ocr_text:
+                    ocr_text = "テキストが検出されませんでした。"
+
+            except Exception as e:
+                messages.error(request, f"OCR処理中にエラーが発生しました: {e}")
+                return redirect('core:scan')
+
+            # OCR結果をデータベースに保存
+            receipt = Receipt.objects.create(
+                user=request.user,
+                image_url=image_url,
+                ocr_text=ocr_text
+            )
             
-            messages.success(request, 'レシート画像が正常にアップロードされました。')
-            return redirect('core:result')
+            messages.success(request, 'レシート画像が正常にアップロードされ、OCR処理が完了しました。')
+            return redirect('core:receipt_detail', receipt_id=receipt.id)
         else:
             messages.error(request, '画像ファイルが選択されていません。')
             return redirect('core:scan')

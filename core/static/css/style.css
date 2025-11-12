@@ -176,7 +176,7 @@ button { padding: 10px 40px; }
   font-weight: bold;
 }
 button:hover, .btn:hover { background: #c8e6c9; }
-.logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; }
+.logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; width: auto; }
 
 .btn-sm {
   padding: 5px 10px; /* Smaller padding */

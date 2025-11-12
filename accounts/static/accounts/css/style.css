@@ -161,7 +161,7 @@ button { padding: 10px 40px; }
   text-decoration: none;
 }
 button:hover, .btn:hover { background: #c8e6c9; }
-.logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; }
+.logout-button { padding: 4px 8px; font-size: .8em; white-space: nowrap; width: auto; }
 
 /* ===== 下部ナビ ===== */
 :root { --nav-h: 64px; }
@@ -225,8 +225,8 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
   border-radius: 8px;
   font-size: 15px;
 }
-form .actions { text-align: center; }
-form .actions button { width: 40%; margin: 15px 1%; }
+form .actions { text-align: center; display: flex; gap: 15px; }
+form .actions button { flex: 1; margin: 15px 0; }
 main p { font-size: 15px; color: #2e7d32; font-weight: 500; }
 
 /* ===== パスワード可視化 ===== */
@@ -253,7 +253,7 @@ main p { font-size: 15px; color: #2e7d32; font-weight: 500; }
     box-shadow: none;
     background: linear-gradient(#c8f7c5, #9be39d);
   }
-  .actions button, .btn { width: 100%; }
+  .btn { width: 100%; }
   form.full, .wrapper.full {
     width: 100%;
     max-width: none;

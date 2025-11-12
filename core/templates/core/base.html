@@ -48,7 +48,7 @@
             <button class="hamburger-icon" onclick="toggleMenu()">&#9776;</button>
             <div class="menu-items" id="menu-items">
               {% if user.is_authenticated %}
-                <button type="button" class="logout-button"onclick="location.href='{% url 'accounts:profile_edit' %}'">プロフィール編集</button>
+                <a href="{% url 'accounts:profile_edit' %}" class="logout-button btn">プロフィール編集</a>
                 <form method="post" action="{% url 'accounts:logout' %}" class="logout-form">
                   {% csrf_token %}
                   <button type="submit" class="logout-button">ログアウト</button>
@@ -76,7 +76,7 @@
           <a href="/menu/" class="nav-item">
             <img src="{% static 'img/home.png' %}" alt="ホーム"><span>ホーム</span>
           </a>
-          <a href="/result/" class="nav-item">
+          <a href="{% url 'core:receipt_history' %}" class="nav-item">
             <img src="{% static 'img/result.png' %}" alt="読み取り履歴"><span>読み取り履歴</span>
           </a>
           <a href="/receipts/" class="nav-item">
@@ -91,5 +91,15 @@
         </nav>
       </footer>
     </div>
+    <script>
+      function toggleMenu() {
+        var menu = document.getElementById("menu-items");
+        if (menu.style.display === "block") {
+          menu.style.display = "none";
+        } else {
+          menu.style.display = "block";
+        }
+      }
+    </script>
   </body>
 </html>
