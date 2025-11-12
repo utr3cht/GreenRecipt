@@ -224,3 +224,19 @@ textarea { resize: vertical; min-height: 120px; }
     font-size: 0.85rem;
   }
 }
+
+/* ===== パスワード可視化 ===== */
+.password-container { position: relative; }
+.password-container input { padding-right: 72px; }
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  padding: 6px 8px;
+  font-size: 12px;
+  background: transparent;
+  color: #2e7d32;
+  border: 0;
+  cursor: pointer;
+}

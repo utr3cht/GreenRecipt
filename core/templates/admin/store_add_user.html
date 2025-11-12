@@ -9,9 +9,40 @@
     <h1>{{ store.store_name }} - 新規アカウント登録</h1>
     <form method="post">
       {% csrf_token %}
-      {{ form.as_p }}
+      {% for field in form.visible_fields %}
+        <div class="form-group">
+          {{ field.label_tag }}
+          {% if field.name == 'password1' or field.name == 'password2' %}
+            <div class="password-container">
+              {{ field }}
+              <button type="button" class="toggle-password" onclick="togglePasswordVisibility(this, '{{ field.id_for_label }}')" title="パスワードの表示/非表示を切り替える">表示</button>
+            </div>
+          {% else %}
+            {{ field }}
+          {% endif %}
+          {% if field.help_text %}
+            <small class="form-text text-muted">{{ field.help_text }}</small>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
       <button type="submit" class="btn">登録</button>
     </form>
+
+    <script>
+      function togglePasswordVisibility(button, fieldId) {
+        var passwordField = document.getElementById(fieldId);
+        if (passwordField.type === "password") {
+          passwordField.type = "text";
+          button.textContent = "非表示";
+        } else {
+          passwordField.type = "password";
+          button.textContent = "表示";
+        }
+      }
+    </script>
     <a href="{% url 'core:store_edit' store.store_id %}" class="btn">キャンセル</a>
   </div>
 {% endblock %}
