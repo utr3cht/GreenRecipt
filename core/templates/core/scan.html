@@ -1,5 +1,86 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-<h1>スキャン</h1>
+<style>
+  .scan-container {
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+  }
+  #image-preview {
+    max-width: 100%;
+    height: auto;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    display: none; /* Initially hidden */
+  }
+  .file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .file-input-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .submit-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: none; /* Initially hidden */
+  }
+</style>
+
+<div class="scan-container">
+  <h1>レシートをスキャン</h1>
+  <p>カメラでレシートを撮影してください。</p>
+
+  <form method="post" enctype="multipart/form-data" action="{% url 'core:scan' %}">
+    {% csrf_token %}
+    <div class="file-input-wrapper">
+      <span>カメラを起動</span>
+      <input type="file" name="receipt_image" id="receipt_image" accept="image/*" capture="environment" required>
+    </div>
+
+    <img id="image-preview" src="#" alt="Image Preview"/>
+
+    <button type="submit" class="submit-btn" id="submit-button">この画像をアップロード</button>
+  </form>
+</div>
+
+<script>
+  document.getElementById('receipt_image').addEventListener('change', function(event) {
+    const preview = document.getElementById('image-preview');
+    const submitButton = document.getElementById('submit-button');
+    const file = event.target.files[0];
+    
+    if (file) {
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        submitButton.style.display = 'inline-block';
+      }
+      
+      reader.readAsDataURL(file);
+    }
+  });
+</script>
 {% endblock %}

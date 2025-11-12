@@ -8,6 +8,7 @@ from django.core import serializers
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages # Added messages import
+from django.core.files.storage import FileSystemStorage
 
 # Forms
 from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm
@@ -94,7 +95,22 @@ def result(request):
     return render(request, "core/result.html")
 
 
+@login_required
 def scan(request):
+    if request.method == 'POST':
+        image_file = request.FILES.get('receipt_image')
+        if image_file:
+            # ファイルを保存する
+            fs = FileSystemStorage()
+            # receipts ディレクトリに保存
+            filename = fs.save('receipts/' + image_file.name, image_file)
+            
+            messages.success(request, 'レシート画像が正常にアップロードされました。')
+            return redirect('core:result')
+        else:
+            messages.error(request, '画像ファイルが選択されていません。')
+            return redirect('core:scan')
+            
     return render(request, "core/scan.html")
 
 
