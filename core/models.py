@@ -74,8 +74,10 @@ class Receipt(models.Model):
     store = models.ForeignKey(
         Store, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='店舗')
     scanned_at = models.DateField(auto_now_add=True, verbose_name='スキャン日時')
+    transaction_time = models.DateTimeField(null=True, blank=True, verbose_name='取引日時')
     ocr_text = models.TextField(blank=True, verbose_name='文字起こし内容')
     image_url = models.URLField(max_length=191, verbose_name='画像URL')
+    parsed_data = models.JSONField(null=True, blank=True, verbose_name='解析済みデータ')
 
     def __str__(self):
         return f"Receipt {self.id} - {self.scanned_at}"

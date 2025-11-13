@@ -9,7 +9,38 @@
       <img src="{{ receipt.image_url }}" alt="レシート画像" class="receipt-image">
     </div>
     <div class="ocr-result">
-      <pre>{{ receipt.ocr_text }}</pre>
+      <h2>解析結果</h2>
+      <div class="parsed-info">
+        <p><strong>店舗名:</strong> {{ receipt.store.store_name|default:"不明" }}</p>
+        <p><strong>取引日時:</strong> {{ receipt.transaction_time|date:"Y年m月d日 H:i"|default:"不明" }}</p>
+      </div>
+
+      {% if receipt.parsed_data %}
+        <h3>商品リスト</h3>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>商品名</th>
+              <th>数量</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in receipt.parsed_data %}
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>商品リストを抽出できませんでした。</p>
+      {% endif %}
+
+      <details class="raw-ocr-details">
+        <summary>元の文字起こし結果を表示</summary>
+        <pre>{{ receipt.ocr_text }}</pre>
+      </details>
     </div>
   </div>
 
@@ -33,7 +64,7 @@
   text-align: left;
 }
 .receipt-image-container {
-  flex: 1;
+  flex: 0 0 40%; /* 画像コンテナの幅を固定 */
 }
 .receipt-image {
   width: 100%;
@@ -45,12 +76,42 @@
   background-color: #f9f9f9;
   padding: 15px;
   border-radius: 5px;
-  white-space: pre-wrap;
-  font-family: monospace;
+  font-family: sans-serif;
 }
-.ocr-result pre {
+.parsed-info {
+  margin-bottom: 20px;
+}
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.items-table th, .items-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.items-table th {
+  background-color: #f2f2f2;
+}
+.raw-ocr-details {
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+}
+.raw-ocr-details summary {
+  cursor: pointer;
+  font-weight: bold;
+}
+.raw-ocr-details pre {
+  margin-top: 10px;
   white-space: pre-wrap;
   word-wrap: break-word;
+  font-family: monospace;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 4px;
 }
 .btn {
     display: inline-block;
