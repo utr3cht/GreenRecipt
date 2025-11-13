@@ -86,10 +86,19 @@ def receipt_detail(request, receipt_id):
     return render(request, "core/result.html", {'receipt': receipt})
 
 def parse_receipt_data(text):
+    """
+    OCRテキストから店舗名、取引日時、商品リストを抽出する。
+    様々なフォーマットに対応するため、複数の正規表現を試す。
+    """
     lines = text.split('\n')
+    
+    # --- 店舗名の抽出 ---
     store_name = lines[0] if lines else "不明な店舗"
+
+    # --- 取引日時の抽出 (より厳密な正規表現) ---
     transaction_time = None
-    date_pattern = re.compile(r'(\d{4})年(\d{1,2})月(\d{1,2})日.*?(\d{1,2}):(\d{1,2})')
+    # パターン: 2025年11月12日(水)17:03 または 2025年10月 9日 12:51
+    date_pattern = re.compile(r'(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日(?:\s*\(.\))?\s*(\d{1,2}):(\d{1,2})')
     for line in lines:
         match = date_pattern.search(line)
         if match:
@@ -97,26 +106,73 @@ def parse_receipt_data(text):
                 year, month, day, hour, minute = map(int, match.groups())
                 transaction_time = datetime(year, month, day, hour, minute)
                 break
-            except ValueError:
+            except (ValueError, IndexError):
                 continue
+
+    # --- 商品リストの抽出 ---
     items = []
-    item_pattern = re.compile(r'^(?!.*(小計|合計|税|ポイント|お預り|お釣り|クレジット|現金))(.+?)\s+.*([¥￥])\s*([\d,]+)')
-    quantity_pattern = re.compile(r'(\d+)\s*[@＠]')
-    for line in lines:
-        if re.search(r'(小計|合計|お会計)', line):
+    start_keywords = ['【領収証】', '領収証', '領収書', '内訳']
+    end_keywords = ['小計', '合計', '点数', 'お会計']
+    
+    # パターン定義
+    item_pattern = re.compile(r'^\d+\s+(.+?)\s*(?:[¥￥]|$)') # コード 商品名 ... (価格はあってもなくても良い)
+    quantity_pattern = re.compile(r'\(?(\d+)\s*(?:個|点|x|X)\b')
+    price_line_pattern = re.compile(r'^\s*[¥￥][\d,]+')
+    exclude_keywords = ['【領収証】', '領収証', '領収書', '内訳', 'アクロスプラザ', '電話', 'コード', 'レジ', '責', 'No.']
+
+
+    in_items_section = False
+    last_item_added = None
+
+    for i, line in enumerate(lines):
+        line_no_space = line.replace(' ', '').replace('　', '')
+        
+        if not in_items_section and any(keyword in line_no_space for keyword in start_keywords):
+            in_items_section = True
+            continue
+        
+        if in_items_section and any(keyword in line for keyword in end_keywords):
             break
-        item_match = item_pattern.search(line)
-        if item_match:
-            name = item_match.group(2).strip()
-            price_str = item_match.group(4).replace(',', '')
-            name = re.sub(r'\s+[¥￥]?[\d,]+$', '', name).strip()
-            quantity = 1
-            quantity_match = quantity_pattern.search(line)
-            if quantity_match:
-                quantity = int(quantity_match.group(1))
-            if name and price_str.isdigit():
-                items.append({"name": name, "quantity": quantity, "price": int(price_str)})
-    return {"store_name": store_name, "transaction_time": transaction_time, "items": items}
+
+        if in_items_section:
+            line = line.strip()
+            if not line: continue
+
+            # 個数行のチェックを先に行う
+            if last_item_added:
+                quantity_match = quantity_pattern.search(line)
+                if quantity_match:
+                    last_item_added['quantity'] = int(quantity_match.group(1))
+                    continue # 個数行は処理したので次へ
+
+            # 価格のみの行は無視
+            if price_line_pattern.match(line):
+                continue
+
+            # 商品行の解析
+            item_match = item_pattern.search(line)
+            if item_match:
+                name = item_match.group(1).strip()
+                # 価格部分が商品名に含まれていたら削除
+                name = re.sub(r'\s*[¥￥].*$', '', name).strip()
+                
+                item = {"name": name, "quantity": 1, "price": 0}
+                items.append(item)
+                last_item_added = item # 新しい商品を「最後のアイテム」として設定
+                continue
+            
+            # 上記のいずれにも一致しないが、除外キーワードも含まない行を商品候補とする (LAWSON形式など)
+            if not any(kw in line for kw in exclude_keywords) and not line.isdigit():
+                 # ただし、前のループでitem_patternに一致するものが一つでもあれば、このロジックは実行しない
+                if not any(item_pattern.search(i['name']) for i in items):
+                    items.append({"name": line, "quantity": 1, "price": 0})
+
+
+    return {
+        "store_name": store_name,
+        "transaction_time": transaction_time,
+        "items": items
+    }
 
 @login_required
 def scan(request):
