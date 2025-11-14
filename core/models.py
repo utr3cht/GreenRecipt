@@ -139,15 +139,51 @@ class Report(models.Model):
         verbose_name_plural = 'AIレポート'
 
 
+from PIL import Image
+from io import BytesIO
+from django.core.files.base import ContentFile
+
 class Announcement(models.Model):
     title = models.CharField(max_length=100, verbose_name='記事名')
     content = models.TextField(verbose_name='内容')
-    image = models.ImageField(
-        upload_to='announcements/', null=True, blank=True, verbose_name='画像')
+    file = models.FileField(
+        upload_to='announcements/', null=True, blank=True, verbose_name='ファイル')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
 
     def __str__(self):
         return self.title
+
+    @property
+    def is_image(self):
+        if self.file:
+            image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+            return any(self.file.name.lower().endswith(ext) for ext in image_extensions)
+        return False
+
+    @property
+    def is_video(self):
+        if self.file:
+            video_extensions = ['.mp4', '.mov', '.avi', '.wmv']
+            return any(self.file.name.lower().endswith(ext) for ext in video_extensions)
+        return False
+
+    def save(self, *args, **kwargs):
+        if self.file and self.is_image and self._state.adding:
+            pil_image = Image.open(self.file)
+
+            if pil_image.width > 1200:
+                new_width = 1200
+                new_height = int((new_width / pil_image.width) * pil_image.height)
+                resized_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                buffer = BytesIO()
+                img_format = pil_image.format or 'JPEG'
+                resized_image.save(buffer, format=img_format)
+                
+                file_name = self.file.name
+                self.file = ContentFile(buffer.getvalue(), name=file_name)
+
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'お知らせ'
