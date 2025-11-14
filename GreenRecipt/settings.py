@@ -144,3 +144,10 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 LOGIN_URL = '/'
+
+#  - -  Colab API Settings  - -
+
+USE_COLAB_API = True  # Set to False to disable Colab API and use local processing
+
+# Replace with your ngrok URL
+COLAB_API_URL = "https://unhermitic-vivaciously-donya.ngrok-free.dev"

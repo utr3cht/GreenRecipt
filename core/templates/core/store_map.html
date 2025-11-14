@@ -113,20 +113,20 @@
     
     stores.forEach(function (s) {
       // lat / lng 両方が有効な場合のみ
-      if (s.lat && s.lng && s.lat !== 0 && s.lng !== 0) {
-        var open_time = s.open_time ? s.open_time.substring(0, 5) : '';
-        var close_time = s.close_time ? s.close_time.substring(0, 5) : '';
+      if (s.fields.lat && s.fields.lng && s.fields.lat !== 0 && s.fields.lng !== 0) {
+        var open_time = s.fields.open_time ? s.fields.open_time.substring(0, 5) : '';
+        var close_time = s.fields.close_time ? s.fields.close_time.substring(0, 5) : '';
         var hours = (open_time && close_time) ? `${open_time} - ${close_time}` : '－';
 
         var popup = `
               <div class="popup-content">
-                <div class="store-name">${s.store_name}</div>
-                カテゴリ：${s.category}<br>
-                住所：${s.address}<br>
-                電話：${s.tel || '－'}<br>
+                <div class="store-name">${s.fields.store_name}</div>
+                カテゴリ：${s.fields.category}<br>
+                住所：${s.fields.address}<br>
+                電話：${s.fields.tel || '－'}<br>
                 営業時間：${hours}
               </div>`
-        L.marker([s.lat, s.lng]).addTo(map).bindPopup(popup)
+        L.marker([s.fields.lat, s.fields.lng]).addTo(map).bindPopup(popup)
       }
     })
     

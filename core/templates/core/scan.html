@@ -9,6 +9,7 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     text-align: center;
+    position: relative; /* For spinner positioning */
   }
   #image-preview {
     max-width: 100%;
@@ -49,13 +50,58 @@
   .scan-container form {
     text-align: center; /* formのtext-align: left; を上書き */
   }
+
+  /* Loading Overlay Styles */
+  #loading-overlay {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 10;
+    border-radius: 8px;
+  }
+
+  .spinner {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    margin-left: -30px; /* Half of width */
+    margin-top: -30px; /* Half of height */
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+  }
+  
+  #loading-overlay p {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #333;
+    font-weight: bold;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 
 <div class="scan-container">
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <p>処理中です...</p>
+  </div>
   <h1>レシートをスキャン</h1>
   <p>カメラでレシートを撮影してください。</p>
 
-  <form method="post" enctype="multipart/form-data" action="{% url 'core:scan' %}">
+  <form id="scan-form" method="post" enctype="multipart/form-data" action="{% url 'core:scan' %}">
     {% csrf_token %}
     <div class="file-input-wrapper">
       <span>カメラを起動</span>
@@ -85,6 +131,39 @@
       
       reader.readAsDataURL(file);
     }
+  });
+
+  document.getElementById('scan-form').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    const overlay = document.getElementById('loading-overlay');
+    const form = event.target;
+    const formData = new FormData(form);
+
+    overlay.style.display = 'block'; // Show overlay
+
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      overlay.style.display = 'none'; // Hide overlay
+      if (data.success) {
+        window.location.href = data.redirect_url;
+      } else {
+        alert('エラーが発生しました: ' + data.error);
+      }
+    })
+    .catch(error => {
+      overlay.style.display = 'none'; // Hide overlay
+      console.error('Error:', error);
+      alert('スキャン処理中にエラーが発生しました。');
+    });
   });
 </script>
 {% endblock %}
