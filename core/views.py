@@ -430,6 +430,13 @@ def announcement_update(request, announcement_id):
         form = AnnouncementForm(
             request.POST, request.FILES, instance=announcement)
         if form.is_valid():
+            # If delete checkbox is checked, delete the old file.
+            if form.cleaned_data.get('delete_file'):
+                if announcement.file:
+                    announcement.file.delete(save=False) # Delete from storage, don't save the model yet.
+            
+            # form.save() will handle saving the new file if uploaded,
+            # or clearing the file field if 'delete_file' was checked and no new file was uploaded.
             form.save()
             return redirect('core:announcement_list')
     else:

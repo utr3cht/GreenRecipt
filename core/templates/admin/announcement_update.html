@@ -13,7 +13,42 @@
         <div class="card-body">
           <form method="post" action="." enctype="multipart/form-data" onsubmit="return confirm('この内容でお知らせを更新してもよろしいですか？');">
             {% csrf_token %}
-            {{ form.as_p }}
+            
+            <p>
+              <label for="{{ form.title.id_for_label }}">記事名:</label>
+              {{ form.title }}
+              {% if form.title.errors %}<div class="error">{{ form.title.errors }}</div>{% endif %}
+            </p>
+            
+            <p>
+              <label for="{{ form.content.id_for_label }}">内容:</label>
+              {{ form.content }}
+              {% if form.content.errors %}<div class="error">{{ form.content.errors }}</div>{% endif %}
+            </p>
+
+            <div>
+              <p>現在のファイル: 
+                {% if form.instance.file %}
+                  <a href="{{ form.instance.file.url }}" target="_blank">{{ form.instance.file.name }}</a>
+                {% else %}
+                  なし
+                {% endif %}
+              </p>
+              <p>
+                <label for="{{ form.file.id_for_label }}">ファイルを変更:</label>
+                {{ form.file }}
+                {% if form.file.errors %}<div class="error">{{ form.file.errors }}</div>{% endif %}
+              </p>
+              {% if form.instance.file and form.delete_file %}
+              <div class="form-check">
+                <label class="form-check-label" for="{{ form.delete_file.id_for_label }}">
+                  {{ form.delete_file.label }}
+                </label>
+                {{ form.delete_file }}
+              </div>
+              {% endif %}
+            </div>
+
             <button type="submit" class="btn btn-primary">更新する</button>
           </form>
         </div>

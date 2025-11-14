@@ -27,7 +27,29 @@ class StoreForm(forms.ModelForm):
                   'address', 'open_time', 'close_time']
 
 
+from django.core.exceptions import ValidationError
+
 class AnnouncementForm(forms.ModelForm):
+    delete_file = forms.BooleanField(required=False, label="既存のファイルを削除する")
+
     class Meta:
         model = Announcement
-        fields = ['title', 'content', 'image']
+        fields = ['title', 'content', 'file', 'delete_file']
+        widgets = {
+            'file': forms.FileInput,
+        }
+
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        if file:
+            allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', 'mov', '.avi', '.wmv']
+            ext = '.' + file.name.split('.')[-1].lower()
+            if ext not in allowed_extensions:
+                raise ValidationError("許可されていないファイル形式です。画像または動画ファイルをアップロードしてください。")
+        return file
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # On create form, there is no instance, so hide the delete checkbox
+        if not self.instance or not self.instance.pk:
+            del self.fields['delete_file']
