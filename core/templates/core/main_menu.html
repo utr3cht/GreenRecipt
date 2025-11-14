@@ -5,8 +5,12 @@
 {% endblock %}
 
 {% block content %}
+  <div class="welcome-container">
+    <h1 style="font-size: 24px;">ようこそ、{{ user.username }}さん</h1>
+  </div>
+
   <section class="rank-box">
-    <h1>あなたのランク</h1>
+    <h2>あなたのランク</h2>
     <h2>{{ rank }}</h2>
     <div class="eco-point">{{ current_points }} エコポイント</div>
   </section>

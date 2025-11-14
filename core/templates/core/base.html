@@ -34,7 +34,6 @@
 
           <div class="user-info desktop-only">
             {% if user.is_authenticated %}
-              <span class="welcome">ようこそ、{{ user.username }}さん</span>
               <a href="{% url 'accounts:profile_edit' %}" class="logout-button btn">プロフィール編集</a>
               <form method="post" action="{% url 'accounts:logout' %}" class="logout-form">
                 {% csrf_token %}
@@ -44,7 +43,6 @@
           </div>
 
           <div class="hamburger-menu mobile-only">
-            <span class="welcome">ようこそ、{{ user.username }}さん</span>
             <button class="hamburger-icon" onclick="toggleMenu()">&#9776;</button>
             <div class="menu-items" id="menu-items">
               {% if user.is_authenticated %}
