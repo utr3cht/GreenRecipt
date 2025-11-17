@@ -333,8 +333,14 @@ def scan(request):
     return render(request, "core/scan.html")
 
 
+@login_required
 def ai_report(request):
-    return render(request, "core/ai_report.html")
+    user_receipts = Receipt.objects.filter(user=request.user)
+    total_items_purchased = sum(receipt.total_quantity for receipt in user_receipts)
+    context = {
+        'total_items_purchased': total_items_purchased,
+    }
+    return render(request, "core/ai_report.html", context)
 
 # --- 問い合わせ関連ビュー ---
 

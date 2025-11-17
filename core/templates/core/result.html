@@ -32,6 +32,12 @@
               </tr>
             {% endfor %}
           </tbody>
+          <tfoot>
+            <tr>
+              <td><strong>合計点数</strong></td>
+              <td><strong>{{ receipt.total_quantity }}</strong></td>
+            </tr>
+          </tfoot>
         </table>
       {% else %}
         <p>商品リストを抽出できませんでした。</p>
@@ -122,6 +128,21 @@
     text-decoration: none;
     border-radius: 5px;
     margin-left: 10px;
+}
+
+/* スマートフォン向けの調整 */
+@media (max-width: 600px) {
+  .receipt-details {
+    flex-direction: column; /* 縦並びにする */
+    gap: 15px; /* 縦の余白を調整 */
+  }
+  .receipt-image-container {
+    flex: 1 1 auto; /* flexの挙動をリセット */
+    width: 100%; /* 幅を100%にする */
+  }
+  .ocr-result {
+    width: 100%;
+  }
 }
 </style>
 {% endblock %}
