@@ -11,7 +11,7 @@
           <a href="{% url 'core:receipt_detail' receipt.id %}">
             <img src="{{ receipt.image_url }}" alt="レシート画像" class="receipt-thumbnail">
             <div class="receipt-info">
-              <p><strong>スキャン日時:</strong> {{ receipt.created_at|date:"Y年m月d日 H:i" }}</p>
+              <p><strong>スキャン日時:</strong> {{ receipt.scanned_at|date:"Y年m月d日" }}</p>
               <p class="ocr-preview">{{ receipt.ocr_text|truncatechars:50 }}</p>
             </div>
           </a>
@@ -50,6 +50,7 @@
   padding: 15px;
   text-decoration: none;
   color: inherit;
+  flex-wrap: wrap; /* 追加: 小さい画面で折り返す */
 }
 .receipt-thumbnail {
   width: 80px;
@@ -57,14 +58,18 @@
   object-fit: cover;
   border-radius: 4px;
   margin-right: 15px;
+  flex-shrink: 0; /* 追加: 縮小しない */
 }
-.receipt-info p {
-  margin: 0;
+.receipt-info {
+  flex-grow: 1; /* 追加: 残りのスペースを埋める */
+  min-width: 0; /* 追加: flexアイテムの最小幅を0に設定 */
 }
 .ocr-preview {
   color: #666;
   font-size: 0.9em;
   margin-top: 5px;
+  white-space: normal; /* テキストの折り返しを許可 */
+  word-break: break-word; /* 長い単語でも改行 */
 }
 .history-container .btn {
     display: inline-block;
@@ -74,6 +79,24 @@
     color: white;
     text-decoration: none;
     border-radius: 5px;
+}
+
+/* スマートフォン向けの調整 */
+@media (max-width: 600px) {
+  .receipt-item a {
+    flex-direction: column; /* 縦並びにする */
+    align-items: flex-start; /* 左寄せ */
+  }
+  .receipt-thumbnail {
+    width: 100%; /* 幅を100%にする */
+    height: auto; /* 高さを自動調整 */
+    max-height: 150px; /* 最大高さを設定して縦長になりすぎないように */
+    margin-right: 0;
+    margin-bottom: 10px; /* 下に余白 */
+  }
+  .receipt-info {
+    width: 100%; /* 幅を100%にする */
+  }
 }
 </style>
 {% endblock %}

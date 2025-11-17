@@ -82,6 +82,15 @@ class Receipt(models.Model):
     def __str__(self):
         return f"Receipt {self.id} - {self.scanned_at}"
 
+    @property
+    def total_quantity(self):
+        """
+        parsed_dataから合計購入点数を計算して返す。
+        """
+        if self.parsed_data and isinstance(self.parsed_data, list):
+            return sum(item.get('quantity', 0) for item in self.parsed_data)
+        return 0
+
     class Meta:
         verbose_name = 'レシート'
         verbose_name_plural = 'レシート'
