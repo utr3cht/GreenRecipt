@@ -76,6 +76,8 @@ def main_menu(request):
         'announcements': announcements,
         'coupons': coupons,
         'receipts': receipts,
+        'rank': user.rank,
+        'current_points': user.current_points,
     }
     return render(request, "core/main_menu.html", context)
 
