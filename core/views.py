@@ -19,6 +19,8 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 import requests  # Add this import
 from django.core.files.base import ContentFile  # fs.saveエラーを修正するために追加
+import uuid  # Add this
+import os   # Add this
 
 # Forms
 from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm
@@ -106,119 +108,225 @@ def receipt_detail(request, receipt_id):
 
 def parse_receipt_data(text):
     """
-    OCRテキストから店舗名、取引日時、商品リストを抽出する。
-    様々なフォーマットに対応するため、複数の正規表現を試す。
+    Extract store name, transaction time, and item list from OCR text.
+    Handles complex cases where item code, name, and price are on separate lines.
     """
-    lines = text.split('\n')
+    translation_map = str.maketrans(
+        '　Ｏ０oOоО１１iIíÍl丨２２３３４４５５６６７７８８９９￥円',
+        '  00000011111112233445566778899¥¥'
+    )
+    text = text.translate(translation_map)
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
 
-    # --- 店舗名の抽出 (新ロジック) ---
-    store_name = "不明"
-    # レシートの上部から数行をチェック
-    for line in lines[:5]:
-        line = line.strip()
-        # 「店」で終わる行を店名と見なす（ただし、長すぎる行や特定キーワードを含む行は除外）
-        if line.endswith('店') and len(line) < 30 and not any(kw in line for kw in ["領収書", "登録番号", "電話"]):
+    # Extract store name
+    store_name = "Unknown"
+    store_keywords = ['店', 'ストア', 'スーパー', 'マート', 'ドラッグ', '薬局', 'TOP', 'MARKET']
+    exclude_keywords = ['領収書', '登録番号', 'TEL', '電話', '#', '年', '月', '日', '精算']
+
+    for line in lines[:10]:
+        if any(kw in line for kw in exclude_keywords):
+            continue
+        if any(kw in line for kw in store_keywords) and 3 <= len(line) <= 50:
             store_name = line
-            break  # 最初に見つかったものを採用
+            break
 
-    # 「店」が見つからない場合、最初の行をフォールバックとして試す
-    if store_name == "不明" and lines:
-        first_line = lines[0].strip()
-        # 明らかに店名ではないような行（例：日付、長い注意書き）を避ける
-        if len(first_line) > 1 and len(first_line) < 30 and not any(kw in first_line for kw in ["領収書", "登録番号", "電話", "年", "月", "日"]):
-            store_name = first_line
-
-    # --- 取引日時の抽出 (より厳密な正規表現) ---
+    # Extract transaction time
     transaction_time = None
-    # パターン: 2025年11月12日(水)17:03 または 2025年10月 9日 12:51
-    date_pattern = re.compile(
-        r'(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日(?:\s*\(.\))?\s*(\d{1,2}):(\d{1,2})')
+    datetime_pattern = re.compile(
+        r'(\d{4})\s*年?\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日.*?(\d{1,2})\s*:\s*(\d{2})'
+    )
+
     for line in lines:
-        match = date_pattern.search(line)
+        match = datetime_pattern.search(line)
         if match:
             try:
                 year, month, day, hour, minute = map(int, match.groups())
-                transaction_time = datetime(year, month, day, hour, minute)
-                break
+                if 2020 <= year <= 2030 and 1 <= month <= 12 and 1 <= day <= 31:
+                    transaction_time = datetime(year, month, day, hour, minute)
+                    break
             except (ValueError, IndexError):
                 continue
 
-    # --- 商品リストの抽出 (再々改善版) ---
+    # Extract items
     items = []
-    start_keywords = ['【領収証】', '領収証', '領収書', '内訳']
-    end_keywords = ['小計', '合計', '点数', 'お会計']
+    end_keywords = ['小計', '合計', '点数', '外税', '買上点数', 'お預り', 'お釣り', '税率']
 
-    # パターン定義
-    # Starts with digits and space
-    item_line_pattern = re.compile(r'^\d+\s+(.+)')
-    quantity_pattern = re.compile(r'\(?(\d+)\s*(?:個|点|x|X)\b')
-    price_line_pattern = re.compile(r'^\s*[¥￥][\d,]+')
-    # Keywords to filter out lines that are not items
-    non_item_keywords = ['年', '月', '日', 'フルセルフ', '電話', 'No.', '登録番号']
+    item_code_pattern = re.compile(r'^\s*(\d{4})\s+(.+)$')
+    price_pattern = re.compile(r'¥\s*([\d,]+)')
+    quantity_pattern = re.compile(r'^\s*[(\s]*(\d+)\s*個?\s*[×xX]\s*@(\d+)')
+    item_code_only_pattern = re.compile(r'^\s*\d{4}\s*$')
 
-    in_items_section = False
-    last_item_added = None
+    i = 0
+    pending_price = None
 
-    # We need to iterate with an index to look ahead for the price
-    for i, line in enumerate(lines):
-        line = line.strip()
-        if not line:
-            continue
+    while i < len(lines):
+        line = lines[i]
 
-        # --- Section Detection ---
-        if not in_items_section:
-            is_item_like = False
-            match = item_line_pattern.search(line)
-            if match and not any(kw in line for kw in non_item_keywords):
-                has_price_on_same_line = re.search(r'[¥￥]', line)
-                is_price_on_next_line = (
-                    i + 1 < len(lines)) and price_line_pattern.search(lines[i+1])
-                if has_price_on_same_line or is_price_on_next_line:
-                    is_item_like = True
-
-            if any(kw in line.replace(' ', '') for kw in start_keywords) or is_item_like:
-                in_items_section = True
-                if any(kw in line.replace(' ', '') for kw in start_keywords):
-                    continue
-
-        if in_items_section and any(keyword in line for keyword in end_keywords):
+        if any(kw in line for kw in end_keywords):
             break
 
-        # --- Line Parsing within Item Section ---
-        if in_items_section:
-            # 1. Check for quantity line
-            if last_item_added:
-                quantity_match = quantity_pattern.search(line)
-                if quantity_match:
-                    last_item_added['quantity'] = int(quantity_match.group(1))
+        # Pattern 1: Item code + name on same line
+        code_match = item_code_pattern.match(line)
+        if code_match:
+            code = code_match.group(1)
+            name_part = code_match.group(2).strip()
+
+            price_in_name = price_pattern.search(name_part)
+            if price_in_name:
+                name = name_part[:price_in_name.start()
+                                 ].strip().replace('※', '')
+                try:
+                    price = int(price_in_name.group(1).replace(',', ''))
+                except ValueError:
+                    price = None
+            else:
+                name = name_part.replace('※', '')
+                price = None
+
+            quantity = 1
+            j = i + 1
+            found_quantity = False
+
+            while j < len(lines) and price is None:
+                next_line = lines[j]
+
+                if any(kw in next_line for kw in end_keywords):
+                    break
+
+                if item_code_pattern.match(next_line) or item_code_only_pattern.match(next_line):
+                    break
+
+                price_match = price_pattern.search(next_line)
+                if price_match:
+                    try:
+                        price = int(price_match.group(1).replace(',', ''))
+                        j += 1
+                        break
+                    except ValueError:
+                        pass
+
+                j += 1
+
+            while j < len(lines) and not found_quantity:
+                check_line = lines[j]
+
+                if any(kw in check_line for kw in end_keywords):
+                    break
+                if item_code_pattern.match(check_line) or item_code_only_pattern.match(check_line):
+                    break
+
+                qty_match = quantity_pattern.match(check_line)
+                if qty_match:
+                    quantity = int(qty_match.group(1))
+                    found_quantity = True
+                    j += 1
+                    break
+
+                j += 1
+
+            if price is None and pending_price:
+                price = pending_price
+                pending_price = None
+
+            if name and price and 10 <= price <= 100000:
+                items.append({
+                    "name": name,
+                    "quantity": quantity,
+                    "price": price
+                })
+
+            i = j
+            continue
+
+        # Pattern 2: Item code only (name on next line)
+        if item_code_only_pattern.match(line):
+            code = line.strip()
+
+            if i + 1 < len(lines):
+                next_line = lines[i + 1].strip()
+
+                if not price_pattern.match(next_line):
+                    name = next_line.replace('※', '')
+
+                    price = None
+                    quantity = 1
+                    found_quantity = False
+                    j = i + 2
+
+                    while j < len(lines):
+                        check_line = lines[j]
+
+                        if any(kw in check_line for kw in end_keywords):
+                            break
+                        if item_code_pattern.match(check_line) or item_code_only_pattern.match(check_line):
+                            break
+
+                        price_match = price_pattern.search(check_line)
+                        if price_match:
+                            try:
+                                price = int(price_match.group(
+                                    1).replace(',', ''))
+                                j += 1
+                                break
+                            except ValueError:
+                                pass
+
+                        j += 1
+
+                    while j < len(lines) and not found_quantity:
+                        check_line = lines[j]
+
+                        if any(kw in check_line for kw in end_keywords):
+                            break
+                        if item_code_pattern.match(check_line) or item_code_only_pattern.match(check_line):
+                            break
+
+                        qty_match = quantity_pattern.match(check_line)
+                        if qty_match:
+                            quantity = int(qty_match.group(1))
+                            found_quantity = True
+                            j += 1
+                            break
+
+                        j += 1
+
+                    if price is None and pending_price:
+                        price = pending_price
+                        pending_price = None
+
+                    if name and price and 10 <= price <= 100000:
+                        items.append({
+                            "name": name,
+                            "quantity": quantity,
+                            "price": price
+                        })
+
+                    i = j
                     continue
 
-            # 2. Check for item line
-            item_match = item_line_pattern.search(line)
-            if item_match and not any(kw in line for kw in non_item_keywords):
-                has_price_on_same_line = re.search(r'[¥￥]', line)
-                is_price_on_next_line = (
-                    i + 1 < len(lines)) and price_line_pattern.search(lines[i+1])
+        # Pattern 3: Price only line (before item name)
+        price_match = price_pattern.match(line)
+        if price_match:
+            try:
+                pending_price = int(price_match.group(1).replace(',', ''))
+            except ValueError:
+                pass
 
-                if has_price_on_same_line or is_price_on_next_line:
-                    name = item_match.group(1).strip()
+        i += 1
 
-                    price_match = re.search(r'\s*[¥￥].*$', name)
-                    if price_match:
-                        name = name[:price_match.start()].strip()
-
-                    item = {"name": name, "quantity": 1, "price": 0}
-                    items.append(item)
-                    last_item_added = item
-                    continue
+    # Clean item names
+    for item in items:
+        item['name'] = re.sub(r'^\d{4}\s+', '', item['name'])
+        item['name'] = re.sub(r'\s+\d+$', '', item['name'])
+        item['name'] = re.sub(r'\s*¥.*$', '', item['name'])
+        item['name'] = ' '.join(item['name'].split())
+        item['name'] = item['name'].strip()
 
     return {
         "store_name": store_name,
         "transaction_time": transaction_time,
         "items": items
     }
-
-# ⭐️ --- 'scan' ビューを修正 --- ⭐️
 
 
 @login_required
@@ -230,8 +338,12 @@ def scan(request):
 
         image_bytes = image_file.read()
         ocr_text = None
-        filename = None  # 保存後のファイル名を保持する変数
         fs = FileSystemStorage()
+
+        # --- 新しい安全なファイル名を生成 ---
+        original_filename = image_file.name
+        ext = os.path.splitext(original_filename)[1]
+        safe_filename = f"{uuid.uuid4().hex}{ext}"
 
         # 1. Colab API 処理を試行
         use_colab = getattr(settings, 'USE_COLAB_API', False)
@@ -240,7 +352,8 @@ def scan(request):
         if use_colab and colab_url and colab_url != 'YOUR_COLAB_NGROK_URL_HERE':
             try:
                 print(f"Calling Colab API at {colab_url} to upload image.")
-                files = {'file': (image_file.name, image_bytes,
+                # Colab APIには元のファイル名を渡す (API側で処理されるため)
+                files = {'file': (original_filename, image_bytes,
                                   image_file.content_type)}
                 colab_response = requests.post(
                     f"{colab_url}/ocr",
@@ -265,32 +378,36 @@ def scan(request):
         if ocr_text is None:
             print("Falling back to local OCR processing.")
             try:
-                # ⭐️ 修正: 'bytes' エラーを回避するため ContentFile でラップ
-                content_file = ContentFile(image_bytes)
-                filename = fs.save('receipts/' + image_file.name, content_file)
-                image_path = fs.path(filename)
+                # 画像データをメモリからデコードしてOCR処理
+                nparr = np.frombuffer(image_bytes, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if img is None:
+                    raise ValueError(
+                        "画像ファイルのデコードに失敗しました。ファイルが破損しているか、サポートされていない形式の可能性があります。")
+
+                # --- DEBUGGING: Save decoded image ---
+                debug_image_path = os.path.join(
+                    settings.MEDIA_ROOT, 'debug_images', f'decoded_{safe_filename}')
+                os.makedirs(os.path.dirname(debug_image_path), exist_ok=True)
+                cv2.imwrite(debug_image_path, img)
+                print(f"[DEBUG] デコードされた画像を保存しました: {debug_image_path}")
+                print(f"[DEBUG] デコードされた画像の形状: {img.shape}")
+                # --- END DEBUGGING ---
 
                 analyzer = DocumentAnalyzer()
-                img = cv2.imread(image_path)
-                if img is None:
-                    raise ValueError("ローカルでの画像ファイルの読み込みに失敗しました。")
-
                 results, _, _ = analyzer(img)  # 同期呼び出し
                 ocr_text = "".join(paragraph.contents + "\n" for paragraph in results.paragraphs) if results and hasattr(
                     results, 'paragraphs') else "テキストが検出されませんでした。"
-                print("Successfully processed OCR locally.")
+                print("Successfully processed OCR locally from memory.")
             except Exception as e:
                 return JsonResponse({'success': False, 'error': f"ローカルOCR処理中にエラーが発生しました: {e}"})
 
         # 3. OCRテキストをパースして保存
         if ocr_text:
-            image_url = None
-
-            # ⭐️ 修正: Colab APIが成功した場合、ここで初めてファイルを保存する
-            # (ローカルフォールバック時は 'filename' は既に設定されている)
-            if filename is None:
-                content_file = ContentFile(image_bytes)
-                filename = fs.save('receipts/' + image_file.name, content_file)
+            # ファイルを保存 (安全なファイル名を使用)
+            content_file = ContentFile(image_bytes)
+            filename = fs.save('receipts/' + safe_filename,
+                               content_file)  # Use safe_filename here
 
             image_url = fs.url(filename)
 
@@ -302,7 +419,7 @@ def scan(request):
                     store_name_to_find = parsed_data['store_name'].strip()
                     store = Store.objects.filter(
                         store_name__icontains=store_name_to_find).first()
-                except Exception as e:
+                except Exception:
                     pass
 
             # 重複チェック
@@ -327,8 +444,6 @@ def scan(request):
             redirect_url = reverse('core:receipt_detail', kwargs={
                                    'receipt_id': receipt.id})
             return JsonResponse({'success': True, 'redirect_url': redirect_url})
-        else:
-            return JsonResponse({'success': False, 'error': 'APIとローカル処理の両方でOCRテキストの取得に失敗しました。'})
 
     return render(request, "core/scan.html")
 
@@ -439,8 +554,9 @@ def announcement_update(request, announcement_id):
             # If delete checkbox is checked, delete the old file.
             if form.cleaned_data.get('delete_file'):
                 if announcement.file:
-                    announcement.file.delete(save=False) # Delete from storage, don't save the model yet.
-            
+                    # Delete from storage, don't save the model yet.
+                    announcement.file.delete(save=False)
+
             # form.save() will handle saving the new file if uploaded,
             # or clearing the file field if 'delete_file' was checked and no new file was uploaded.
             form.save()
