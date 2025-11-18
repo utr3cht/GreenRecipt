@@ -86,9 +86,27 @@ class Receipt(models.Model):
     def total_quantity(self):
         """
         parsed_dataから合計購入点数を計算して返す。
+        直接抽出された合計点数を優先する。
         """
-        if self.parsed_data and isinstance(self.parsed_data, list):
+        if isinstance(self.parsed_data, dict):
+            # 直接抽出された合計点数があればそれを返す
+            if 'total_quantity' in self.parsed_data and self.parsed_data['total_quantity'] > 0:
+                return self.parsed_data['total_quantity']
+            # なければitemsリストから計算
+            if 'items' in self.parsed_data and isinstance(self.parsed_data['items'], list):
+                return sum(item.get('quantity', 0) for item in self.parsed_data['items'])
+        # 過去のデータ形式（リストのみ）との後方互換性
+        if isinstance(self.parsed_data, list):
             return sum(item.get('quantity', 0) for item in self.parsed_data)
+        return 0
+
+    @property
+    def ec_points(self):
+        """
+        ocr_text内の"EC"の出現回数に基づいてポイントを計算する。
+        """
+        if self.ocr_text:
+            return self.ocr_text.upper().count('EC') * 5
         return 0
 
     class Meta:

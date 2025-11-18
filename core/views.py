@@ -108,224 +108,78 @@ def receipt_detail(request, receipt_id):
 
 def parse_receipt_data(text):
     """
-    Extract store name, transaction time, and item list from OCR text.
-    Handles complex cases where item code, name, and price are on separate lines.
+    OCRテキストから店舗名、取引日時、商品リスト、合計点数を抽出する。
+    価格行の前の行を商品名と見なすロジックを主軸とする。
     """
-    translation_map = str.maketrans(
-        '　Ｏ０oOоО１１iIíÍl丨２２３３４４５５６６７７８８９９￥円',
-        '  00000011111112233445566778899¥¥'
-    )
-    text = text.translate(translation_map)
-    lines = [line.strip() for line in text.split('\n') if line.strip()]
-
-    # Extract store name
-    store_name = "Unknown"
-    store_keywords = ['店', 'ストア', 'スーパー', 'マート', 'ドラッグ', '薬局', 'TOP', 'MARKET']
-    exclude_keywords = ['領収書', '登録番号', 'TEL', '電話', '#', '年', '月', '日', '精算']
-
-    for line in lines[:10]:
-        if any(kw in line for kw in exclude_keywords):
-            continue
-        if any(kw in line for kw in store_keywords) and 3 <= len(line) <= 50:
-            store_name = line
-            break
-
-    # Extract transaction time
+    lines = text.split('\n')
+    
+    # --- 店舗名、取引日時の抽出（既存のロジックを流用・簡略化） ---
+    store_name = lines[0] if lines else "不明"
     transaction_time = None
-    datetime_pattern = re.compile(
-        r'(\d{4})\s*年?\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日.*?(\d{1,2})\s*:\s*(\d{2})'
-    )
-
+    date_pattern = re.compile(r'(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日.*?(\d{1,2}):(\d{2})')
     for line in lines:
-        match = datetime_pattern.search(line)
+        match = date_pattern.search(line)
         if match:
             try:
                 year, month, day, hour, minute = map(int, match.groups())
-                if 2020 <= year <= 2030 and 1 <= month <= 12 and 1 <= day <= 31:
-                    transaction_time = datetime(year, month, day, hour, minute)
-                    break
+                transaction_time = datetime(year, month, day, hour, minute)
+                break
             except (ValueError, IndexError):
                 continue
 
-    # Extract items
-    items = []
-    end_keywords = ['小計', '合計', '点数', '外税', '買上点数', 'お預り', 'お釣り', '税率']
-
-    item_code_pattern = re.compile(r'^\s*(\d{4})\s+(.+)$')
-    price_pattern = re.compile(r'¥\s*([\d,]+)')
-    quantity_pattern = re.compile(r'^\s*[(\s]*(\d+)\s*個?\s*[×xX]\s*@(\d+)')
-    item_code_only_pattern = re.compile(r'^\s*\d{4}\s*$')
-
-    i = 0
-    pending_price = None
-
-    while i < len(lines):
-        line = lines[i]
-
-        if any(kw in line for kw in end_keywords):
+    # --- 合計点数の直接抽出 ---
+    total_quantity_from_receipt = 0
+    quantity_total_pattern = re.compile(r'(?:買上点数|点数)\s*(\d+) *点?')
+    for line in lines:
+        match = quantity_total_pattern.search(line)
+        if match:
+            total_quantity_from_receipt = int(match.group(1))
             break
 
-        # Pattern 1: Item code + name on same line
-        code_match = item_code_pattern.match(line)
-        if code_match:
-            code = code_match.group(1)
-            name_part = code_match.group(2).strip()
+    # --- 商品リストの抽出 ---
+    items = []
+    end_keywords = ['小計', '合計', '外税', 'お預り', 'お釣り']
+    price_pattern = re.compile(r'¥([\d,]+)※?$')
+    quantity_pattern = re.compile(r'\(?\s*(\d+)\s*(?:個|点|x|X)\b')
 
-            price_in_name = price_pattern.search(name_part)
-            if price_in_name:
-                name = name_part[:price_in_name.start()
-                                 ].strip().replace('※', '')
-                try:
-                    price = int(price_in_name.group(1).replace(',', ''))
-                except ValueError:
-                    price = None
-            else:
-                name = name_part.replace('※', '')
-                price = None
+    for i, line in enumerate(lines):
+        line = line.strip()
+        
+        # 終了キーワードが見つかったらループを抜ける
+        if any(kw in line for kw in end_keywords):
+            break
+            
+        # 価格行のパターンにマッチするか確認
+        price_match = price_pattern.search(line)
+        if price_match and i > 0:
+            # 価格がマッチした場合、その前の行を商品名と見なす
+            item_name = lines[i-1].strip()
+            
+            # 商品名が空、または明らかに商品名でないものを除外
+            if not item_name or item_name.startswith('¥') or len(item_name) > 50:
+                continue
 
-            quantity = 1
-            j = i + 1
-            found_quantity = False
-
-            while j < len(lines) and price is None:
-                next_line = lines[j]
-
-                if any(kw in next_line for kw in end_keywords):
-                    break
-
-                if item_code_pattern.match(next_line) or item_code_only_pattern.match(next_line):
-                    break
-
-                price_match = price_pattern.search(next_line)
-                if price_match:
-                    try:
-                        price = int(price_match.group(1).replace(',', ''))
-                        j += 1
-                        break
-                    except ValueError:
-                        pass
-
-                j += 1
-
-            while j < len(lines) and not found_quantity:
-                check_line = lines[j]
-
-                if any(kw in check_line for kw in end_keywords):
-                    break
-                if item_code_pattern.match(check_line) or item_code_only_pattern.match(check_line):
-                    break
-
-                qty_match = quantity_pattern.match(check_line)
-                if qty_match:
-                    quantity = int(qty_match.group(1))
-                    found_quantity = True
-                    j += 1
-                    break
-
-                j += 1
-
-            if price is None and pending_price:
-                price = pending_price
-                pending_price = None
-
-            if name and price and 10 <= price <= 100000:
-                items.append({
-                    "name": name,
-                    "quantity": quantity,
-                    "price": price
-                })
-
-            i = j
-            continue
-
-        # Pattern 2: Item code only (name on next line)
-        if item_code_only_pattern.match(line):
-            code = line.strip()
-
-            if i + 1 < len(lines):
-                next_line = lines[i + 1].strip()
-
-                if not price_pattern.match(next_line):
-                    name = next_line.replace('※', '')
-
-                    price = None
-                    quantity = 1
-                    found_quantity = False
-                    j = i + 2
-
-                    while j < len(lines):
-                        check_line = lines[j]
-
-                        if any(kw in check_line for kw in end_keywords):
-                            break
-                        if item_code_pattern.match(check_line) or item_code_only_pattern.match(check_line):
-                            break
-
-                        price_match = price_pattern.search(check_line)
-                        if price_match:
-                            try:
-                                price = int(price_match.group(
-                                    1).replace(',', ''))
-                                j += 1
-                                break
-                            except ValueError:
-                                pass
-
-                        j += 1
-
-                    while j < len(lines) and not found_quantity:
-                        check_line = lines[j]
-
-                        if any(kw in check_line for kw in end_keywords):
-                            break
-                        if item_code_pattern.match(check_line) or item_code_only_pattern.match(check_line):
-                            break
-
-                        qty_match = quantity_pattern.match(check_line)
-                        if qty_match:
-                            quantity = int(qty_match.group(1))
-                            found_quantity = True
-                            j += 1
-                            break
-
-                        j += 1
-
-                    if price is None and pending_price:
-                        price = pending_price
-                        pending_price = None
-
-                    if name and price and 10 <= price <= 100000:
-                        items.append({
-                            "name": name,
-                            "quantity": quantity,
-                            "price": price
-                        })
-
-                    i = j
-                    continue
-
-        # Pattern 3: Price only line (before item name)
-        price_match = price_pattern.match(line)
-        if price_match:
             try:
-                pending_price = int(price_match.group(1).replace(',', ''))
-            except ValueError:
-                pass
+                price = int(price_match.group(1).replace(',', ''))
+                item = {"name": item_name, "quantity": 1, "price": price}
+                items.append(item)
+            except (ValueError, IndexError):
+                continue
 
-        i += 1
+        # 数量行のパターンにマッチするか確認
+        quantity_match = quantity_pattern.search(line)
+        if quantity_match and items:
+            # 直前の商品の数量を更新
+            items[-1]['quantity'] = int(quantity_match.group(1))
 
-    # Clean item names
-    for item in items:
-        item['name'] = re.sub(r'^\d{4}\s+', '', item['name'])
-        item['name'] = re.sub(r'\s+\d+$', '', item['name'])
-        item['name'] = re.sub(r'\s*¥.*$', '', item['name'])
-        item['name'] = ' '.join(item['name'].split())
-        item['name'] = item['name'].strip()
+    # 抽出した合計点数があれば、それを優先する
+    final_total_quantity = total_quantity_from_receipt if total_quantity_from_receipt > 0 else sum(item.get('quantity', 0) for item in items)
 
     return {
         "store_name": store_name,
         "transaction_time": transaction_time,
-        "items": items
+        "items": items,
+        "total_quantity": final_total_quantity
     }
 
 
@@ -439,7 +293,7 @@ def scan(request):
                 ocr_text=ocr_text,
                 store=store,
                 transaction_time=parsed_data['transaction_time'],
-                parsed_data=parsed_data['items']
+                parsed_data=parsed_data
             )
             redirect_url = reverse('core:receipt_detail', kwargs={
                                    'receipt_id': receipt.id})
@@ -452,8 +306,10 @@ def scan(request):
 def ai_report(request):
     user_receipts = Receipt.objects.filter(user=request.user)
     total_items_purchased = sum(receipt.total_quantity for receipt in user_receipts)
+    total_ec_points = sum(receipt.ec_points for receipt in user_receipts)
     context = {
         'total_items_purchased': total_items_purchased,
+        'total_ec_points': total_ec_points,
     }
     return render(request, "core/ai_report.html", context)
 

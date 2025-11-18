@@ -15,7 +15,7 @@
         <p><strong>取引日時:</strong> {{ receipt.transaction_time|date:"Y年m月d日 H:i"|default:"不明" }}</p>
       </div>
 
-      {% if receipt.parsed_data %}
+      {% if receipt.parsed_data.items %}
         <h3>商品リスト</h3>
         <table class="items-table">
           <thead>
@@ -25,7 +25,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for item in receipt.parsed_data %}
+            {% for item in receipt.parsed_data.items %}
               <tr>
                 <td>{{ item.name }}</td>
                 <td>{{ item.quantity }}</td>
@@ -36,6 +36,10 @@
             <tr>
               <td><strong>合計点数</strong></td>
               <td><strong>{{ receipt.total_quantity }}</strong></td>
+            </tr>
+            <tr>
+              <td><strong>合計pt</strong></td>
+              <td><strong>{{ receipt.ec_points }}</strong></td>
             </tr>
           </tfoot>
         </table>
