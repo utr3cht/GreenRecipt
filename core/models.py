@@ -96,6 +96,34 @@ class Receipt(models.Model):
         verbose_name_plural = 'レシート'
 
 
+class Product(models.Model):
+    name = models.CharField(max_length=255, unique=True, verbose_name='商品名')
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = '商品'
+        verbose_name_plural = '商品'
+
+
+class ReceiptItem(models.Model):
+    receipt = models.ForeignKey(
+        Receipt, related_name='items', on_delete=models.CASCADE, verbose_name='レシート')
+    # 商品マスターは消さない
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, verbose_name='商品')
+    quantity = models.IntegerField(verbose_name='数量')
+    price = models.IntegerField(verbose_name='価格')
+
+    def __str__(self):
+        return f"{self.product.name} ({self.quantity} x ¥{self.price})"
+
+    class Meta:
+        verbose_name = 'レシート項目'
+        verbose_name_plural = 'レシート項目'
+
+
 class Inquiry(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                              null=True, blank=True, verbose_name='問い合わせユーザー')
@@ -118,9 +146,13 @@ class Inquiry(models.Model):
 
 
 class Coupon(models.Model):
+    TYPE_CHOICES = [
+        ('percentage', '割引率'),
+        ('absolute', '固定額'),
+    ]
     title = models.CharField(max_length=64, verbose_name='タイトル')
     description = models.CharField(max_length=64, verbose_name='詳細')
-    type = models.CharField(max_length=64, verbose_name='タイプ')
+    type = models.CharField(max_length=64, verbose_name='タイプ', choices=TYPE_CHOICES)
     discount_value = models.DecimalField(
         max_digits=12, decimal_places=2, verbose_name='割引量')
     available_stores = models.ManyToManyField(

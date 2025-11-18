@@ -1,0 +1,26 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}
+  クーポンを手動で付与 | GreenReceipt
+{% endblock %}
+
+{% block content %}
+  <main class="dashboard-main">
+    <div class="dashboard-container">
+      <h1>クーポンを手動で付与</h1>
+      <p>特定のユーザーにクーポンを付与します。</p>
+      
+      <div class="card mb-4">
+        <div class="card-body">
+          <form method="post" action="." onsubmit="return confirm('この内容でクーポンを付与してもよろしいですか？');">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">付与する</button>
+          </form>
+        </div>
+      </div>
+
+      <a href="{% url 'core:coupon_list_admin' %}" class="btn btn-secondary mt-3">クーポン一覧に戻る</a>
+    </div>
+  </main>
+{% endblock %}

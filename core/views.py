@@ -21,14 +21,17 @@ import requests  # Add this import
 from django.core.files.base import ContentFile  # fs.saveエラーを修正するために追加
 import uuid  # Add this
 import os   # Add this
+import numpy as np # Add this line
+
+from django.db import transaction
 
 # Forms
-from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm
+from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponForm, GrantCouponForm
 # ⭐️ 修正: StoreUserCreationForm は accounts.forms からインポート
 from accounts.forms import StoreUserCreationForm
 
 # Models
-from .models import Inquiry, Store, Announcement, Receipt, Coupon
+from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem
 from accounts.models import CustomUser
 
 # --- 認証関連ビュー ---
@@ -396,12 +399,30 @@ def scan(request):
                 print(f"[DEBUG] デコードされた画像の形状: {img.shape}")
                 # --- END DEBUGGING ---
 
+                print("[INFO] Initializing DocumentAnalyzer...")
                 analyzer = DocumentAnalyzer()
+                print("[INFO] DocumentAnalyzer initialized. Starting analysis...")
                 results, _, _ = analyzer(img)  # 同期呼び出し
-                ocr_text = "".join(paragraph.contents + "\n" for paragraph in results.paragraphs) if results and hasattr(
-                    results, 'paragraphs') else "テキストが検出されませんでした。"
+                print("[INFO] Analysis complete. Processing results...")
+
+                if results and hasattr(results, 'paragraphs') and results.paragraphs:
+                    ocr_text = "".join(paragraph.contents + "\n" for paragraph in results.paragraphs)
+                    print("[INFO] Successfully extracted text from OCR results.")
+                else:
+                    ocr_text = "テキストが検出されませんでした。"
+                    print("[WARN] No text detected or paragraphs attribute is missing/empty in the result.")
+                    if results:
+                        print(f"[DEBUG] Raw result object type: {type(results)}")
+                        # Note: Printing the full result might be too verbose.
+                        # Check attributes available in the result object.
+                        print(f"[DEBUG] Result attributes: {dir(results)}")
+
                 print("Successfully processed OCR locally from memory.")
             except Exception as e:
+                # エラーログをより詳細に出力
+                import traceback
+                print(f"[ERROR] An exception occurred during local OCR processing: {e}")
+                print(f"[ERROR] Traceback: {traceback.format_exc()}")
                 return JsonResponse({'success': False, 'error': f"ローカルOCR処理中にエラーが発生しました: {e}"})
 
         # 3. OCRテキストをパースして保存
@@ -435,14 +456,44 @@ def scan(request):
                 if existing_receipt:
                     return JsonResponse({'success': False, 'error': 'このレシートは既に登録済みです。'})
 
-            receipt = Receipt.objects.create(
-                user=request.user,
-                image_url=image_url,
-                ocr_text=ocr_text,
-                store=store,
-                transaction_time=parsed_data['transaction_time'],
-                parsed_data=parsed_data['items']
-            )
+            try:
+                with transaction.atomic():
+                    # まずレシート本体を作成
+                    receipt = Receipt.objects.create(
+                        user=request.user,
+                        image_url=image_url,
+                        ocr_text=ocr_text,
+                        store=store,
+                        transaction_time=parsed_data['transaction_time'],
+                        parsed_data=parsed_data['items']  # 冗長データとしてまだ保存
+                    )
+
+                    # パースされたアイテムをReceiptItemモデルに保存
+                    if parsed_data['items']:
+                        for item_data in parsed_data['items']:
+                            # 商品名が空の場合はスキップ
+                            if not item_data.get('name'):
+                                continue
+
+                            product, created = Product.objects.get_or_create(
+                                name=item_data['name']
+                            )
+                            ReceiptItem.objects.create(
+                                receipt=receipt,
+                                product=product,
+                                # quantityがない場合のデフォルト値
+                                quantity=item_data.get('quantity', 1),
+                                price=item_data.get('price', 0)  # priceがない場合のデフォルト値
+                            )
+
+            except Exception as e:
+                # トランザクション内でエラーが起きた場合
+                import traceback
+                print(
+                    f"[ERROR] An exception occurred during receipt saving transaction: {e}")
+                print(f"[ERROR] Traceback: {traceback.format_exc()}")
+                return JsonResponse({'success': False, 'error': f"レシートの保存中にエラーが発生しました: {e}"})
+
             redirect_url = reverse('core:receipt_detail', kwargs={
                                    'receipt_id': receipt.id})
             return JsonResponse({'success': True, 'redirect_url': redirect_url})
@@ -573,6 +624,62 @@ def announcement_delete(request, announcement_id):
     announcement = get_object_or_404(Announcement, pk=announcement_id)
     announcement.delete()
     return redirect('core:announcement_list')
+
+
+@staff_member_required
+def coupon_create(request):
+    if request.method == 'POST':
+        form = CouponForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # Redirect to a new coupon list page (which I will create next)
+            return redirect('core:coupon_list_admin')
+    else:
+        form = CouponForm()
+    return render(request, 'admin/coupon_create.html', {'form': form})
+
+
+@staff_member_required
+def coupon_list_admin(request):
+    coupons = Coupon.objects.all()
+    return render(request, 'admin/coupon_list_admin.html', {'coupons': coupons})
+
+
+@staff_member_required
+def coupon_update(request, coupon_id):
+    coupon = get_object_or_404(Coupon, pk=coupon_id)
+    if request.method == 'POST':
+        form = CouponForm(request.POST, instance=coupon)
+        if form.is_valid():
+            form.save()
+            return redirect('core:coupon_list_admin')
+    else:
+        form = CouponForm(instance=coupon)
+    return render(request, 'admin/coupon_update.html', {'form': form, 'coupon': coupon})
+
+
+@staff_member_required
+def coupon_delete(request, coupon_id):
+    coupon = get_object_or_404(Coupon, pk=coupon_id)
+    coupon.delete()
+    # Optionally, add a success message
+    # messages.success(request, f'クーポン「{coupon.title}」を削除しました。')
+    return redirect('core:coupon_list_admin')
+
+
+@staff_member_required
+def grant_coupon_admin(request):
+    if request.method == 'POST':
+        form = GrantCouponForm(request.POST)
+        if form.is_valid():
+            user = form.cleaned_data['user']
+            coupon = form.cleaned_data['coupon']
+            user.current_coupons.add(coupon)
+            messages.success(request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
+            return redirect('core:grant_coupon_admin')
+    else:
+        form = GrantCouponForm()
+    return render(request, 'admin/grant_coupon_admin.html', {'form': form})
 
 
 @staff_member_required

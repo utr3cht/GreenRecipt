@@ -24,6 +24,12 @@ urlpatterns = [
     path("staff/announcement/<int:announcement_id>/delete/", views.announcement_delete, name="announcement_delete"),
     path("staff/announcement/<int:announcement_id>/", views.announcement_detail, name="announcement_detail"),
 
+    path("staff/coupons/", views.coupon_list_admin, name="coupon_list_admin"),
+    path("staff/coupons/create/", views.coupon_create, name="coupon_create"),
+    path("staff/coupons/<int:coupon_id>/update/", views.coupon_update, name="coupon_update"),
+    path("staff/coupons/<int:coupon_id>/delete/", views.coupon_delete, name="coupon_delete"),
+    path("staff/coupons/grant/", views.grant_coupon_admin, name="grant_coupon_admin"),
+
     path("inquiries/complete/", views.inquiry_complete, name="inquiry_complete"),
     path("staff/login/",views.admin_login,name="staff_login"),
     path("staff/logout/", views.staff_logout, name="staff_logout"),

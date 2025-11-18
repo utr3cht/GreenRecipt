@@ -6,7 +6,18 @@ html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  background: linear-gradient(to right, #c8f7c5, #9be39d);
+  /* ⭐️ 修正: 虹色のグラデーションとアニメーションを追加 */
+  background: linear-gradient(120deg, 
+    hsl(0, 80%, 70%), 
+    hsl(30, 80%, 70%), 
+    hsl(60, 80%, 70%), 
+    hsl(120, 80%, 70%), 
+    hsl(180, 80%, 70%), 
+    hsl(240, 80%, 70%), 
+    hsl(300, 80%, 70%)
+  );
+  background-size: 1800% 1800%;
+  animation: rainbow-bg 0.5s ease infinite;
 }
 body {
   font-family: "Segoe UI", "メイリオ", sans-serif;
@@ -14,6 +25,13 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+/* ⭐️ 虹色アニメーションのキーフレームを追加 */
+@keyframes rainbow-bg {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* ===== コンテナ ===== */

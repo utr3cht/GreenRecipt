@@ -26,6 +26,9 @@
                         <li class="list-group-item">
                             <a href="{% url 'core:announcement_list' %}">お知らせ編集</a>
                         </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'core:coupon_list_admin' %}">クーポン管理</a>
+                        </li>
                         {% endif %}
                         {% if user.role == 'store' %}
                         <li class="list-group-item">

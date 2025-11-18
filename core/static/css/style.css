@@ -185,7 +185,7 @@ button:hover, .btn:hover { background: #c8e6c9; }
 }
 
 /* ===== 下部ナビ ===== */
-:root { --nav-h: 64px; }
+:root { --nav-h: 100px; }
 footer { margin-top: auto; }
 .bottom-nav {
   position: fixed;
@@ -208,9 +208,9 @@ footer { margin-top: auto; }
   align-items: center;
   color: #388e3c;
   text-decoration: none;
-  font-size: 11px;
+  font-size: 15px;
 }
-.nav-item img { width: 26px; height: 26px; margin-bottom: 3px; }
+.nav-item img { width: 45px; height: 45px; margin-bottom: 3px; }
 
 /* ===== main / form ===== */
 main {

@@ -1,6 +1,7 @@
 from .models import Receipt, Inquiry, Store
 from django import forms
-from .models import Receipt, Inquiry, Store, Announcement
+from .models import Receipt, Inquiry, Store, Announcement, Coupon
+from accounts.models import CustomUser
 
 
 class ReceiptForm(forms.ModelForm):
@@ -27,6 +28,26 @@ class StoreForm(forms.ModelForm):
                   'address', 'open_time', 'close_time']
 
 
+class CouponForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = ['title', 'description', 'type', 'discount_value', 'available_stores']
+        widgets = {
+            'available_stores': forms.CheckboxSelectMultiple,
+        }
+
+
+class GrantCouponForm(forms.Form):
+    user = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(role='user'),
+        label="ユーザー"
+    )
+    coupon = forms.ModelChoiceField(
+        queryset=Coupon.objects.all(),
+        label="クーポン"
+    )
+
+
 from django.core.exceptions import ValidationError
 
 class AnnouncementForm(forms.ModelForm):
@@ -42,7 +63,7 @@ class AnnouncementForm(forms.ModelForm):
     def clean_file(self):
         file = self.cleaned_data.get('file')
         if file:
-            allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', 'mov', '.avi', '.wmv']
+            allowed_extensions = ['.jpg', '.jpeg', '.png', 'gif', '.webp', '.mp4', 'mov', '.avi', '.wmv']
             ext = '.' + file.name.split('.')[-1].lower()
             if ext not in allowed_extensions:
                 raise ValidationError("許可されていないファイル形式です。画像または動画ファイルをアップロードしてください。")

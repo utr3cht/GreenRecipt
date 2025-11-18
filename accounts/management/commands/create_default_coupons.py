@@ -24,6 +24,12 @@ class Command(BaseCommand):
                 'type': 'absolute',
                 'discount_value': 500.00,
             },
+            {
+                'title': '1000ポイント達成記念',
+                'description': '次回のお買い物で使える300円割引クーポン',
+                'type': 'absolute',
+                'discount_value': 300.00,
+            },
         ]
 
         for coupon_data in coupons_to_create:
