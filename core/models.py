@@ -101,6 +101,15 @@ class Receipt(models.Model):
         return 0
 
     @property
+    def total_amount(self):
+        """
+        parsed_dataから合計金額を計算して返す。
+        """
+        if isinstance(self.parsed_data, dict):
+            return self.parsed_data.get('total_amount', 0)
+        return 0
+
+    @property
     def ec_points(self):
         """
         ocr_text内の"EC"の出現回数に基づいてポイントを計算する。
@@ -247,3 +256,18 @@ class Announcement(models.Model):
     class Meta:
         verbose_name = 'お知らせ'
         verbose_name_plural = 'お知らせ'
+
+
+class EcoProduct(models.Model):
+    name = models.CharField(
+        max_length=255, unique=True, verbose_name='エコ商品名/キーワード')
+    jan_code = models.CharField(
+        max_length=13, blank=True, null=True, unique=True, verbose_name='JANコード')
+    points = models.IntegerField(default=10, verbose_name='付与ポイント')
+
+    def __str__(self):
+        return f"{self.name} ({self.points} pts)"
+
+    class Meta:
+        verbose_name = 'エコ商品'
+        verbose_name_plural = 'エコ商品'

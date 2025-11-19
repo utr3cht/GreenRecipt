@@ -10,7 +10,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.utils.decorators import method_decorator
 from yomitoku.document_analyzer import DocumentAnalyzer
 import cv2
 import re
@@ -21,17 +23,17 @@ import requests  # Add this import
 from django.core.files.base import ContentFile  # fs.saveエラーを修正するために追加
 import uuid  # Add this
 import os   # Add this
-import numpy as np # Add this line
+import numpy as np  # Add this line
 
 from django.db import transaction
 
 # Forms
-from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponForm, GrantCouponForm
+from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponForm, GrantCouponForm, EcoProductForm
 # ⭐️ 修正: StoreUserCreationForm は accounts.forms からインポート
 from accounts.forms import StoreUserCreationForm
 
 # Models
-from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem
+from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct
 from accounts.models import CustomUser
 
 # --- 認証関連ビュー ---
@@ -42,7 +44,7 @@ def admin_login(request):
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            if user.role in ['admin', 'store']:
+            if user.is_superuser or user.role in ['admin', 'store']:
                 login(request, user)
                 return redirect('core:staff_index')
             else:
@@ -61,7 +63,7 @@ def staff_logout(request):
 
 def index(request):
     if request.user.is_authenticated:
-        if request.user.role in ['admin', 'store']:
+        if request.user.is_superuser or request.user.role in ['admin', 'store']:
             return redirect('core:staff_index')
         else:
             return redirect('core:main_menu')
@@ -113,78 +115,130 @@ def receipt_detail(request, receipt_id):
 
 def parse_receipt_data(text):
     """
-    OCRテキストから店舗名、取引日時、商品リスト、合計点数を抽出する。
-    価格行の前の行を商品名と見なすロジックを主軸とする。
+    OCRテキストから店舗名、取引日時、商品リスト、合計などを抽出する。（改善版）
+    - 様々な日付フォーマットに対応。
+    - 複数行にわたる商品情報や、1行にまとまった商品情報に対応。
+    - 合計金額、合計点数の抽出精度を向上。
     """
     lines = text.split('\n')
+    lines = [line.strip() for line in lines if line.strip()]
+
+    store_name = "不明"
+    title_line = ""
+    branch_line = ""
+
+    if lines:
+        title_line = lines[0]
+
+    for line in lines[1:5]:
+        if line.endswith('店'):
+            branch_line = line
+            break
     
-    # --- 店舗名、取引日時の抽出（既存のロジックを流用・簡略化） ---
-    store_name = lines[0] if lines else "不明"
+    if title_line and branch_line and "HP" not in title_line:
+        store_name = f"{title_line} {branch_line}"
+    elif branch_line:
+        store_name = branch_line
+    elif title_line:
+        store_name = title_line
+    else:
+        store_name = "不明"
+
     transaction_time = None
-    date_pattern = re.compile(r'(\d{4})年\s*(\d{1,2})月\s*(\d{1,2})日.*?(\d{1,2}):(\d{2})')
-    for line in lines:
+    date_line_index = -1
+    date_pattern = re.compile(
+        r'(\d{2,4})[年/](\d{1,2})[月/](\d{1,2})日?\(?\w?\)?\s*(\d{1,2}):(\d{2})'
+    )
+    for i, line in enumerate(lines):
         match = date_pattern.search(line)
         if match:
             try:
-                year, month, day, hour, minute = map(int, match.groups())
+                year_str, month_str, day_str, hour_str, minute_str = match.groups()
+                year, month, day, hour, minute = map(
+                    int, [year_str, month_str, day_str, hour_str, minute_str])
+                if year < 100:
+                    year += 2000
                 transaction_time = datetime(year, month, day, hour, minute)
+                date_line_index = i
                 break
             except (ValueError, IndexError):
                 continue
 
-    # --- 合計点数の直接抽出 ---
     total_quantity_from_receipt = 0
-    quantity_total_pattern = re.compile(r'(?:買上点数|点数)\s*(\d+) *点?')
+    total_amount_from_receipt = 0
+    quantity_total_pattern = re.compile(r'(?:合計点数|買上点数|点数)\s*(\d+)')
+    amount_total_pattern = re.compile(r'(?:(?:御)?合計|小計)\s*¥?([\d,]+)')
+
     for line in lines:
-        match = quantity_total_pattern.search(line)
-        if match:
-            total_quantity_from_receipt = int(match.group(1))
-            break
+        qty_match = quantity_total_pattern.search(line)
+        if qty_match:
+            total_quantity_from_receipt = int(qty_match.group(1))
+        amt_match = amount_total_pattern.search(line)
+        if amt_match:
+            total_amount_from_receipt = int(amt_match.group(1).replace(',', ''))
 
-    # --- 商品リストの抽出 ---
     items = []
-    end_keywords = ['小計', '合計', '外税', 'お預り', 'お釣り']
-    price_pattern = re.compile(r'¥([\d,]+)※?$')
-    quantity_pattern = re.compile(r'\(?\s*(\d+)\s*(?:個|点|x|X)\b')
+    start_index = date_line_index + 1 if date_line_index != -1 else 0
+    end_index = len(lines)
 
-    for i, line in enumerate(lines):
-        line = line.strip()
-        
-        # 終了キーワードが見つかったらループを抜ける
-        if any(kw in line for kw in end_keywords):
+    for i, line in enumerate(lines[start_index:]):
+        if any(keyword in line for keyword in ['小計', '合計', 'クレジット', 'お預り']):
+            end_index = start_index + i
             break
+
+    item_lines = lines[start_index:end_index]
+
+    # 商品行の正規表現
+    single_line_pattern = re.compile(r'^\d{4}\s+(.+?)\s+¥([\d,]+)※?$')
+    name_pattern = re.compile(r'^\d{4}\s+(.+)$')
+    price_pattern = re.compile(r'^¥([\d,]+)※?$')
+    quantity_pattern = re.compile(r'\(?\s*(\d+)\s*[個xX]')
+
+    i = 0
+    while i < len(item_lines):
+        line = item_lines[i]
+        
+        # 1行パターン
+        single_match = single_line_pattern.search(line)
+        if single_match:
+            name = single_match.group(1).strip()
+            price = int(single_match.group(2).replace(',', ''))
+            items.append({"name": name, "quantity": 1, "price": price})
+            i += 1
+        # 2行パターン
+        else:
+            name_match = name_pattern.search(line)
+            if name_match and i + 1 < len(item_lines):
+                next_line = item_lines[i+1]
+                price_match = price_pattern.search(next_line)
+                if price_match:
+                    name = name_match.group(1).strip()
+                    price = int(price_match.group(1).replace(',', ''))
+                    items.append({"name": name, "quantity": 1, "price": price})
+                    i += 2
+                else:
+                    i += 1 # nameはあったがpriceがなかった
+            else:
+                i += 1 # 何にもマッチせず
             
-        # 価格行のパターンにマッチするか確認
-        price_match = price_pattern.search(line)
-        if price_match and i > 0:
-            # 価格がマッチした場合、その前の行を商品名と見なす
-            item_name = lines[i-1].strip()
-            
-            # 商品名が空、または明らかに商品名でないものを除外
-            if not item_name or item_name.startswith('¥') or len(item_name) > 50:
-                continue
+        # 数量行のチェック (itemsに追加された後)
+        if items and i < len(item_lines):
+            qty_line = item_lines[i]
+            qty_match = quantity_pattern.search(qty_line)
+            if qty_match:
+                quantity = int(qty_match.group(1))
+                items[-1]['quantity'] = quantity
+                i += 1 # 数量行を消費
 
-            try:
-                price = int(price_match.group(1).replace(',', ''))
-                item = {"name": item_name, "quantity": 1, "price": price}
-                items.append(item)
-            except (ValueError, IndexError):
-                continue
-
-        # 数量行のパターンにマッチするか確認
-        quantity_match = quantity_pattern.search(line)
-        if quantity_match and items:
-            # 直前の商品の数量を更新
-            items[-1]['quantity'] = int(quantity_match.group(1))
-
-    # 抽出した合計点数があれば、それを優先する
-    final_total_quantity = total_quantity_from_receipt if total_quantity_from_receipt > 0 else sum(item.get('quantity', 0) for item in items)
+    final_total_quantity = total_quantity_from_receipt if total_quantity_from_receipt > 0 else sum(
+        item.get('quantity', 1) for item in items)
 
     return {
         "store_name": store_name,
         "transaction_time": transaction_time,
         "items": items,
-        "total_quantity": final_total_quantity
+        "total_quantity": final_total_quantity,
+        "total_amount": total_amount_from_receipt
     }
 
 
@@ -260,13 +314,16 @@ def scan(request):
                 print("[INFO] Analysis complete. Processing results...")
 
                 if results and hasattr(results, 'paragraphs') and results.paragraphs:
-                    ocr_text = "".join(paragraph.contents + "\n" for paragraph in results.paragraphs)
+                    ocr_text = "".join(paragraph.contents +
+                                       "\n" for paragraph in results.paragraphs)
                     print("[INFO] Successfully extracted text from OCR results.")
                 else:
                     ocr_text = "テキストが検出されませんでした。"
-                    print("[WARN] No text detected or paragraphs attribute is missing/empty in the result.")
+                    print(
+                        "[WARN] No text detected or paragraphs attribute is missing/empty in the result.")
                     if results:
-                        print(f"[DEBUG] Raw result object type: {type(results)}")
+                        print(
+                            f"[DEBUG] Raw result object type: {type(results)}")
                         # Note: Printing the full result might be too verbose.
                         # Check attributes available in the result object.
                         print(f"[DEBUG] Result attributes: {dir(results)}")
@@ -275,7 +332,8 @@ def scan(request):
             except Exception as e:
                 # エラーログをより詳細に出力
                 import traceback
-                print(f"[ERROR] An exception occurred during local OCR processing: {e}")
+                print(
+                    f"[ERROR] An exception occurred during local OCR processing: {e}")
                 print(f"[ERROR] Traceback: {traceback.format_exc()}")
                 return JsonResponse({'success': False, 'error': f"ローカルOCR処理中にエラーが発生しました: {e}"})
 
@@ -291,14 +349,13 @@ def scan(request):
             # (以下、既存のパース・保存ロジック)
             parsed_data = parse_receipt_data(ocr_text)
             store = None
-            if parsed_data['store_name']:
-                try:
-                    store_name_to_find = parsed_data['store_name'].strip()
-                    store = Store.objects.filter(
-                        store_name__icontains=store_name_to_find).first()
-                except Exception:
-                    pass
-
+            if parsed_data['store_name'] and parsed_data['store_name'] != "不明":
+                store_name_to_find = parsed_data['store_name'].strip()
+                # get_or_create を使用して、店舗が存在しない場合は作成する
+                store, created = Store.objects.get_or_create(
+                    store_name=store_name_to_find,
+                    defaults={'category': 'other', 'address': '不明'} # 新規作成時のデフォルト値
+                )
             # 重複チェック
             if store and parsed_data['transaction_time']:
                 existing_receipt = Receipt.objects.filter(
@@ -312,6 +369,11 @@ def scan(request):
 
             try:
                 with transaction.atomic():
+                    # parsed_dataからdatetimeオブジェクトを削除または文字列に変換
+                    data_to_save = parsed_data.copy()
+                    if 'transaction_time' in data_to_save:
+                        del data_to_save['transaction_time']
+
                     # まずレシート本体を作成
                     receipt = Receipt.objects.create(
                         user=request.user,
@@ -319,8 +381,14 @@ def scan(request):
                         ocr_text=ocr_text,
                         store=store,
                         transaction_time=parsed_data['transaction_time'],
-                        parsed_data=parsed_data['items']  # 冗長データとしてまだ保存
+                        parsed_data=data_to_save  # datetimeを除いた辞書を保存
                     )
+
+                    # エコ商品のリストを事前に取得
+                    eco_products = list(EcoProduct.objects.all())
+                    total_eco_points_to_add = 0
+                    # 同じ商品での重複加算を防ぐ
+                    processed_products = set()
 
                     # パースされたアイテムをReceiptItemモデルに保存
                     if parsed_data['items']:
@@ -337,8 +405,26 @@ def scan(request):
                                 product=product,
                                 # quantityがない場合のデフォルト値
                                 quantity=item_data.get('quantity', 1),
-                                price=item_data.get('price', 0)  # priceがない場合のデフォルト値
+                                # priceがない場合のデフォルト値
+                                price=item_data.get('price', 0)
                             )
+
+                            # ポイント加算ロジック
+                            # まだこの商品でポイント加算していなければ処理
+                            if product.id not in processed_products:
+                                for eco_product in eco_products:
+                                    # 商品名にエコ商品のキーワードが含まれているかチェック
+                                    if eco_product.name in product.name:
+                                        total_eco_points_to_add += eco_product.points
+                                        processed_products.add(product.id)
+                                        # 1つの商品が複数のエコ商品にマッチしても、最初の1つで抜ける
+                                        break
+
+                    # 合計ポイントを加算してユーザー情報を更新
+                    if total_eco_points_to_add > 0:
+                        user = request.user
+                        user.current_points += total_eco_points_to_add
+                        user.save()
 
             except Exception as e:
                 # トランザクション内でエラーが起きた場合
@@ -358,7 +444,8 @@ def scan(request):
 @login_required
 def ai_report(request):
     user_receipts = Receipt.objects.filter(user=request.user)
-    total_items_purchased = sum(receipt.total_quantity for receipt in user_receipts)
+    total_items_purchased = sum(
+        receipt.total_quantity for receipt in user_receipts)
     total_ec_points = sum(receipt.ec_points for receipt in user_receipts)
     context = {
         'total_items_purchased': total_items_purchased,
@@ -531,7 +618,8 @@ def grant_coupon_admin(request):
             user = form.cleaned_data['user']
             coupon = form.cleaned_data['coupon']
             user.current_coupons.add(coupon)
-            messages.success(request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
+            messages.success(
+                request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
             return redirect('core:grant_coupon_admin')
     else:
         form = GrantCouponForm()
@@ -649,3 +737,34 @@ def store_delete_user(request, user_id):
         messages.success(request, '店舗アカウントが正常に削除されました。')
         return redirect('core:store_edit', store_id=store_id)
     return redirect('core:store_edit', store_id=store_id)
+
+
+# EcoProduct管理ビュー
+@method_decorator(staff_member_required, name='dispatch')
+class EcoProductListView(ListView):
+    model = EcoProduct
+    template_name = 'admin/ecoproduct_list.html'
+    context_object_name = 'ecoproducts'
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class EcoProductCreateView(CreateView):
+    model = EcoProduct
+    form_class = EcoProductForm
+    template_name = 'admin/ecoproduct_form.html'
+    success_url = reverse_lazy('core:ecoproduct_list')
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class EcoProductUpdateView(UpdateView):
+    model = EcoProduct
+    form_class = EcoProductForm
+    template_name = 'admin/ecoproduct_form.html'
+    success_url = reverse_lazy('core:ecoproduct_list')
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class EcoProductDeleteView(DeleteView):
+    model = EcoProduct
+    template_name = 'admin/ecoproduct_confirm_delete.html'
+    success_url = reverse_lazy('core:ecoproduct_list')

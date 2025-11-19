@@ -42,4 +42,9 @@ urlpatterns = [
     path("staff/stores/<int:store_id>/add_user/", views.store_add_user, name="store_add_user"),
     path("staff/users/<int:user_id>/delete/", views.store_delete_user, name="store_delete_user"),
 
+    # EcoProduct管理URL
+    path("staff/ecoproducts/", views.EcoProductListView.as_view(), name="ecoproduct_list"),
+    path("staff/ecoproducts/create/", views.EcoProductCreateView.as_view(), name="ecoproduct_create"),
+    path("staff/ecoproducts/<int:pk>/edit/", views.EcoProductUpdateView.as_view(), name="ecoproduct_update"),
+    path("staff/ecoproducts/<int:pk>/delete/", views.EcoProductDeleteView.as_view(), name="ecoproduct_delete"),
 ]
