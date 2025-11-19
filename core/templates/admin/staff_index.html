@@ -29,6 +29,12 @@
                         <li class="list-group-item">
                             <a href="{% url 'core:coupon_list_admin' %}">クーポン管理</a>
                         </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'core:grant_coupon_admin' %}">クーポン付与</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
+                        </li>
                         {% endif %}
                         {% if user.role == 'store' %}
                         <li class="list-group-item">
@@ -36,6 +42,9 @@
                         </li>
                         <li class="list-group-item">
                             <a href="{% url 'core:store_help' %}">ヘルプFAQ</a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
                         </li>
                         {% endif %}
                         <!-- 今後、店舗向けの機能などをここに追加できます -->

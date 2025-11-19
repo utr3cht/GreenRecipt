@@ -1,6 +1,6 @@
 from .models import Receipt, Inquiry, Store
 from django import forms
-from .models import Receipt, Inquiry, Store, Announcement, Coupon
+from .models import Receipt, Inquiry, Store, Announcement, Coupon, EcoProduct
 from accounts.models import CustomUser
 
 
@@ -74,3 +74,9 @@ class AnnouncementForm(forms.ModelForm):
         # On create form, there is no instance, so hide the delete checkbox
         if not self.instance or not self.instance.pk:
             del self.fields['delete_file']
+
+
+class EcoProductForm(forms.ModelForm):
+    class Meta:
+        model = EcoProduct
+        fields = ['name', 'jan_code', 'points']

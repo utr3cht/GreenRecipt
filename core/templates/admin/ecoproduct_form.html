@@ -1,0 +1,15 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}エコ商品{% if form.instance.pk %}編集{% else %}作成{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>エコ商品{% if form.instance.pk %}編集{% else %}作成{% endif %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">保存</button>
+        <a href="{% url 'core:ecoproduct_list' %}" class="btn btn-secondary">キャンセル</a>
+    </form>
+</div>
+{% endblock %}

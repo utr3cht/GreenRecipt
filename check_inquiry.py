@@ -1,4 +1,10 @@
 
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "GreenRecipt.settings")
+django.setup()
+
 from core.models import Inquiry
 
 # 画像ファイル名が空文字列やNULLでないものを探す

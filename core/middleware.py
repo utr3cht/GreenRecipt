@@ -11,7 +11,7 @@ class AdminAccessMiddleware:
             # If the user is authenticated
             if request.user.is_authenticated:
                 # And their role is not admin or system
-                if request.user.role not in ['admin', 'system']:
+                if not request.user.is_superuser and request.user.role not in ['admin', 'system']:
                     # Redirect them to the index page.
                     return redirect('core:index')
         
