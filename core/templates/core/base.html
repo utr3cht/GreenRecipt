@@ -68,27 +68,26 @@
       <main>
         {% block content %}{% endblock %}
       </main>
-
-      <footer>
-        <nav class="bottom-nav">
-          <a href="/menu/" class="nav-item">
-            <img src="{% static 'img/home.png' %}" alt="ホーム"><span>ホーム</span>
-          </a>
-          <a href="{% url 'core:receipt_history' %}" class="nav-item">
-            <img src="{% static 'img/result.png' %}" alt="読み取り履歴"><span>読み取り履歴</span>
-          </a>
-          <a href="/receipts/" class="nav-item">
-            <img src="{% static 'img/scan.png' %}" alt="スキャン"><span>スキャン</span>
-          </a>
-          <a href="/reports/" class="nav-item">
-            <img src="{% static 'img/report.png' %}" alt="AIレポート"><span>AIレポート</span>
-          </a>
-          <a href="/inquiries/" class="nav-item">
-            <img src="{% static 'img/mail.png' %}" alt="お問い合わせ"><span>お問い合わせ</span>
-          </a>
-        </nav>
-      </footer>
     </div>
+    <footer>
+      <nav class="bottom-nav">
+        <a href="/menu/" class="nav-item">
+          <img src="{% static 'img/home.png' %}" alt="ホーム"><span>ホーム</span>
+        </a>
+        <a href="{% url 'core:receipt_history' %}" class="nav-item">
+          <img src="{% static 'img/result.png' %}" alt="読み取り履歴"><span>読み取り履歴</span>
+        </a>
+        <a href="/receipts/" class="nav-item">
+          <img src="{% static 'img/scan.png' %}" alt="スキャン"><span>スキャン</span>
+        </a>
+        <a href="/reports/" class="nav-item">
+          <img src="{% static 'img/report.png' %}" alt="AIレポート"><span>AIレポート</span>
+        </a>
+        <a href="/inquiries/" class="nav-item">
+          <img src="{% static 'img/mail.png' %}" alt="お問い合わせ"><span>お問い合わせ</span>
+        </a>
+      </nav>
+    </footer>
     <script>
       function toggleMenu() {
         var menu = document.getElementById("menu-items");

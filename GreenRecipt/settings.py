@@ -144,7 +144,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Email settings
 # Set to True to send real emails, False to output to console
-SEND_EMAIL = False
+SEND_EMAIL = True
 
 if SEND_EMAIL:
     # Gmail SMTP settings for sending real emails

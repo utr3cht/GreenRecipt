@@ -11,7 +11,7 @@
   --shadow-strong: 0 22px 60px rgba(9, 109, 217, 0.18);
   --text: #0f172a;
   --muted: #475569;
-  --accent: #0ea5e9;
+  --accent: #79ca69;
   --accent-2: #0f766e;
   --success: #22c55e;
   --danger: #ef4444;
@@ -36,7 +36,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============= Animations (navœŠO‚Åg—p) ============= */
+/* ============= Animations (navï¿½ï¿½ï¿½Oï¿½Ågï¿½p) ============= */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideLeft { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
@@ -88,7 +88,7 @@ header { padding: 12px 16px; animation: slideLeft 0.6s ease-out; }
   .user-info.desktop-only { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 }
 
-/* ============= ƒnƒ“ƒo[ƒK[ƒƒjƒ…[ ============= */
+/* ============= ï¿½nï¿½ï¿½ï¿½oï¿½[ï¿½Kï¿½[ï¿½ï¿½ï¿½jï¿½ï¿½ï¿½[ ============= */
 .hamburger-menu.mobile-only { display: block; position: relative; }
 @media (min-width: 768px) { .hamburger-menu.mobile-only { display: none; } }
 .hamburger-icon {
@@ -250,7 +250,7 @@ button { padding: 11px 42px; }
 }
 .btn-sm { padding: 6px 12px; font-size: 0.84em; width: auto; box-shadow: 0 8px 18px rgba(14, 165, 233, 0.2); }
 
-/* ============= ‰º•”ƒiƒriƒŒƒCƒAƒEƒg‚ÍˆÛj ============= */
+/* ============= ï¿½ï¿½ï¿½ï¿½ï¿½iï¿½rï¿½iï¿½ï¿½ï¿½Cï¿½Aï¿½Eï¿½gï¿½ÍˆÛï¿½ï¿½j ============= */
 :root { --nav-h: 100px; }
 footer { margin-top: auto; }
 .bottom-nav {
@@ -340,7 +340,7 @@ form .actions { text-align: center; margin-top: 22px; display: flex; gap: 10px; 
 form .actions button { flex: 1; min-width: 120px; margin: 0; }
 main p { font-size: 15px; color: var(--muted); font-weight: 500; }
 
-/* ============= ƒpƒXƒ[ƒh‰Â‹‰» ============= */
+/* ============= ï¿½pï¿½Xï¿½ï¿½ï¿½[ï¿½hï¿½Âï¿½ï¿½ï¿½ ============= */
 .password-container { position: relative; }
 .password-container input { padding-right: 72px; }
 .toggle-password {
@@ -356,7 +356,7 @@ main p { font-size: 15px; color: var(--muted); font-weight: 500; }
   cursor: pointer;
 }
 
-/* ============= ƒ‚ƒoƒCƒ‹ ============= */
+/* ============= ï¿½ï¿½ï¿½oï¿½Cï¿½ï¿½ ============= */
 @media (max-width: 767px) {
   .container { max-width: none; border-radius: 0; box-shadow: none; background: transparent; }
   .actions button, .btn { width: 100%; }
@@ -388,7 +388,7 @@ header .logo { width: 190px; height: auto; }
 .hamburger-icon { flex: 0 0 auto; width: 44px; height: 44px; }
 @media (min-width: 768px) { .user-info.desktop-only .welcome { text-overflow: ellipsis; white-space: nowrap; max-width: 28ch; } }
 
-/* ============= Dashboard / –â‚¢‡‚í‚¹ˆê—— ============= */
+/* ============= Dashboard / ï¿½â‚¢ï¿½ï¿½ï¿½í‚¹ï¿½ê—— ============= */
 main.dashboard-main { justify-content: flex-start; align-items: stretch; padding: 44px 0 90px 0; }
 .dashboard-container {
   width: 100%;
@@ -436,7 +436,7 @@ main.dashboard-main { justify-content: flex-start; align-items: stretch; padding
   .dashboard-container th, .dashboard-container td { font-size: 0.85rem; padding: 9px; }
 }
 
-/* ============= –â‚¢‡‚í‚¹Ú× ============= */
+/* ============= ï¿½â‚¢ï¿½ï¿½ï¿½í‚¹ï¿½Úï¿½ ============= */
 main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 44px 0 90px 0; text-align: left; }
 .inquiry-detail { width: 100%; max-width: none; margin: 0; border-radius: 0; box-shadow: none; background: var(--panel-strong); padding: 44px 60px; border-top: 1px solid #dce6f5; border-bottom: 1px solid #dce6f5; }
 .inquiry-detail h1 { font-size: 1.65rem; font-weight: 700; color: var(--accent-2); margin-bottom: 25px; text-align: left; }

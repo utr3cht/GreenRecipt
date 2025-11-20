@@ -1,81 +1,83 @@
-{% extends "admin/admin_base.html" %}
+{% extends 'admin/admin_base.html' %}
 {% load static %}
 
-{% block title %}スタッフ専用ページ | GreenRecipt{% endblock %}
+{% block title %}
+  スタッフ専用ページ | GreenRecipt
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h1>メインメニュー</h1>
-                </div>
-                <div class="card-body">
-                    <p>ここは管理者および店舗スタッフ専用のページです。</p>
-                    <hr>
-                    <p>以下の機能にアクセスできます。</p>
-                    <ul class="list-group list-group-flush">
-                        {% if user.role == 'admin' or user.is_superuser %}
-                        <li class="list-group-item">
-                            <a href="/store/list/">加盟店舗一覧</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:admin_inquiry_dashboard' %}">お問い合わせ一覧</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:announcement_list' %}">お知らせ編集</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:coupon_list_admin' %}">クーポン管理</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:grant_coupon_admin' %}">クーポン付与</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
-                        </li>
-                        {% endif %}
-                        {% if user.role == 'store' %}
-                        <li class="list-group-item">
-                            <a href="{% url 'core:staff_inquiry' %}">お問い合わせ</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:store_help' %}">ヘルプFAQ</a>
-                        </li>
-                        <li class="list-group-item">
-                            <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
-                        </li>
-                        {% endif %}
-                        <!-- 今後、店舗向けの機能などをここに追加できます -->
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
+  <div class="container mt-5">
     <div class="row mt-4">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header">
-                    <h2>お知らせ一覧</h2>
-                </div>
-                <div class="card-body">
-                    {% if announcements %}
-                        <ul class="list-group list-group-flush">
-                            {% for announcement in announcements %}
-                                <li class="list-group-item">
-                                    <a href="{% url 'core:announcement_detail' announcement.id %}">{{ announcement.title }}</a>
-                                    <small class="text-muted d-block">{{ announcement.created_at|date:"Y/m/d" }}</small>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>現在、お知らせはありません。</p>
-                    {% endif %}
-                </div>
-            </div>
+      <div class="col-md-8 offset-md-2">
+        <div class="card">
+          <div class="card-header">
+            <h2>お知らせ一覧</h2>
+          </div>
+          <div class="card-body">
+            {% if announcements %}
+              <ul class="list-group list-group-flush">
+                {% for announcement in announcements %}
+                  <li class="list-group-item">
+                    <a href="{% url 'core:announcement_detail' announcement.id %}">{{ announcement.title }}</a>
+                    <small class="text-muted d-block">{{ announcement.created_at|date:'Y/m/d' }}</small>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p>現在、お知らせはありません。</p>
+            {% endif %}
+          </div>
         </div>
+      </div>
     </div>
-</div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header">
+          <h1>メインメニュー</h1>
+        </div>
+        <div class="card-body">
+          <p>ここは管理者および店舗スタッフ専用のページです。</p>
+          <hr />
+          <p>以下の機能にアクセスできます。</p>
+          <ul class="list-group list-group-flush">
+            {% if user.role == 'admin' or user.is_superuser %}
+              <li class="list-group-item">
+                <a href="/store/list/">加盟店舗一覧</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:admin_inquiry_dashboard' %}">お問い合わせ一覧</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:announcement_list' %}">お知らせ編集</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:coupon_list_admin' %}">クーポン管理</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:grant_coupon_admin' %}">クーポン付与</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
+              </li>
+            {% endif %}
+            {% if user.role == 'store' %}
+              <li class="list-group-item">
+                <a href="{% url 'core:staff_inquiry' %}">お問い合わせ</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:store_help' %}">ヘルプFAQ</a>
+              </li>
+              <li class="list-group-item">
+                <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
+              </li>
+            {% endif %}
+            <!-- 今後、店舗向けの機能などをここに追加できます -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}

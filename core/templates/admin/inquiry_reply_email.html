@@ -2,28 +2,29 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ subject }}</title>
 </head>
-<body style="font-family: sans-serif; color: #333;">
+<body style="margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f3f9ff; font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;">
 
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-        <h2 style="color: #0056b3;">お問い合わせへのご返信</h2>
-        <p>
+    <div style="max-width: 600px; margin: 40px auto; padding: 30px; background-color: #ffffff; border: 1px solid #dce6f5; border-radius: 18px; box-shadow: 0 14px 48px rgba(9, 109, 217, 0.12);">
+        <h2 style="color: #0f766e; font-size: 24px; margin-top: 0;">お問い合わせへのご返信</h2>
+        <p style="color: #0f172a; font-size: 16px; line-height: 1.6;">
             {{ user.username }}様
         </p>
-        <p>
+        <p style="color: #0f172a; font-size: 16px; line-height: 1.6;">
             GreenReciptへのお問い合わせ、誠にありがとうございます。<br>
             お問い合わせいただいた件につきまして、以下の通りご返信申し上げます。
         </p>
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-            <h3 style="margin-top: 0; color: #333;">件名: {{ subject }}</h3>
-            <p style="white-space: pre-wrap;">{{ message }}</p>
+        <div style="background-color: #f3f9ff; padding: 25px; border: 1px solid #dce6f5; border-radius: 12px; margin: 25px 0;">
+            <h3 style="margin-top: 0; color: #0f766e; font-size: 18px;">件名: {{ subject }}</h3>
+            <p style="white-space: pre-wrap; color: #0f172a; font-size: 16px; line-height: 1.7;">{{ message }}</p>
         </div>
-        <p>
+        <p style="color: #475569; font-size: 16px; line-height: 1.6;">
             また何かご不明な点がございましたら、お気軽にお問い合わせください。
         </p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 0.9em; color: #777;">
+        <hr style="border: none; border-top: 1px solid #dce6f5; margin: 30px 0;">
+        <p style="font-size: 14px; color: #777;">
             このメールは自動送信されています。返信はご遠慮ください。<br>
             GreenRecipt カスタマーサポート
         </p>
