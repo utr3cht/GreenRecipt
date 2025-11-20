@@ -6,6 +6,7 @@
 <div class="container mt-4">
     <h2>エコ商品一覧</h2>
     <a href="{% url 'core:ecoproduct_create' %}" class="btn btn-success mb-3">新しいエコ商品を追加</a>
+    <a href="{% url 'core:staff_index' %}" class="btn btn-secondary mb-3 ms-2">戻る</a>
 
     {% if ecoproducts %}
     <table class="table table-striped">

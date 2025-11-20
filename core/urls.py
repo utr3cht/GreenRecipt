@@ -8,6 +8,7 @@ urlpatterns = [
     path("staff/index",views.staff_index,name="staff_index"),
     path("menu/", views.main_menu, name="main_menu"),
     path("coupons/", views.coupon_list, name="coupon_list"),
+    path('coupons/use/<int:coupon_id>/', views.use_coupon, name='use_coupon'),
     path("map/", views.store_map, name="store_map"),
     path('history/', views.receipt_history, name='receipt_history'),
     path('receipt/<int:receipt_id>/', views.receipt_detail, name='receipt_detail'),

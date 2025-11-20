@@ -179,11 +179,24 @@ class Coupon(models.Model):
     ]
     title = models.CharField(max_length=64, verbose_name='タイトル')
     description = models.CharField(max_length=64, verbose_name='詳細')
+    requirement = models.CharField(max_length=255, blank=True, verbose_name='利用条件')
     type = models.CharField(max_length=64, verbose_name='タイプ', choices=TYPE_CHOICES)
     discount_value = models.DecimalField(
         max_digits=12, decimal_places=2, verbose_name='割引量')
     available_stores = models.ManyToManyField(
         Store, verbose_name='利用可能店舗', blank=True)
+
+    @property
+    def discount_amount(self):
+        if self.type == 'absolute':
+            return int(self.discount_value)
+        return None
+
+    @property
+    def discount_rate(self):
+        if self.type == 'percentage':
+            return int(self.discount_value)
+        return None
 
     def __str__(self):
         return self.title

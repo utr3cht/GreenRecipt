@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -141,7 +142,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email settings
+# Set to True to send real emails, False to output to console
+SEND_EMAIL = False
+
+if SEND_EMAIL:
+    # Gmail SMTP settings for sending real emails
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_HOST_USER = 'utm247700d@gmail.com'  # Replace with your Gmail address
+    # Replace with your generated App Password
+    EMAIL_HOST_PASSWORD = 'iwrw fvwv yeej sukc'
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = 'utm247700d@gmail.com'  # Replace with your Gmail address
+else:
+    # Console backend for development
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 LOGIN_URL = '/'
 

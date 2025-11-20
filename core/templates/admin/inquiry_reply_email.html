@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ subject }}</title>
+</head>
+<body style="font-family: sans-serif; color: #333;">
+
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #0056b3;">お問い合わせへのご返信</h2>
+        <p>
+            {{ user.username }}様
+        </p>
+        <p>
+            GreenReciptへのお問い合わせ、誠にありがとうございます。<br>
+            お問い合わせいただいた件につきまして、以下の通りご返信申し上げます。
+        </p>
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">件名: {{ subject }}</h3>
+            <p style="white-space: pre-wrap;">{{ message }}</p>
+        </div>
+        <p>
+            また何かご不明な点がございましたら、お気軽にお問い合わせください。
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 0.9em; color: #777;">
+            このメールは自動送信されています。返信はご遠慮ください。<br>
+            GreenRecipt カスタマーサポート
+        </p>
+    </div>
+
+</body>
+</html>

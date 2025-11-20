@@ -5,21 +5,101 @@
 {% endblock %}
 
 {% block content %}
-  <main class="dashboard-main">
-    <div class="dashboard-container">
-      <h1>新規クーポン作成</h1>
-      
-      <div class="card mb-4">
-        <div class="card-body">
-          <form method="post" action="." enctype="multipart/form-data" onsubmit="return confirm('この内容でクーポンを作成してもよろしいですか？');">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">作成する</button>
-          </form>
-        </div>
-      </div>
+<style>
+  .form-field-group {
+    margin-bottom: 1rem;
+  }
+  .form-field-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  .form-field-group input[type="text"],
+  .form-field-group input[type="number"],
+  .form-field-group textarea,
+  .form-field-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .form-field-group ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  .store-selection-buttons {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  .store-selection-buttons .btn {
+    margin-right: 10px;
+  }
+</style>
 
-      <a href="{% url 'core:coupon_list_admin' %}" class="btn btn-secondary mt-3">一覧に戻る</a>
+<main class="dashboard-main">
+  <div class="dashboard-container">
+    <h1>新規クーポン作成</h1>
+    
+    <div class="card mb-4">
+      <div class="card-body">
+        <form method="post" action="." enctype="multipart/form-data" onsubmit="return confirm('この内容でクーポンを作成してもよろしいですか？');">
+          {% csrf_token %}
+
+          {% for field in form %}
+            <div class="form-field-group">
+              {{ field.label_tag }}
+              
+              {% if field.name == 'available_stores' %}
+                <div class="store-selection-buttons">
+                  <button type="button" id="selectAllStores" class="btn btn-sm btn-info">全店舗を選択</button>
+                  <button type="button" id="deselectAllStores" class="btn btn-sm btn-secondary">選択を解除</button>
+                </div>
+              {% endif %}
+
+              {{ field }}
+
+              {% if field.errors %}
+                <div class="alert alert-danger mt-1">
+                  {{ field.errors }}
+                </div>
+              {% endif %}
+
+              {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text }}</small>
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          <button type="submit" class="btn btn-primary">作成する</button>
+        </form>
+      </div>
     </div>
-  </main>
+
+    <a href="{% url 'core:coupon_list_admin' %}" class="btn btn-secondary mt-3">一覧に戻る</a>
+  </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const selectAllBtn = document.getElementById('selectAllStores');
+  const deselectAllBtn = document.getElementById('deselectAllStores');
+  const storeCheckboxes = document.querySelectorAll('input[name="available_stores"]');
+
+  if(selectAllBtn) {
+    selectAllBtn.addEventListener('click', () => {
+      storeCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+      });
+    });
+  }
+
+  if(deselectAllBtn) {
+    deselectAllBtn.addEventListener('click', () => {
+      storeCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+      });
+    });
+  }
+});
+</script>
 {% endblock %}
