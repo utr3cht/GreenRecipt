@@ -6,8 +6,7 @@ class Command(BaseCommand):
     help = 'Finds and reports duplicate email addresses in the CustomUser model.'
 
     def handle(self, *args, **options):
-        User = get_user_model()
-
+        User = get_user_model
         # Find duplicate emails
         duplicates = User.objects.values('email') \
             .annotate(email_count=Count('email')) \
