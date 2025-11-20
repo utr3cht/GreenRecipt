@@ -459,12 +459,27 @@ def ai_report(request):
     user_receipts = Receipt.objects.filter(user=request.user)
     total_items_purchased = sum(
         receipt.total_quantity for receipt in user_receipts)
+    
+    # Eco-friendly product calculation
+    eco_product_names = list(EcoProduct.objects.values_list('name', flat=True))
+    total_eco_items = 0
+    if eco_product_names:
+        # Get all receipt items for the user
+        user_receipt_items = ReceiptItem.objects.filter(receipt__user=request.user)
+        for item in user_receipt_items:
+            # Check if any eco-product keyword is in the item name
+            if any(eco_name in item.product.name for eco_name in eco_product_names):
+                total_eco_items += item.quantity
+
     total_ec_points = sum(receipt.ec_points for receipt in user_receipts)
+
     context = {
         'total_items_purchased': total_items_purchased,
         'total_ec_points': total_ec_points,
+        'total_eco_items': total_eco_items,
     }
-    return render(request, "core/ai_report.html", context)
+    # return render(request, "core/ai_report.html", context)
+    return render(request, "core/notai_report.html", context)
 
 # --- 問い合わせ関連ビュー ---
 
