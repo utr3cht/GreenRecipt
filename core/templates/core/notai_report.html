@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h1>分析レポート</h1>
+
+<div class="report-section">
+    <h2>購入数</h2>
+    <p>これまでに購入した商品の合計点数は <strong>{{ total_items_purchased }}</strong> 点です。</p>
+    <p>獲得した合計ECポイントは <strong>{{ total_ec_points }}</strong> ptです。</p>
+</div>
+
+<div class="report-section">
+    <h2>エコ商品レポート</h2>
+    <p>これまでに購入したエコ商品の合計点数は <strong>{{ total_eco_items }}</strong> 点です。</p>
+    
+    {% if total_eco_items >= 5 %}
+        <p style="color: green; font-weight: bold;">素晴らしいです！この調子でエコ活動を続けましょう！</p>
+    {% else %}
+        <p style="color: #c65300; font-weight: bold;">もう少しです！エコ商品を意識して買い物をしてみませんか？</p>
+    {% endif %}
+</div>
+
+<style>
+.report-section {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+.report-section h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+.report-section p {
+    font-size: 1.1em;
+    color: #555;
+}
+.report-section strong {
+    color: #007bff;
+}
+</style>
+{% endblock %}
