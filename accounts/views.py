@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 import uuid
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -62,16 +62,27 @@ class RegisterConfirmView(TemplateView):
 
             current_site = get_current_site(self.request)
             mail_subject = 'GreenRecipt: アカウントを有効にしてください'
-            message = render_to_string('accounts/account_verification_email.html', {
+            context = {
                 'user': user,
                 'domain': current_site.domain,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                 'token': user.verification_token,
-            })
+            }
+            
+            # Render plain text and HTML content
+            text_content = render_to_string('accounts/account_verification_email.txt', context)
+            html_content = render_to_string('accounts/account_verification_email.html', context)
+            
             to_email = form.cleaned_data.get('email')
-            email = EmailMessage(
-                mail_subject, message, to=[to_email]
+            
+            # Create the email message
+            email = EmailMultiAlternatives(
+                mail_subject,
+                text_content,
+                to=[to_email]
             )
+            # Attach the HTML version
+            email.attach_alternative(html_content, "text/html")
             email.send()
 
             del request.session['form_data']
@@ -111,12 +122,24 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
             # 確認メールを送信
             current_site = get_current_site(self.request)
             mail_subject = 'GreenRecipt: メールアドレスの変更を認証してください'
-            message = render_to_string('accounts/email_change_verification_email.html', {
+            context = {
                 'user': user_instance,
                 'domain': current_site.domain,
                 'token': user_instance.email_change_token,
-            })
-            email = EmailMessage(mail_subject, message, to=[user_instance.new_email])
+            }
+
+            # Render plain text and HTML content
+            text_content = render_to_string('accounts/email_change_verification_email.txt', context)
+            html_content = render_to_string('accounts/email_change_verification_email.html', context)
+
+            # Create the email message
+            email = EmailMultiAlternatives(
+                mail_subject,
+                text_content,
+                to=[user_instance.new_email]
+            )
+            # Attach the HTML version
+            email.attach_alternative(html_content, "text/html")
             email.send()
 
             messages.success(self.request, '新しいメールアドレスに確認メールを送信しました。メールをご確認の上、変更を完了してください。')

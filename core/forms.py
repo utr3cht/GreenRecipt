@@ -31,7 +31,7 @@ class StoreForm(forms.ModelForm):
 class CouponForm(forms.ModelForm):
     class Meta:
         model = Coupon
-        fields = ['title', 'description', 'type', 'discount_value', 'available_stores']
+        fields = ['title', 'description', 'requirement', 'type', 'discount_value', 'available_stores']
         widgets = {
             'available_stores': forms.CheckboxSelectMultiple,
         }

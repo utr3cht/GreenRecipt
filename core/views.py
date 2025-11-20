@@ -5,12 +5,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core import serializers
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
 from django.http import JsonResponse
 from django.urls import reverse, reverse_lazy
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.utils.decorators import method_decorator
 from yomitoku.document_analyzer import DocumentAnalyzer
@@ -89,8 +91,19 @@ def main_menu(request):
 
 @login_required
 def coupon_list(request):
-    coupons = Coupon.objects.all()
+    coupons = request.user.current_coupons.all()
     return render(request, "core/coupon_list.html", {'coupons': coupons})
+
+
+@login_required
+@require_POST
+def use_coupon(request, coupon_id):
+    try:
+        coupon_to_use = request.user.current_coupons.get(pk=coupon_id)
+        request.user.current_coupons.remove(coupon_to_use)
+        return JsonResponse({'success': True})
+    except Coupon.DoesNotExist:
+        return JsonResponse({'success': False, 'error': '指定されたクーポンが見つかりません。'}, status=404)
 
 
 @login_required
@@ -617,9 +630,13 @@ def grant_coupon_admin(request):
         if form.is_valid():
             user = form.cleaned_data['user']
             coupon = form.cleaned_data['coupon']
-            user.current_coupons.add(coupon)
-            messages.success(
-                request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
+            if user.current_coupons.filter(pk=coupon.pk).exists():
+                messages.warning(
+                    request, f'ユーザー「{user.username}」は既にクーポン「{coupon.title}」を所持しています。')
+            else:
+                user.current_coupons.add(coupon)
+                messages.success(
+                    request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
             return redirect('core:grant_coupon_admin')
     else:
         form = GrantCouponForm()
@@ -646,8 +663,27 @@ def inquiry_detail(request, inquiry_id):
         if form.is_valid():
             subject = form.cleaned_data['subject']
             message = form.cleaned_data['message']
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
-                      [inquiry.reply_to_email])
+            
+            context = {
+                'user': inquiry.user if inquiry.user else {'username': 'ゲスト'},
+                'subject': subject,
+                'message': message,
+            }
+
+            # Render plain text and HTML content
+            text_content = render_to_string('admin/inquiry_reply_email.txt', context)
+            html_content = render_to_string('admin/inquiry_reply_email.html', context)
+
+            # Create and send the email
+            email = EmailMultiAlternatives(
+                subject,
+                text_content,
+                settings.DEFAULT_FROM_EMAIL,
+                [inquiry.reply_to_email]
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+
             inquiry.is_replied = True
             inquiry.reply_message = message
             inquiry.save()

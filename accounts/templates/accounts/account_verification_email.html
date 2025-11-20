@@ -1,12 +1,32 @@
-{% autoescape off %}
-こんにちは {{ user.username }}様、
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>アカウントの有効化</title>
+</head>
+<body style="font-family: sans-serif; color: #333;">
 
-GreenReciptにご登録いただきありがとうございます。
-アカウントを有効にするには、以下のリンクをクリックしてください。
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #0056b3;">GreenReciptへようこそ！</h2>
+        <p>
+            ご登録いただきありがとうございます。
+        </p>
+        <p>
+            アカウントを有効にするには、下のボタンをクリックしてください。
+        </p>
+        <p style="text-align: center; margin: 30px 0;">
+            <a href="{{ protocol }}://{{ domain }}{% url 'accounts:activate' uidb64=uid token=token %}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                アカウントを有効にする
+            </a>
+        </p>
+        <p>
+            もしこのメールに心当たりがない場合は、無視してください。
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 0.9em; color: #777;">
+            このメールは自動送信されています。返信はご遠慮ください。
+        </p>
+    </div>
 
-http://{{ domain }}{% url 'accounts:activate' uidb64=uid token=token %}
-
-このメールに心当たりがない場合は、このメールを無視してください。
-
-GreenReciptチームより
-{% endautoescape %}
+</body>
+</html>
