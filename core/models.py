@@ -78,6 +78,7 @@ class Receipt(models.Model):
     ocr_text = models.TextField(blank=True, verbose_name='文字起こし内容')
     image_url = models.URLField(max_length=191, verbose_name='画像URL')
     parsed_data = models.JSONField(null=True, blank=True, verbose_name='解析済みデータ')
+    points_earned = models.IntegerField(default=0, verbose_name='獲得ポイント')
 
     def __str__(self):
         return f"Receipt {self.id} - {self.scanned_at}"
@@ -112,11 +113,10 @@ class Receipt(models.Model):
     @property
     def ec_points(self):
         """
-        ocr_text内の"EC"の出現回数に基づいてポイントを計算する。
+        獲得ポイントを返す。
+        後方互換性のためにプロパティ名を維持するが、実態はpoints_earnedを返す。
         """
-        if self.ocr_text:
-            return self.ocr_text.upper().count('EC') * 5
-        return 0
+        return self.points_earned
 
     class Meta:
         verbose_name = 'レシート'

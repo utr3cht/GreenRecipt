@@ -26,8 +26,14 @@ class CustomUser(AbstractUser):
         ('store', '店舗'),
         ('user', '一般ユーザー'),
     )
+    RANK_CHOICES = (
+        ('seed', '種'),
+        ('sprout', '芽'),
+        ('tree', '木'),
+        ('apple_tree', 'リンゴの木'),
+    )
     current_points = models.IntegerField(default=0, verbose_name='ポイント')
-    rank = models.CharField(max_length=10, default='seed', verbose_name='ランク')
+    rank = models.CharField(max_length=20, choices=RANK_CHOICES, default='seed', verbose_name='ランク')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='アカウント更新日時')
     birthday = models.DateField(verbose_name='生年月日', null=True, blank=True)
     purchased_amount = models.IntegerField(default=0, verbose_name='購入点数')
@@ -46,23 +52,29 @@ class CustomUser(AbstractUser):
     )
 
     # ランク階層を定義
-    RANK_HIERARCHY = {'seed': 0, 'bronze': 1, 'silver': 2, 'gold': 3}
+    RANK_HIERARCHY = {'seed': 0, 'sprout': 1, 'tree': 2, 'apple_tree': 3}
 
     def _update_rank(self):
         """ポイントに基づいてランクを更新する"""
         points = self.current_points
         new_rank = self.rank
 
-        if points >= 5000:
-            new_rank = 'gold'
-        elif points >= 2000:
-            new_rank = 'silver'
-        elif points >= 500:
-            new_rank = 'bronze'
+        if points >= 800:
+            new_rank = 'apple_tree'
+        elif points >= 300:
+            new_rank = 'tree'
+        elif points >= 100:
+            new_rank = 'sprout'
         else:
             new_rank = 'seed'
         
         self.rank = new_rank
+
+    def add_points(self, points):
+        """ポイントを加算し、ランクを更新して保存する"""
+        self.current_points += points
+        self._update_rank()
+        self.save()
 
     def save(self, *args, **kwargs):
         # --- 1. ランクとポイントの更新前処理 ---
@@ -90,9 +102,9 @@ class CustomUser(AbstractUser):
         # --- 4. クーポン付与ロジック（save後に行う） ---
         # ランクアップ時のクーポン付与
         rank_coupon_map = {
-            'bronze': 'ブロンズランク特典',
-            'silver': 'シルバーランク特典',
-            'gold': 'ゴールドランク特典',
+            'sprout': 'ブロンズランク特典', # クーポン名は既存のままか確認が必要だが、一旦コード上のキーを変更
+            'tree': 'シルバーランク特典',
+            'apple_tree': 'ゴールドランク特典',
         }
         if self.RANK_HIERARCHY.get(self.rank, -1) > self.RANK_HIERARCHY.get(old_rank, -1):
             coupon_title = rank_coupon_map.get(self.rank)

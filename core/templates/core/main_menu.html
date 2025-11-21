@@ -11,8 +11,25 @@
 
   <section class="rank-box">
     <h2>あなたのランク</h2>
-    <h2>{{ rank }}</h2>
+    <div class="rank-image-container" style="text-align: center; margin: 10px 0;">
+      {% load static %}
+      <img src="{% static 'img/rank_'|add:rank|add:'.png' %}" alt="{{ user.get_rank_display }}" style="max-width: 100px; height: auto;">
+    </div>
+    <h2>{{ user.get_rank_display }}</h2>
     <div class="eco-point">{{ current_points }} エコポイント</div>
+
+    <div class="rank-progress-container" style="margin-top: 15px;">
+      {% if next_rank_points %}
+        <div class="progress-bar-wrapper" style="background-color: #e0e0e0; border-radius: 10px; height: 20px; width: 100%; overflow: hidden;">
+          <div class="progress-bar" style="background-color: #4caf50; height: 100%; width: {{ progress_percentage }}%;"></div>
+        </div>
+        <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+          次のランクまであと {{ points_to_next }} ポイント
+        </p>
+      {% else %}
+        <p style="font-size: 0.9em; color: #4caf50; font-weight: bold;">最高ランク到達！</p>
+      {% endif %}
+    </div>
   </section>
 
   <div class="buttons">

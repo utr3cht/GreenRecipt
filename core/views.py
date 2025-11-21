@@ -79,12 +79,45 @@ def main_menu(request):
     coupons = Coupon.objects.all()[:3]
     receipts = Receipt.objects.filter(
         user=request.user).order_by('-scanned_at')[:3]
+    # ランク進捗の計算
+    current_points = user.current_points
+    next_rank_points = 0
+    prev_rank_points = 0
+    
+    if current_points < 100:
+        next_rank_points = 100
+        prev_rank_points = 0
+    elif current_points < 300:
+        next_rank_points = 300
+        prev_rank_points = 100
+    elif current_points < 800:
+        next_rank_points = 800
+        prev_rank_points = 300
+    else:
+        next_rank_points = None # Max rank
+        prev_rank_points = 800
+
+    progress_percentage = 100
+    points_to_next = 0
+
+    if next_rank_points:
+        points_to_next = next_rank_points - current_points
+        range_points = next_rank_points - prev_rank_points
+        if range_points > 0:
+            progress_points = current_points - prev_rank_points
+            progress_percentage = int((progress_points / range_points) * 100)
+        else:
+            progress_percentage = 0
+
     context = {
         'announcements': announcements,
         'coupons': coupons,
         'receipts': receipts,
         'rank': user.rank,
         'current_points': user.current_points,
+        'next_rank_points': next_rank_points,
+        'points_to_next': points_to_next,
+        'progress_percentage': progress_percentage,
     }
     return render(request, "core/main_menu.html", context)
 
@@ -405,6 +438,7 @@ def scan(request):
 
                     # パースされたアイテムをReceiptItemモデルに保存
                     if parsed_data['items']:
+                        import unicodedata
                         for item_data in parsed_data['items']:
                             # 商品名が空の場合はスキップ
                             if not item_data.get('name'):
@@ -425,9 +459,15 @@ def scan(request):
                             # ポイント加算ロジック
                             # まだこの商品でポイント加算していなければ処理
                             if product.id not in processed_products:
+                                # 商品名を正規化（NFKC）して空白削除、小文字化
+                                normalized_product_name = unicodedata.normalize('NFKC', product.name).replace(' ', '').replace('　', '').lower()
+                                
                                 for eco_product in eco_products:
+                                    # エコ商品名も同様に正規化
+                                    normalized_eco_name = unicodedata.normalize('NFKC', eco_product.name).replace(' ', '').replace('　', '').lower()
+                                    
                                     # 商品名にエコ商品のキーワードが含まれているかチェック
-                                    if eco_product.name in product.name:
+                                    if normalized_eco_name in normalized_product_name:
                                         total_eco_points_to_add += eco_product.points
                                         processed_products.add(product.id)
                                         # 1つの商品が複数のエコ商品にマッチしても、最初の1つで抜ける
@@ -436,8 +476,11 @@ def scan(request):
                     # 合計ポイントを加算してユーザー情報を更新
                     if total_eco_points_to_add > 0:
                         user = request.user
-                        user.current_points += total_eco_points_to_add
-                        user.save()
+                        user.add_points(total_eco_points_to_add)
+                        
+                        # レシートにも獲得ポイントを保存
+                        receipt.points_earned = total_eco_points_to_add
+                        receipt.save()
 
             except Exception as e:
                 # トランザクション内でエラーが起きた場合
