@@ -36,7 +36,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ============= Animations (nav���O�Ŏg�p) ============= */
+/* ============= Animations (nav以外で使用) ============= */
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideLeft { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
@@ -88,7 +88,7 @@ header { padding: 12px 16px; animation: slideLeft 0.6s ease-out; }
   .user-info.desktop-only { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 }
 
-/* ============= �n���o�[�K�[���j���[ ============= */
+/* ============= ハンバーガーメニュー ============= */
 .hamburger-menu.mobile-only { display: block; position: relative; }
 @media (min-width: 768px) { .hamburger-menu.mobile-only { display: none; } }
 .hamburger-icon {
@@ -250,7 +250,7 @@ button { padding: 11px 42px; }
 }
 .btn-sm { padding: 6px 12px; font-size: 0.84em; width: auto; box-shadow: 0 8px 18px rgba(14, 165, 233, 0.2); }
 
-/* ============= �����i�r�i���C�A�E�g�͈ێ��j ============= */
+/* ============= ボトムナビ（レイアウト範囲維持） ============= */
 :root { --nav-h: 100px; }
 footer { margin-top: auto; }
 .bottom-nav {
@@ -340,7 +340,7 @@ form .actions { text-align: center; margin-top: 22px; display: flex; gap: 10px; 
 form .actions button { flex: 1; min-width: 120px; margin: 0; }
 main p { font-size: 15px; color: var(--muted); font-weight: 500; }
 
-/* ============= �p�X���[�h���� ============= */
+/* ============= パスワード表示 ============= */
 .password-container { position: relative; }
 .password-container input { padding-right: 72px; }
 .toggle-password {
@@ -356,7 +356,7 @@ main p { font-size: 15px; color: var(--muted); font-weight: 500; }
   cursor: pointer;
 }
 
-/* ============= ���o�C�� ============= */
+/* ============= モバイル ============= */
 @media (max-width: 767px) {
   .container { max-width: none; border-radius: 0; box-shadow: none; background: transparent; }
   .actions button, .btn { width: 100%; }
@@ -388,7 +388,7 @@ header .logo { width: 190px; height: auto; }
 .hamburger-icon { flex: 0 0 auto; width: 44px; height: 44px; }
 @media (min-width: 768px) { .user-info.desktop-only .welcome { text-overflow: ellipsis; white-space: nowrap; max-width: 28ch; } }
 
-/* ============= Dashboard / �₢���킹�ꗗ ============= */
+/* ============= Dashboard / 問い合わせ一覧 ============= */
 main.dashboard-main { justify-content: flex-start; align-items: stretch; padding: 44px 0 90px 0; }
 .dashboard-container {
   width: 100%;
