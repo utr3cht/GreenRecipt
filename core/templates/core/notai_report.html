@@ -7,6 +7,15 @@
     <h2>購入数</h2>
     <p>これまでに購入した商品の合計点数は <strong>{{ total_items_purchased }}</strong> 点です。</p>
     <p>獲得した合計ECポイントは <strong>{{ total_ec_points }}</strong> ptです。</p>
+    {% if total_ec_points == 0 %}
+        <p>まだポイントがありませんね。次回の購入でポイントを獲得しましょう！</p>
+    {% elif total_ec_points >= 800 %}
+        <p>素晴らしい！あなたはエコの達人です！</p>
+    {% elif total_ec_points >= 300 %}
+        <p>エコ活動が着実に実を結んでいますね！</p>
+    {% elif total_ec_points >= 100 %}
+        <p>コツコツとエコ活動、素晴らしいです！</p>
+    {% endif %}
 </div>
 
 <div class="report-section">
