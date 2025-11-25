@@ -1,0 +1,199 @@
+{% extends 'admin/admin_base.html' %}
+{% load static %}
+
+{% block title %}
+  クーポン利用詳細 | GreenRecipt
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'core:staff_index' %}">ダッシュボード</a></li>
+          <li class="breadcrumb-item active" aria-current="page">クーポン利用詳細: {{ coupon.title }}</li>
+        </ol>
+      </nav>
+      
+      <h1>{{ coupon.title }} - 利用詳細</h1>
+      <p class="lead">{{ coupon.description }}</p>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h3>利用内訳</h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div style="max-width: 300px; margin: 0 auto;">
+                <canvas id="issuedChart"></canvas>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div style="max-width: 300px; margin: 0 auto;">
+                <canvas id="usageChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h3>利用履歴一覧</h3>
+        </div>
+        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+          {% if usage_history %}
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>日時</th>
+                  <th>ユーザー</th>
+                  {% if not is_store_staff %}
+                    <th>店舗</th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for usage in usage_history %}
+                  <tr>
+                    <td>{{ usage.used_at|date:"Y/m/d H:i" }}</td>
+                    <td>{{ usage.user.username|slice:":2" }}***</td>
+                    {% if not is_store_staff %}
+                      <td>{{ usage.store.store_name|default:"-" }}</td>
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p>利用履歴はありません。</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('usageChart').getContext('2d');
+  const labels = JSON.parse('{{ chart_labels|safe }}');
+  const data = JSON.parse('{{ chart_data|safe }}');
+  
+  if (labels.length === 0) {
+      // データがない場合の表示
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('データがありません', ctx.canvas.width / 2, ctx.canvas.height / 2);
+      return;
+  }
+
+  // グラデーション色の生成関数
+  function generateGradientColors(count) {
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+      // 緑(0, 255, 0) から 青(0, 0, 255) へのグラデーション
+      // 比率計算 (0.0 to 1.0)
+      const ratio = count > 1 ? i / (count - 1) : 0;
+      
+      const r = 0;
+      const g = Math.round(255 * (1 - ratio));
+      const b = Math.round(255 * ratio);
+      
+      colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
+    }
+    return colors;
+  }
+
+  const backgroundColors = generateGradientColors(labels.length);
+  const issuedData = JSON.parse('{{ issued_chart_data|safe }}');
+
+  // 1. 発行状況チャート (左側)
+  new Chart(document.getElementById('issuedChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['利用済み', '未利用'],
+      datasets: [{
+        data: issuedData,
+        backgroundColor: ['#4CAF50', '#E0E0E0'], // 緑: 利用済み, グレー: 未利用
+        borderWidth: 0,
+        borderRadius: 10,
+        hoverOffset: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '85%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            padding: 20
+          }
+        },
+        title: {
+          display: true,
+          text: '発行状況',
+          padding: {
+            bottom: 20
+          }
+        }
+      },
+      layout: {
+        padding: 20
+      }
+    }
+  });
+
+  // 2. 利用内訳チャート (右側)
+  new Chart(document.getElementById('usageChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: backgroundColors,
+        borderWidth: 0,
+        borderRadius: 10,
+        hoverOffset: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '85%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            padding: 20
+          }
+        },
+        title: {
+          display: true,
+          text: '{% if is_store_staff %}ランク別利用割合{% else %}店舗別利用割合{% endif %}',
+          padding: {
+            bottom: 20
+          }
+        }
+      },
+      layout: {
+        padding: 20
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

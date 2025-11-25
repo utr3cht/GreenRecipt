@@ -105,7 +105,7 @@
                 </thead>
                 <tbody>
                   {% for stat in coupon_stats %}
-                    <tr>
+                    <tr data-href="{% url 'core:coupon_stats_detail' stat.coupon.id %}" class="clickable-row">
                       <td>{{ stat.coupon.title }}</td>
                       <td>{{ stat.issued_count }}</td>
                       <td>{{ stat.usage_count }}</td>
@@ -125,4 +125,24 @@
       </div>
     </div>
   </div>
+
+  <style>
+    .clickable-row {
+      cursor: pointer;
+    }
+    .clickable-row:hover {
+      background-color: #f5f5f5;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const rows = document.querySelectorAll('.clickable-row');
+      rows.forEach(row => {
+        row.addEventListener('click', function() {
+          window.location.href = this.dataset.href;
+        });
+      });
+    });
+  </script>
 {% endblock %}

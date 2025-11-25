@@ -824,6 +824,65 @@ def staff_index(request):
 
 
 @staff_member_required
+def coupon_stats_detail(request, coupon_id):
+    coupon = get_object_or_404(Coupon, pk=coupon_id)
+    
+    # 利用履歴の取得
+    usage_history = CouponUsage.objects.filter(coupon=coupon).select_related('user', 'store').order_by('-used_at')
+    
+    # 店舗スタッフの場合は自店の利用履歴のみに絞り込む
+    if request.user.role == 'store' and request.user.store:
+        usage_history = usage_history.filter(store=request.user.store)
+    
+    # グラフ用データの作成
+    chart_labels = []
+    chart_data = []
+    
+    if request.user.role == 'store' and request.user.store:
+        # 店舗スタッフ: ランクごとの利用割合
+        from django.db.models import Count
+        rank_stats = usage_history.values('user__rank').annotate(count=Count('id'))
+        
+        # ランク名のマッピング
+        rank_names = dict(CustomUser.RANK_CHOICES)
+        
+        for stat in rank_stats:
+            rank_code = stat['user__rank']
+            count = stat['count']
+            chart_labels.append(rank_names.get(rank_code, rank_code))
+            chart_data.append(count)
+            
+    else:
+        # 管理者: 店舗ごとの利用割合
+        from django.db.models import Count
+        store_stats = usage_history.values('store__store_name').annotate(count=Count('id'))
+        
+        for stat in store_stats:
+            store_name = stat['store__store_name'] or '不明/オンライン'
+            count = stat['count']
+            chart_labels.append(store_name)
+            chart_data.append(count)
+            
+    # 発行状況データの作成 (外側のリング用)
+    # 利用済み総数
+    global_usage_count = CouponUsage.objects.filter(coupon=coupon).count()
+    # 未利用（現在所持しているユーザー数）
+    holders_count = coupon.customuser_set.count()
+    issued_chart_data = [global_usage_count, holders_count]
+
+    import json
+    context = {
+        'coupon': coupon,
+        'usage_history': usage_history,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_data': json.dumps(chart_data),
+        'issued_chart_data': json.dumps(issued_chart_data),
+        'is_store_staff': request.user.role == 'store'
+    }
+    return render(request, "admin/coupon_stats_detail.html", context)
+
+
+@staff_member_required
 def store_list(request):
     stores = Store.objects.all()
     return render(request, "admin/store_list.html", {'stores': stores})
