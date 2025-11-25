@@ -80,4 +80,49 @@
       </div>
     </div>
   </div>
+
+  <!-- クーポン統計セクション -->
+  <div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header">
+          <h2>クーポン利用統計</h2>
+        </div>
+        <div class="card-body">
+          {% if coupon_stats %}
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>クーポン名</th>
+                    <th>発行数</th>
+                    <th>利用数</th>
+                    <th>利用率</th>
+                    {% if user.role == 'store' %}
+                      <th>自店利用数</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for stat in coupon_stats %}
+                    <tr>
+                      <td>{{ stat.coupon.title }}</td>
+                      <td>{{ stat.issued_count }}</td>
+                      <td>{{ stat.usage_count }}</td>
+                      <td>{{ stat.usage_ratio }}%</td>
+                      {% if user.role == 'store' %}
+                        <td>{{ stat.used_at_my_store }}</td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p>現在、クーポンの統計データはありません。</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}

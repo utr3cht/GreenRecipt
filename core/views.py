@@ -35,7 +35,7 @@ from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponFo
 from accounts.forms import StoreUserCreationForm
 
 # Models
-from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct
+from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct, CouponUsage
 from accounts.models import CustomUser
 
 # --- 認証関連ビュー ---
@@ -133,6 +133,31 @@ def coupon_list(request):
 def use_coupon(request, coupon_id):
     try:
         coupon_to_use = request.user.current_coupons.get(pk=coupon_id)
+        
+        # 店舗IDを取得（JSONリクエストを想定）
+        import json
+        store_id = None
+        if request.body:
+            try:
+                data = json.loads(request.body)
+                store_id = data.get('store_id')
+            except json.JSONDecodeError:
+                pass
+        
+        store = None
+        if store_id:
+            try:
+                store = Store.objects.get(pk=store_id)
+            except Store.DoesNotExist:
+                pass
+
+        # 利用履歴を作成
+        CouponUsage.objects.create(
+            user=request.user,
+            coupon=coupon_to_use,
+            store=store
+        )
+
         request.user.current_coupons.remove(coupon_to_use)
         return JsonResponse({'success': True})
     except Coupon.DoesNotExist:
@@ -754,7 +779,48 @@ def inquiry_detail(request, inquiry_id):
 @login_required
 def staff_index(request):
     announcements = Announcement.objects.all().order_by('-created_at')
-    return render(request, "admin/staff_index.html", {'announcements': announcements})
+    
+    # クーポン統計の計算
+    coupons = Coupon.objects.all()
+    coupon_stats = []
+    
+    for coupon in coupons:
+        # 現在の所持者数
+        holders_count = coupon.customuser_set.count()
+        # 利用回数
+        usage_count = CouponUsage.objects.filter(coupon=coupon).count()
+        # 発行総数 = 所持者数 + 利用回数
+        issued_count = holders_count + usage_count
+        
+        # 利用率
+        usage_ratio = 0
+        if issued_count > 0:
+            usage_ratio = (usage_count / issued_count) * 100
+            
+        # 自店での利用数
+        used_at_my_store = 0
+        if request.user.role == 'store' and request.user.store:
+            used_at_my_store = CouponUsage.objects.filter(
+                coupon=coupon, 
+                store=request.user.store
+            ).count()
+        elif request.user.role == 'admin' or request.user.is_superuser:
+            # 管理者の場合は全店舗での利用数を表示するか、あるいは「-」とするか
+            # ここでは便宜上、全利用数を表示しておくか、0にしておく
+            used_at_my_store = usage_count
+
+        coupon_stats.append({
+            'coupon': coupon,
+            'issued_count': issued_count,
+            'usage_count': usage_count,
+            'usage_ratio': round(usage_ratio, 1),
+            'used_at_my_store': used_at_my_store
+        })
+
+    return render(request, "admin/staff_index.html", {
+        'announcements': announcements,
+        'coupon_stats': coupon_stats
+    })
 
 
 @staff_member_required

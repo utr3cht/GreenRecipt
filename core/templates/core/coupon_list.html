@@ -17,7 +17,8 @@
              data-description="{{ coupon.description }}"
              data-discount="{% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}"
              data-requirement="{{ coupon.requirement }}"
-             data-stores="{% for store in coupon.available_stores.all %}{{ store.store_name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+             data-stores="{% for store in coupon.available_stores.all %}{{ store.store_name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
+             data-store-ids="{% for store in coupon.available_stores.all %}{{ store.store_id }}:{{ store.store_name }}{% if not forloop.last %},{% endif %}{% endfor %}">
           <h3>{{ coupon.title }}</h3>
           <p><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
           <p><strong>条件:</strong> {{ coupon.requirement }}</p>
@@ -42,6 +43,13 @@
       <p><strong>特典:</strong> <span id="modalDiscount"></span></p>
       <p><strong>ご利用条件:</strong> <span id="modalRequirement"></span></p>
       <p><strong>利用可能店舗:</strong> <span id="modalStores"></span></p>
+      
+      <div id="storeSelectionContainer" style="margin-top: 15px; display: none;">
+        <label for="storeSelect">利用する店舗を選択してください:</label>
+        <select id="storeSelect" class="form-control" style="width: 100%; padding: 8px; margin-top: 5px;">
+          <option value="">店舗を選択...</option>
+        </select>
+      </div>
     </div>
     <div class="modal-footer">
       <button id="useCouponBtn" class="use-button">このクーポンを使う</button>
@@ -98,6 +106,41 @@ document.addEventListener('DOMContentLoaded', () => {
       // 'use'ボタンにcoupon-idをセット
       useCouponBtn.dataset.couponId = id;
 
+      // 店舗選択肢の生成
+      const storeIdsStr = this.dataset.storeIds;
+      const storeSelect = document.getElementById('storeSelect');
+      const storeSelectionContainer = document.getElementById('storeSelectionContainer');
+      
+      storeSelect.innerHTML = '<option value="">店舗を選択...</option>';
+      
+      if (storeIdsStr) {
+        const storesList = storeIdsStr.split(',');
+        storesList.forEach(storeStr => {
+          const [id, name] = storeStr.split(':');
+          if (id && name) {
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = name;
+            storeSelect.appendChild(option);
+          }
+        });
+        
+        if (storesList.length > 0) {
+            storeSelectionContainer.style.display = 'block';
+            // 1店舗しかない場合は自動選択
+            if (storesList.length === 1) {
+                storeSelect.selectedIndex = 1;
+            }
+        } else {
+            storeSelectionContainer.style.display = 'none';
+        }
+      } else {
+        // 利用可能店舗の指定がない場合（全店舗など）
+        // ここでは単純化のため、選択なし（null）で送信するか、
+        // あるいは全店舗リストを取得する必要があるが、現状は非表示にする
+        storeSelectionContainer.style.display = 'none';
+      }
+
       modal.style.display = 'block';
     });
   });
@@ -113,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const url = `/coupons/use/${couponId}/`;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const storeId = document.getElementById('storeSelect').value;
 
     fetch(url, {
       method: 'POST',
@@ -120,6 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrfToken,
       },
+      body: JSON.stringify({
+        store_id: storeId
+      }),
     })
     .then(response => response.json())
     .then(data => {

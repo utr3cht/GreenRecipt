@@ -206,6 +206,20 @@ class Coupon(models.Model):
         verbose_name_plural = 'クーポン'
 
 
+class CouponUsage(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='ユーザー')
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, verbose_name='クーポン')
+    store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='利用店舗')
+    used_at = models.DateTimeField(auto_now_add=True, verbose_name='利用日時')
+
+    def __str__(self):
+        return f"{self.user} used {self.coupon} at {self.store}"
+
+    class Meta:
+        verbose_name = 'クーポン利用履歴'
+        verbose_name_plural = 'クーポン利用履歴'
+
+
 class Report(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE, verbose_name='ユーザー')
