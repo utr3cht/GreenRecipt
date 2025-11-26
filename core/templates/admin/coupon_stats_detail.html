@@ -16,7 +16,10 @@
         </ol>
       </nav>
       
-      <h1>{{ coupon.title }} - 利用詳細</h1>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ coupon.title }} - 利用詳細</h1>
+        <a href="{% url 'core:staff_index' %}" class="btn btn-primary" style="width: auto; padding: 10px 20px;">戻る</a>
+      </div>
       <p class="lead">{{ coupon.description }}</p>
     </div>
   </div>

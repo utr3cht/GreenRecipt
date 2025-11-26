@@ -12,17 +12,19 @@
       {% csrf_token %}
       <h2>店舗情報</h2>
       {{ form.as_p }}
-      <button type="submit" class="btn">更新</button>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">更新</button>
+      </div>
     </form>
     
     <hr>
 
     <h2>店舗アカウント一覧</h2>
     {% if store_users %}
-      <ul>
+      <ul class="list-group mb-3">
         {% for user in store_users %}
-          <li>
-            {{ user.username }} ({{ user.email }})
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ user.username }} ({{ user.email }})</span>
             <form method="post" action="{% url 'core:store_delete_user' user.id %}" style="display: inline;">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('本当にこのアカウントを削除しますか？');">削除</button>
@@ -34,10 +36,9 @@
       <p>この店舗に登録されているアカウントはありません。</p>
     {% endif %}
 
-    <a href="{% url 'core:store_add_user' store.store_id %}" class="btn">新規店舗アカウント登録</a>
-    
-    <hr>
-
-    <a href="{% url 'core:store_detail' store.store_id %}" class="btn">キャンセル</a>
+    <div class="d-flex gap-2 align-items-center">
+      <a href="{% url 'core:store_add_user' store.store_id %}" class="btn btn-primary">新規店舗アカウント登録</a>
+      <a href="{% url 'core:store_detail' store.store_id %}" class="btn btn-secondary">キャンセル</a>
+    </div>
   </div>
 {% endblock %}

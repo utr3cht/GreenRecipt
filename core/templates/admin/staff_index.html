@@ -6,28 +6,26 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container mt-5">
-    <div class="row mt-4">
-      <div class="col-md-8 offset-md-2">
-        <div class="card">
-          <div class="card-header">
-            <h2>お知らせ一覧</h2>
+  <div class="dashboard-section mt-5">
+    <div class="card">
+      <div class="card-header">
+        <h2>お知らせ一覧</h2>
+      </div>
+      <div class="card-body">
+        {% if announcements %}
+          <div class="announcement-grid">
+            {% for announcement in announcements %}
+              <a href="{% url 'core:announcement_detail' announcement.id %}" class="announcement-card">
+                <div class="announcement-content">
+                  <h5 class="announcement-title">{{ announcement.title }}</h5>
+                  <small class="announcement-date">{{ announcement.created_at|date:'Y/m/d' }}</small>
+                </div>
+              </a>
+            {% endfor %}
           </div>
-          <div class="card-body">
-            {% if announcements %}
-              <ul class="list-group list-group-flush">
-                {% for announcement in announcements %}
-                  <li class="list-group-item">
-                    <a href="{% url 'core:announcement_detail' announcement.id %}">{{ announcement.title }}</a>
-                    <small class="text-muted d-block">{{ announcement.created_at|date:'Y/m/d' }}</small>
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <p>現在、お知らせはありません。</p>
-            {% endif %}
-          </div>
-        </div>
+        {% else %}
+          <p>現在、お知らせはありません。</p>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -42,40 +40,21 @@
           <p>ここは管理者および店舗スタッフ専用のページです。</p>
           <hr />
           <p>以下の機能にアクセスできます。</p>
-          <ul class="list-group list-group-flush">
+          <div class="d-grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
             {% if user.role == 'admin' or user.is_superuser %}
-              <li class="list-group-item">
-                <a href="/store/list/">加盟店舗一覧</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:admin_inquiry_dashboard' %}">お問い合わせ一覧</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:announcement_list' %}">お知らせ編集</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:coupon_list_admin' %}">クーポン管理</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:grant_coupon_admin' %}">クーポン付与</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
-              </li>
+              <a href="{% url 'core:store_list' %}" class="btn btn-primary">加盟店舗一覧</a>
+              <a href="{% url 'core:admin_inquiry_dashboard' %}" class="btn btn-primary">お問い合わせ一覧</a>
+              <a href="{% url 'core:announcement_list' %}" class="btn btn-primary">お知らせ編集</a>
+              <a href="{% url 'core:coupon_list_admin' %}" class="btn btn-primary">クーポン管理</a>
+              <a href="{% url 'core:grant_coupon_admin' %}" class="btn btn-primary">クーポン付与</a>
+              <a href="{% url 'core:ecoproduct_list' %}" class="btn btn-primary">エコ商品管理</a>
             {% endif %}
             {% if user.role == 'store' %}
-              <li class="list-group-item">
-                <a href="{% url 'core:staff_inquiry' %}">お問い合わせ</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:store_help' %}">ヘルプFAQ</a>
-              </li>
-              <li class="list-group-item">
-                <a href="{% url 'core:ecoproduct_list' %}">エコ商品管理</a>
-              </li>
+              <a href="{% url 'core:staff_inquiry' %}" class="btn btn-primary">お問い合わせ</a>
+              <a href="{% url 'core:store_help' %}" class="btn btn-primary">ヘルプFAQ</a>
+              <a href="{% url 'core:ecoproduct_list' %}" class="btn btn-primary">エコ商品管理</a>
             {% endif %}
-            <!-- 今後、店舗向けの機能などをここに追加できます -->
-          </ul>
+          </div>
         </div>
       </div>
     </div>

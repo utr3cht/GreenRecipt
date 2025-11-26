@@ -16,6 +16,12 @@
         </ul>
       </div>
 
+      <div class="nav-tabs">
+        <a href="?status=unanswered" class="nav-link {% if current_status == 'unanswered' %}active{% endif %}">未対応</a>
+        <a href="?status=in_progress" class="nav-link {% if current_status == 'in_progress' %}active{% endif %}">対応中</a>
+        <a href="?status=completed" class="nav-link {% if current_status == 'completed' %}active{% endif %}">完了</a>
+      </div>
+
       {% if inquiries %}
         <div class="table-responsive">
           <table class="table">
@@ -53,14 +59,26 @@
                     {% endif %}
                   </td>
                   <td>{{ inquiry.created_at|date:'Y年n月j日 H:i' }}</td>
-                  <td>{{ inquiry.is_replied|yesno:"完了,未完了" }}</td>
+                  <td>
+                    <span class="badge {% if inquiry.status == 'completed' %}bg-success{% elif inquiry.status == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">
+                      {{ inquiry.get_status_display }}
+                    </span>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       {% else %}
-        <div class="alert alert-info">現在、お問い合わせはありません。</div>
+        <div class="alert alert-info">
+            {% if current_status == 'unanswered' %}
+                未対応のお問い合わせはありません。
+            {% elif current_status == 'in_progress' %}
+                対応中のお問い合わせはありません。
+            {% else %}
+                完了したお問い合わせはありません。
+            {% endif %}
+        </div>
       {% endif %}
     </div>
   </main>

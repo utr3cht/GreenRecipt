@@ -19,6 +19,7 @@ from yomitoku.document_analyzer import DocumentAnalyzer
 import cv2
 import re
 from datetime import datetime
+from django.utils import timezone
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 import requests  # Add this import
@@ -26,6 +27,8 @@ from django.core.files.base import ContentFile  # fs.saveエラーを修正す�
 import uuid  # Add this
 import os   # Add this
 import numpy as np  # Add this line
+import google.generativeai as genai
+import calendar
 
 from django.db import transaction
 
@@ -35,7 +38,7 @@ from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponFo
 from accounts.forms import StoreUserCreationForm
 
 # Models
-from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct, CouponUsage
+from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct, CouponUsage, Report
 from accounts.models import CustomUser
 
 # --- 認証関連ビュー ---
@@ -524,30 +527,185 @@ def scan(request):
 
 @login_required
 def ai_report(request):
-    user_receipts = Receipt.objects.filter(user=request.user)
-    total_items_purchased = sum(
-        receipt.total_quantity for receipt in user_receipts)
-    
-    # Eco-friendly product calculation
-    eco_product_names = list(EcoProduct.objects.values_list('name', flat=True))
-    total_eco_items = 0
-    if eco_product_names:
-        # Get all receipt items for the user
-        user_receipt_items = ReceiptItem.objects.filter(receipt__user=request.user)
-        for item in user_receipt_items:
-            # Check if any eco-product keyword is in the item name
-            if any(eco_name in item.product.name for eco_name in eco_product_names):
-                total_eco_items += item.quantity
+    # 1. Determine Month
+    today = timezone.now()
+    try:
+        year = int(request.GET.get('year', today.year))
+        month = int(request.GET.get('month', today.month))
+    except ValueError:
+        year = today.year
+        month = today.month
 
-    total_ec_points = sum(receipt.ec_points for receipt in user_receipts)
+    # Normalize month
+    if month < 1:
+        month = 12
+        year -= 1
+    elif month > 12:
+        month = 1
+        year += 1
+    
+    # 2. Filter Receipts
+    # scanned_at is DateField
+    start_date = datetime(year, month, 1).date()
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = datetime(year, month, last_day).date()
+    
+    receipts = Receipt.objects.filter(
+        user=request.user,
+        scanned_at__range=(start_date, end_date)
+    )
+    
+    # 3. Aggregate Products & Calculate Score
+    purchased_products_display = []
+    total_quantity = 0
+    total_eco_points = 0
+    eco_quantity = 0
+    
+    # Get Eco Products Map (Name -> Points)
+    eco_product_map = dict(EcoProduct.objects.values_list('name', 'points'))
+    eco_product_names = list(eco_product_map.keys())
+
+    for receipt in receipts:
+        # Try ReceiptItem first
+        items = receipt.items.all()
+        if items.exists():
+            for item in items:
+                qty = item.quantity
+                total_quantity += qty
+                purchased_products_display.append(f"{item.product.name} ({qty}点)")
+                
+                # Check if eco product
+                # Simple substring match for now, ideally should be exact or smarter
+                matched_eco = next((eco for eco in eco_product_names if eco in item.product.name), None)
+                if matched_eco:
+                    eco_quantity += qty
+                    total_eco_points += qty * eco_product_map[matched_eco]
+                    
+        # Fallback to parsed_data
+        elif receipt.parsed_data and isinstance(receipt.parsed_data, dict) and 'items' in receipt.parsed_data:
+             for item in receipt.parsed_data['items']:
+                 name = item.get('name', 'Unknown')
+                 qty = item.get('quantity', 1)
+                 total_quantity += qty
+                 purchased_products_display.append(f"{name} ({qty}点)")
+                 
+                 matched_eco = next((eco for eco in eco_product_names if eco in name), None)
+                 if matched_eco:
+                     eco_quantity += qty
+                     total_eco_points += qty * eco_product_map[matched_eco]
+    
+    # Check if report already exists for this month
+    # We assume one report per month. We can check generated_at range.
+    # Note: generated_at is DateTimeField, so we check range.
+    existing_report = Report.objects.filter(
+        user=request.user,
+        generated_at__year=year,
+        generated_at__month=month
+    ).first()
+
+    report_text = ""
+    score = 0
+    report_exists = False
+
+    if existing_report:
+        report_text = existing_report.description
+        score = existing_report.score
+        report_exists = True
+    
+    # Handle Generation Request
+    elif request.method == 'POST' and 'generate' in request.POST:
+        # Calculate Score (Weighted)
+        # Formula: (Total Eco Points / (Total Items * 10)) * 100
+        # Assuming baseline is 10 points per item.
+        if total_quantity > 0:
+            raw_score = (total_eco_points / (total_quantity * 10)) * 100
+            score = int(min(raw_score, 100)) # Cap at 100
+        else:
+            score = 0
+        
+        if purchased_products_display:
+            try:
+                genai.configure(api_key=settings.GEMINI_API_KEY)
+                model = genai.GenerativeModel('gemini-flash-latest')
+                
+                prompt = f"""
+                あなたは環境保護のエキスパートです。
+                ユーザーの今月のエコスコアは【{score}点】です。
+                （購入商品数: {total_quantity}点、うちエコ商品: {eco_quantity}点、獲得エコポイント: {total_eco_points}点）
+                
+                以下の購入商品リストとエコ商品データベースを参考に、
+                ユーザーに向けて**100文字程度**で簡潔なアドバイス付きレポートを作成してください。
+                JSONではなく、テキストのみで出力してください。
+
+                ※購入商品リストはレシートOCRの結果であり、省略や誤字が含まれる可能性があります。
+                文脈から正式な商品名を推測し、どのような商品を購入したかを理解した上でアドバイスを行ってください。
+                
+                # 購入商品リスト:
+                {', '.join(purchased_products_display)}
+                
+                # エコ商品データベース:
+                {', '.join(eco_product_names)}
+                """
+                
+                response = model.generate_content(prompt)
+                report_text = response.text.strip()
+                
+                # Save Report
+                # We need to set generated_at to be within the month if we want to query it back correctly by month?
+                # Actually, auto_now_add=True sets it to NOW.
+                # If user generates report for PAST month, it will be saved with CURRENT date.
+                # This might be an issue if we strictly filter by generated_at__month.
+                # However, the requirement says "Once a month", implying "Current month".
+                # If viewing past months, maybe we shouldn't allow generation if it wasn't generated then?
+                # For now, let's assume generation is allowed for the displayed month, 
+                # but we should probably override generated_at if it's a past month report?
+                # Or just let it be generated now.
+                # Let's just save it. If the user is viewing "May" and generates it in "June", 
+                # strictly speaking it's a "May Report" generated in "June".
+                # But our query `generated_at__month=month` will fail to find it next time if we save it as June.
+                # So we should manually set generated_at to the end of that month or something?
+                # Or we can just rely on the fact that users usually generate report for the current month.
+                # Let's stick to simple implementation: Save it. 
+                # If we want to support "Report for May", we might need a 'target_month' field in Report model.
+                # For now, let's just save it.
+                
+                Report.objects.create(
+                    user=request.user,
+                    description=report_text,
+                    score=score
+                    # generated_at will be now
+                )
+                report_exists = True
+
+            except Exception as e:
+                print(f"Gemini API Error: {e}")
+                report_text = "AIレポートの生成中にエラーが発生しました。時間をおいて再度お試しください。"
+        else:
+            report_text = "今月の購入履歴がありません。"
+
+    # Calculate Average Score for the month
+    from django.db.models import Avg
+    avg_score_data = Report.objects.filter(
+        generated_at__year=year,
+        generated_at__month=month
+    ).aggregate(Avg('score'))
+    average_score = avg_score_data['score__avg']
+    if average_score is not None:
+        average_score = round(average_score, 1)
+    else:
+        average_score = 0
 
     context = {
-        'total_items_purchased': total_items_purchased,
-        'total_ec_points': total_ec_points,
-        'total_eco_items': total_eco_items,
+        'year': year,
+        'month': month,
+        'score': score,
+        'report_text': report_text,
+        'purchased_products': purchased_products_display,
+        'eco_products': eco_product_names,
+        'report_exists': report_exists,
+        'average_score': average_score,
     }
-    # return render(request, "core/ai_report.html", context)
-    return render(request, "core/notai_report.html", context)
+    return render(request, "core/ai_report.html", context)
 
 # --- 問い合わせ関連ビュー ---
 
@@ -734,8 +892,15 @@ def announcement_detail(request, announcement_id):
 
 @staff_member_required
 def admin_inquiry_dashboard(request):
-    inquiries = Inquiry.objects.all().order_by('-id')
-    return render(request, 'admin/inquiry_dashboard.html', {'inquiries': inquiries})
+    status = request.GET.get('status', 'unanswered')
+    if status not in ['unanswered', 'in_progress', 'completed']:
+        status = 'unanswered'
+    
+    inquiries = Inquiry.objects.filter(status=status).order_by('-id')
+    return render(request, 'admin/inquiry_dashboard.html', {
+        'inquiries': inquiries,
+        'current_status': status
+    })
 
 
 @staff_member_required

@@ -168,3 +168,6 @@ USE_COLAB_API = True  # Set to False to disable Colab API and use local processi
 
 # Replace with your ngrok URL
 COLAB_API_URL = "https://unhermitic-vivaciously-donya.ngrok-free.dev"
+
+# Gemini API Key
+GEMINI_API_KEY = "AIzaSyA9T6TtCVsHjdoGzfLPHghGWd0tunqbfl0"

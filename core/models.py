@@ -161,6 +161,13 @@ class Inquiry(models.Model):
     body_text = models.TextField(verbose_name='内容')
     image = models.ImageField(
         upload_to='inquiries/', null=True, blank=True, verbose_name='添付画像')
+    STATUS_CHOICES = (
+        ('unanswered', '未対応'),
+        ('in_progress', '対応中'),
+        ('completed', '完了'),
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='unanswered', verbose_name='ステータス')
     is_replied = models.BooleanField(default=False, verbose_name='返信済み')
     reply_message = models.TextField(blank=True, verbose_name='返信内容')
 
@@ -225,6 +232,7 @@ class Report(models.Model):
                              on_delete=models.CASCADE, verbose_name='ユーザー')
     generated_at = models.DateTimeField(auto_now_add=True, verbose_name='生成日時')
     description = models.TextField(verbose_name='内容')
+    score = models.IntegerField(default=0, verbose_name='スコア')
 
     def __str__(self):
         return f"Report for {self.user} at {self.generated_at}"

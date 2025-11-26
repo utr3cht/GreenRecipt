@@ -50,8 +50,10 @@
         }
       </script>
 
-      <button type="submit" class="btn">登録</button>
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">登録</button>
+        <a href="{% url 'core:store_list' %}" class="btn btn-secondary">キャンセル</a>
+      </div>
     </form>
-    <a href="{% url 'core:store_list' %}" class="btn">キャンセル</a>
   </div>
 {% endblock %}

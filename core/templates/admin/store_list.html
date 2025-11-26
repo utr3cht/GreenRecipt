@@ -3,16 +3,12 @@
 {% block content %}
 <main class="dashboard-main">
   <div class="dashboard-container">
-    <div class="header-with-button">
+    <div class="header-with-button d-flex justify-content-between align-items-center mb-4">
         <h1>加盟店舗一覧</h1>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item">
-                <a href="{% url 'core:store_create' %}">新規加盟店舗登録</a>
-            </li>
-            <li class="list-group-item">
-                <a href="{% url 'core:staff_index' %}">戻る</a>
-            </li>
-        </ul>
+        <div class="d-flex gap-2">
+            <a href="{% url 'core:store_create' %}" class="btn btn-primary">新規加盟店舗登録</a>
+            <a href="{% url 'core:staff_index' %}" class="btn btn-secondary">戻る</a>
+        </div>
     </div>
 
     <div class="table-responsive">
