@@ -60,6 +60,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 0;
   min-height: 100vh;
+  display: flex;
   flex-direction: column;
   justify-content: flex-start;
   padding-bottom: calc(var(--nav-h, 64px) + env(safe-area-inset-bottom));
@@ -234,8 +235,7 @@ button, .btn {
 button:hover, .btn:hover { transform: translateY(-3px); box-shadow: var(--shadow-strong); filter: saturate(1.05); }
 button:active, .btn:active { transform: translateY(-1px); }
 button { padding: 11px 42px; }
-.btn {padding: 13px; border-radius: 14px; text-decoration: none; }
-.btn-1 { width: 20%; padding: 13px; border-radius: 14px; text-decoration: none; }
+.btn { width: 100%; padding: 13px; border-radius: 14px; text-decoration: none; }
 .btn-action { min-width: 80px; text-align: center; }
 .staff_btn { padding: 12px; border-radius: 14px; text-decoration: none; font-weight: 700; }
 .logout-button {
@@ -283,6 +283,7 @@ footer { margin-top: auto; }
 
 /* ============= Main / Form ============= */
 main {
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -902,7 +903,7 @@ main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #e0ffe0, #c0e0c0);
+  background: linear-gradient(160deg, #f0fff8, #e7f4ff 42%, #ebfff6);
   z-index: 9999;
   display: flex;
   justify-content: center;
@@ -987,7 +988,7 @@ main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 
 .leaf {
   position: absolute;
   width: 20px; height: 20px;
-  background-color: #8bc34a;
+  background-color: ;
   border-radius: 0 50% 50% 50%;
   transform: rotate(45deg);
   opacity: 0;
