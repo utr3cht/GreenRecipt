@@ -5,60 +5,116 @@
 {% endblock %}
 
 {% block content %}
-  <main class="dashboard-main">
-    <div class="dashboard-container inquiry-detail">
-      <h1>お問い合わせ詳細</h1>
+<main class="dashboard-main">
+    <div class="container-fluid dashboard-section mt-4 px-4 inquiry-detail">
+        <h1 style="color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 0.5rem; margin-bottom: 2rem;">お問い合わせ詳細</h1>
 
-      <section class="inquiry-card">
-        <header>
-          <h2>{{ inquiry.subject }}</h2>
-        </header>
-        <div class="inquiry-meta">
-          <p>
-            <strong>ID:</strong> {{ inquiry.id }}
-          </p>
-          <p>
-            <strong>ユーザー:</strong> {% if inquiry.user %}
-              {{ inquiry.user.username }}
-            {% else %}
-              ゲスト
+        <!-- Inquiry Header Info -->
+        <section class="inquiry-card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
+            <header style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.5rem; color: #2c3e50;">{{ inquiry.subject }}</h2>
+                     <span class="status-badge status-{{ inquiry.status }}" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-top: 5px; color: white; background-color: {% if inquiry.status == 'completed' %}#95a5a6{% elif inquiry.status == 'in_progress' %}#3498db{% else %}#e74c3c{% endif %};">
+                        {{ inquiry.get_status_display }}
+                     </span>
+                </div>
+                <div style="text-align: right; color: #7f8c8d; font-size: 0.9rem;">
+                    <p style="margin: 0;">ID: {{ inquiry.id }}</p>
+                    <p style="margin: 0;">{{ inquiry.created_at|date:'Y年n月j日 H:i' }}</p>
+                </div>
+            </header>
+            
+            <div class="inquiry-meta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <strong style="color: #7f8c8d;">ユーザー:</strong> 
+                    {% if inquiry.user %}{{ inquiry.user.username }}{% else %}ゲスト{% endif %}
+                </div>
+                <div>
+                    <strong style="color: #7f8c8d;">返信先:</strong> {{ inquiry.reply_to_email }}
+                </div>
+            </div>
+
+            <div class="inquiry-body" style="background: #f9f9f9; padding: 20px; border-radius: 8px;">
+                <h3 style="margin-top: 0; font-size: 1.1rem; color: #34495e;">お問い合わせ内容</h3>
+                <p style="white-space: pre-wrap; margin-bottom: 15px;">{{ inquiry.body_text }}</p>
+                {% if inquiry.image %}
+                    <div style="margin-top: 15px;">
+                        <strong>添付画像:</strong><br>
+                        <img src="{{ inquiry.image.url }}" alt="添付画像" style="max-width: 100%; max-height: 400px; border-radius: 4px; border: 1px solid #ddd; margin-top: 5px;" />
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Message Thread -->
+        <section class="message-thread" style="margin-bottom: 40px;">
+            <h3 style="border-left: 4px solid #3498db; padding-left: 10px; margin-bottom: 20px;">対応履歴</h3>
+            
+            <!-- Old single reply (Backward Compatibility) -->
+            {% if inquiry.is_replied and not messages_list %}
+                 <div class="message-item admin" style="background: #e8f6fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3498db; margin-left: 20%;">
+                    <div class="message-meta" style="margin-bottom: 5px; font-size: 0.85rem; color: #3498db; font-weight: bold;">
+                        管理者 (旧返信データ)
+                    </div>
+                    <div class="message-content" style="white-space: pre-wrap;">{{ inquiry.reply_message }}</div>
+                </div>
             {% endif %}
-          </p>
-          <p>
-            <strong>返信先メールアドレス:</strong> {{ inquiry.reply_to_email }}
-          </p>
-          <p>
-            <strong>作成日時:</strong> {{ inquiry.created_at|date:'Y年n月j日 H:i' }}
-          </p>
-        </div>
 
-        <div class="inquiry-body">
-          <h3>お問い合わせ内容</h3>
-          <p>{{ inquiry.body_text|linebreaksbr }}</p>
-          {% if inquiry.image %}
-            <h3>添付画像</h3>
-            <img src="{{ inquiry.image.url }}" alt="添付画像" class="inquiry-image" />
-          {% endif %}
-        </div>
-      </section>
+            {% for msg in messages_list %}
+                <div class="message-item {{ msg.sender_type }}" style="padding: 15px; border-radius: 8px; margin-bottom: 15px; {% if msg.sender_type == 'admin' %}background: #e8f6fd; margin-left: 20%; border-left: 4px solid #3498db;{% else %}background: #fdf2e9; margin-right: 20%; border-left: 4px solid #e67e22;{% endif %}">
+                    <div class="message-meta" style="margin-bottom: 5px; font-size: 0.85rem; font-weight: bold; color: {% if msg.sender_type == 'admin' %}#3498db{% else %}#e67e22{% endif %}; display: flex; justify-content: space-between;">
+                        <span>{% if msg.sender_type == 'admin' %}管理者{% else %}ユーザー{% endif %}</span>
+                        <span style="font-weight: normal; color: #95a5a6;">{{ msg.created_at|date:'Y/n/j H:i' }}</span>
+                    </div>
+                    <div class="message-content" style="white-space: pre-wrap;">{{ msg.message }}</div>
+                </div>
+            {% empty %}
+                {% if not inquiry.is_replied %}
+                <p style="color: #95a5a6; font-style: italic;">まだメッセージ履歴はありません。</p>
+                {% endif %}
+            {% endfor %}
+        </section>
 
-      <section class="inquiry-reply">
-        {% if inquiry.is_replied %}
-          <h2>返信済み</h2>
-          <div class="inquiry-body">
-            <h3>返信内容</h3>
-            <p>{{ inquiry.reply_message|linebreaksbr }}</p>
-          </div>
-        {% else %}
-          <h2>お問い合わせに返信する</h2>
-          <form method="post" class="reply-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">返信する</button>
-          </form>
-        {% endif %}
-        <a href="{% url 'core:admin_inquiry_dashboard' %}" class="btn btn-secondary">ダッシュボードに戻る</a>
-      </section>
+        <!-- Actions -->
+        <section class="inquiry-reply" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            {% if inquiry.status == 'completed' %}
+                <div style="text-align: center; padding: 20px;">
+                    <h3 style="color: #27ae60;">対応完了</h3>
+                    <p style="color: #7f8c8d;">このお問い合わせは完了しています。</p>
+                    <div style="margin-top: 20px;">
+                        <a href="{% url 'core:admin_inquiry_dashboard' %}" class="btn btn-secondary">ダッシュボードに戻る</a>
+                    </div>
+                </div>
+            {% else %}
+                <h3 style="margin-top: 0;">返信する</h3>
+                <form method="post" class="reply-form">
+                    {% csrf_token %}
+                    <div style="margin-bottom: 15px;">
+                        <label for="{{ form.subject.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: bold;">件名:</label>
+                        {{ form.subject }}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="{{ form.message.id_for_label }}" style="display: block; margin-bottom: 5px; font-weight: bold;">メッセージ:</label>
+                        {{ form.message }}
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; align-items: center; margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="padding: 10px 30px;">
+                            <i class="fas fa-paper-plane"></i> 返信する
+                        </button>
+                        
+                        {% if inquiry.status == 'in_progress' %}
+                            <button type="submit" name="complete" value="1" class="btn" style="background: #27ae60; color: white; border: none; padding: 10px 20px;" onclick="return confirm('このお問い合わせを完了としてもよろしいですか？');" formnovalidate>
+                                <i class="fas fa-check"></i> 対応完了にする
+                            </button>
+                        {% endif %}
+                    </div>
+                </form>
+                <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <a href="{% url 'core:admin_inquiry_dashboard' %}" class="btn btn-secondary">ダッシュボードに戻る</a>
+                </div>
+            {% endif %}
+        </section>
     </div>
-  </main>
+</main>
 {% endblock %}

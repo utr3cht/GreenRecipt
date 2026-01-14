@@ -1,0 +1,155 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block content %}
+<style>
+    .form-contents {
+        display: contents;
+    }
+</style>
+<main class="dashboard-main">
+  <div class="container-fluid dashboard-section mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1>店舗管理ダッシュボード</h1>
+      <div class="d-flex gap-2">
+        <a href="{% url 'core:store_product_create' %}" class="btn btn-success">+ エコ商品申請</a>
+        <a href="{% url 'core:store_coupon_create' %}" class="btn btn-primary">+ クーポン申請</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">エコ商品申請状況</h5>
+          </div>
+          <div class="card-body">
+            {% if products %}
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>商品名</th>
+                    <th>ステータス</th>
+                    <th>ポイント</th>
+                    <th>備考</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in products %}
+                  <tr>
+                    <td>
+                      {% if item.is_common %}
+                        <span class="badge bg-dark me-1" style="background-color: #212529 !important; color: white !important;">共通</span>
+                      {% endif %}
+                      {{ item.name }}
+                    </td>
+                    <td>
+                      {% if item.status == 'approved' %}
+                        <span class="badge bg-success">承認済み</span>
+                      {% elif item.status == 'rejected' %}
+                        <span class="badge bg-danger">却下</span>
+                      {% else %}
+                        <span class="badge bg-warning text-dark">申請中</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ item.points }}pt</td>
+                    <td class="small">
+                        {% if item.status == 'rejected' and item.rejection_reason %}
+                            <span class="text-danger fw-bold">理由: {{ item.rejection_reason }}</span>
+                        {% else %}
+                            <span class="text-muted">{{ item.remarks|truncatechars:20 }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not item.is_common and item.store == user.store %}
+                            <div class="d-flex gap-1">
+                                {% if item.status == 'rejected' or item.status == 'pending' %}
+                                    <a href="{% url 'core:store_product_update' item.id %}" class="btn btn-sm btn-outline-primary">編集・再申請</a>
+                                {% endif %}
+                                <form method="post" action="{% url 'core:store_product_delete' item.id %}" onsubmit="return confirm('本当に削除しますか？');" class="form-contents">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+              <p class="text-muted">申請中の商品はありません。</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">クーポン申請状況</h5>
+            </div>
+            <div class="card-body">
+              {% if coupons %}
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>タイトル</th>
+                      <th>ステータス</th>
+                      <th>タイプ</th>
+                      <th>備考/却下理由</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in coupons %}
+                    <tr>
+                      <td>{{ item.title }}</td>
+                      <td>
+                        {% if item.status == 'approved' %}
+                          <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success">承認済み</span>
+                            <form method="post" action="{% url 'core:store_request_coupon_delete' item.id %}" onsubmit="return confirm('本当にこのクーポンの削除を申請しますか？');" class="form-contents">
+                              {% csrf_token %}
+                              <button type="submit" class="btn btn-danger btn-sm py-0" style="font-size: 0.8em;">削除申請</button>
+                            </form>
+                          </div>
+                        {% elif item.status == 'rejected' %}
+                          <span class="badge bg-danger">却下</span>
+                        {% elif item.status == 'deletion_requested' %}
+                          <span class="badge bg-danger">削除申請中</span>
+                        {% else %}
+                          <span class="badge bg-warning text-dark">申請中</span>
+                        {% endif %}
+                      </td>
+                      <td>{{ item.get_type_display }}</td>
+                      <td class="small">
+                          {% if item.status == 'rejected' and item.rejection_reason %}
+                            <span class="text-danger fw-bold">理由: {{ item.rejection_reason }}</span>
+                          {% else %}
+                            <span class="text-muted">{{ item.remarks|truncatechars:20 }}</span>
+                          {% endif %}
+                      </td>
+                      <td>
+                          {% if item.status == 'rejected' or item.status == 'pending' %}
+                            <a href="{% url 'core:store_coupon_update' item.id %}" class="btn btn-sm btn-outline-primary">編集・再申請</a>
+                          {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+                <p class="text-muted">申請中のクーポンはありません。</p>
+              {% endif %}
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -3,7 +3,7 @@ from core.models import Receipt
 import json
 
 class Command(BaseCommand):
-    help = 'Displays the details of the most recently scanned receipt'
+    help = '最後にスキャンされたレシートの詳細を表示します。'
 
     def handle(self, *args, **kwargs):
         try:

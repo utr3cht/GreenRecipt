@@ -69,19 +69,19 @@ class RegisterConfirmView(TemplateView):
                 'token': user.verification_token,
             }
             
-            # Render plain text and HTML content
+            # テキスト/HTMLコンテンツのレンダリング
             text_content = render_to_string('accounts/account_verification_email.txt', context)
             html_content = render_to_string('accounts/account_verification_email.html', context)
             
             to_email = form.cleaned_data.get('email')
             
-            # Create the email message
+            # メール作成
             email = EmailMultiAlternatives(
                 mail_subject,
                 text_content,
                 to=[to_email]
             )
-            # Attach the HTML version
+            # HTML版の添付
             email.attach_alternative(html_content, "text/html")
             email.send()
 
@@ -105,21 +105,21 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
     def form_valid(self, form):
-        # データベースから直接、変更前のユーザー情報を取得
+        # 変更前の情報取得
         original_email = CustomUser.objects.get(pk=self.request.user.pk).email
         
         new_email_from_form = form.cleaned_data.get('email')
 
-        # 「新しいメール」と「DBにある元のメール」を比較
+        # メール変更チェック
         if new_email_from_form and new_email_from_form != original_email:
-            # --- メールアドレス変更時の処理 ---
+            # メール変更処理
             user_instance = form.save(commit=False)
-            user_instance.email = original_email # emailは元の値に戻す
-            user_instance.new_email = new_email_from_form # 新しいemailは一時保管場所へ
+            user_instance.email = original_email # 元のメールを保持
+            user_instance.new_email = new_email_from_form # 新メールを一時保存
             user_instance.email_change_token = str(uuid.uuid4())
             user_instance.save()
 
-            # 確認メールを送信
+            # 確認メール送信
             current_site = get_current_site(self.request)
             mail_subject = 'GreenRecipt: メールアドレスの変更を認証してください'
             context = {
@@ -146,7 +146,7 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
             return HttpResponseRedirect(self.get_success_url())
         
         else:
-            # --- メールアドレスが変更されていない時の処理 ---
+            # メール変更なし
             return super().form_valid(form)
 
 
@@ -186,9 +186,9 @@ class ActivateAccountView(TemplateView):
 
         if user is not None and user.verification_token == token:
             user.is_verified = True
-            user.verification_token = None  # Clear the token after successful verification
+            user.verification_token = None  # 認証完了後にトークン消去
             user.save()
-            # Or a specific success page
+            # 成功ページへ
             return redirect('accounts:verification_complete')
         else:
             return render(request, 'accounts/activation_invalid.html')

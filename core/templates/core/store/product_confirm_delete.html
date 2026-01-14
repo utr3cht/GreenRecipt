@@ -1,0 +1,15 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block title %}エコ商品削除確認{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h4>削除確認</h4>
+    <p>「{{ object.name }}」を削除しますか？</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm">削除</button>
+        <a href="{% url 'core:store_dashboard' %}" class="btn btn-secondary btn-sm">キャンセル</a>
+    </form>
+</div>
+{% endblock %}

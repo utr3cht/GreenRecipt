@@ -77,32 +77,32 @@ class CustomUser(AbstractUser):
         self.save()
 
     def save(self, *args, **kwargs):
-        # --- 1. ランクとポイントの更新前処理 ---
+        # 1. 更新前処理
         is_new_user = self.pk is None
         old_rank = 'seed'
         old_points = 0
         if not is_new_user:
             try:
-                # データベースから保存前の状態を取得
+                # 保存前の状態取得
                 old_self = CustomUser.objects.get(pk=self.pk)
                 old_rank = old_self.rank
                 old_points = old_self.current_points
             except CustomUser.DoesNotExist:
-                # 予期せぬエラーケース（ユーザーが存在しない）
+                # ユーザー不在エラー無視
                 pass
 
-        # --- 2. ランクの自動更新 ---
+        # 2. ランク自動更新
         self._update_rank()
         
-        # --- 3. Djangoのデフォルトのsave処理を呼び出す ---
+        # 3. 保存実行
         if not self.is_superuser:
             self.is_staff = self.role in ['admin', 'system', 'store']
         super().save(*args, **kwargs)
 
-        # --- 4. クーポン付与ロジック（save後に行う） ---
-        # ランクアップ時のクーポン付与
+        # 4. クーポン付与
+        # ランクアップ特典
         rank_coupon_map = {
-            'sprout': 'ブロンズランク特典', # クーポン名は既存のままか確認が必要だが、一旦コード上のキーを変更
+            'sprout': 'ブロンズランク特典', # クーポン名定義
             'tree': 'シルバーランク特典',
             'apple_tree': 'ゴールドランク特典',
         }
@@ -111,14 +111,14 @@ class CustomUser(AbstractUser):
             if coupon_title:
                 try:
                     coupon_to_grant = Coupon.objects.get(title=coupon_title)
-                    # 既に持っていない場合のみ付与
+                    # 未所持のみ付与
                     if not self.current_coupons.filter(pk=coupon_to_grant.pk).exists():
                         self.current_coupons.add(coupon_to_grant)
                 except Coupon.DoesNotExist:
-                    # 対応するクーポンが存在しない場合は何もしない
+                    # クーポン不在時無視
                     pass
 
-        # 特定ポイント達成時のクーポン付与
+        # ポイント達成特典
         if old_points < 1000 <= self.current_points:
             try:
                 coupon_to_grant = Coupon.objects.get(title='1000ポイント達成記念')

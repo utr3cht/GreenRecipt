@@ -30,7 +30,7 @@ class Store(models.Model):
     def save(self, *args, **kwargs):
         if self.address and self.lat == 0.0 and self.lng == 0.0:
             geolocated = False
-            # Try Nominatim first
+            # Nominatimでジオコーディングを試行
             geolocator = Nominatim(user_agent="GreenRecipt_Geocoder")
             try:
                 encoded_address = self.address.encode('utf-8').decode('utf-8')
@@ -44,9 +44,9 @@ class Store(models.Model):
                     print(f"Nominatim could not geocode address for store {self.store_name}: {self.address}")
             except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
                 print(f"Nominatim geocoding failed for store {self.store_name}: {self.address} - {e}")
-            time.sleep(1) # Be kind to the Nominatim service
+            time.sleep(1) # Nominatimサービスへの負荷軽減
 
-            # If Nominatim failed and Google Maps geocoding is enabled, try Google Maps
+            # Nominatim失敗時はGoogle Mapsを使用
             if not geolocated and settings.GOOGLE_MAPS_GEOCODING_ENABLED and settings.GOOGLE_MAPS_API_KEY and settings.GOOGLE_MAPS_API_KEY != 'YOUR_GOOGLE_MAPS_API_KEY':
                 try:
                     gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
@@ -93,10 +93,8 @@ class Receipt(models.Model):
             # 直接抽出された合計点数があればそれを返す
             if 'total_quantity' in self.parsed_data and self.parsed_data['total_quantity'] > 0:
                 return self.parsed_data['total_quantity']
-            # なければitemsリストから計算
             if 'items' in self.parsed_data and isinstance(self.parsed_data['items'], list):
                 return sum(item.get('quantity', 0) for item in self.parsed_data['items'])
-        # 過去のデータ形式（リストのみ）との後方互換性
         if isinstance(self.parsed_data, list):
             return sum(item.get('quantity', 0) for item in self.parsed_data)
         return 0
@@ -142,6 +140,7 @@ class ReceiptItem(models.Model):
         Product, on_delete=models.PROTECT, verbose_name='商品')
     quantity = models.IntegerField(verbose_name='数量')
     price = models.IntegerField(verbose_name='価格')
+    points = models.IntegerField(default=0, verbose_name='獲得ポイント')
 
     def __str__(self):
         return f"{self.product.name} ({self.quantity} x ¥{self.price})"
@@ -179,6 +178,21 @@ class Inquiry(models.Model):
         verbose_name_plural = 'お問い合わせ'
 
 
+class InquiryMessage(models.Model):
+    inquiry = models.ForeignKey(Inquiry, related_name='messages', on_delete=models.CASCADE, verbose_name='お問い合わせ')
+    sender_type = models.CharField(max_length=10, choices=[('admin', '管理者'), ('user', 'ユーザー')], verbose_name='送信者タイプ')
+    message = models.TextField(verbose_name='メッセージ')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='作成日時')
+
+    def __str__(self):
+        return f"{self.sender_type}: {self.message[:20]}"
+
+    class Meta:
+        verbose_name = 'お問い合わせメッセージ'
+        verbose_name_plural = 'お問い合わせメッセージ'
+
+
+
 class Coupon(models.Model):
     TYPE_CHOICES = [
         ('percentage', '割引率'),
@@ -192,6 +206,22 @@ class Coupon(models.Model):
         max_digits=12, decimal_places=2, verbose_name='割引量')
     available_stores = models.ManyToManyField(
         Store, verbose_name='利用可能店舗', blank=True)
+    required_points = models.IntegerField(default=0, verbose_name='必要ポイント数')
+    
+    # 承認フロー用
+    STATUS_CHOICES = [
+        ('pending', '申請中'),
+        ('approved', '承認済み'),
+        ('rejected', '却下'),
+        ('deletion_requested', '削除申請中'),
+    ]
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='approved', verbose_name='ステータス')
+    store = models.ForeignKey(
+        Store, on_delete=models.CASCADE, null=True, blank=True, related_name='created_coupons', verbose_name='作成店舗')
+    remarks = models.TextField(blank=True, verbose_name='備考')
+    rejection_reason = models.TextField(blank=True, verbose_name='却下理由')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
 
     @property
     def discount_amount(self):
@@ -233,6 +263,10 @@ class Report(models.Model):
     generated_at = models.DateTimeField(auto_now_add=True, verbose_name='生成日時')
     description = models.TextField(verbose_name='内容')
     score = models.IntegerField(default=0, verbose_name='スコア')
+    
+    # レポート時点のスナップショット
+    rank = models.CharField(max_length=20, blank=True, null=True, verbose_name='会員ランク')
+    monthly_points = models.IntegerField(default=0, verbose_name='月間獲得ポイント')
 
     def __str__(self):
         return f"Report for {self.user} at {self.generated_at}"
@@ -299,6 +333,21 @@ class EcoProduct(models.Model):
     jan_code = models.CharField(
         max_length=13, blank=True, null=True, unique=True, verbose_name='JANコード')
     points = models.IntegerField(default=10, verbose_name='付与ポイント')
+    
+    # 申請用フィールド
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, null=True, blank=True, verbose_name='店舗')
+    remarks = models.TextField(blank=True, verbose_name='備考')
+    is_common = models.BooleanField(default=False, verbose_name='共通商品')
+    
+    STATUS_CHOICES = [
+        ('pending', '申請中'),
+        ('approved', '承認済み'),
+        ('rejected', '却下'),
+    ]
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='approved', verbose_name='ステータス')
+    rejection_reason = models.TextField(blank=True, verbose_name='却下理由')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新日時')
 
     def __str__(self):
         return f"{self.name} ({self.points} pts)"

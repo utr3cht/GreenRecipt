@@ -19,6 +19,7 @@
              data-requirement="{{ coupon.requirement }}"
              data-stores="{% for store in coupon.available_stores.all %}{{ store.store_name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
              data-store-ids="{% for store in coupon.available_stores.all %}{{ store.store_id }}:{{ store.store_name }}{% if not forloop.last %},{% endif %}{% endfor %}">
+          <div class="coupon-badge">所持中</div>
           <h3>{{ coupon.title }}</h3>
           <p><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
           <p><strong>条件:</strong> {{ coupon.requirement }}</p>
@@ -28,6 +29,46 @@
   {% else %}
     <div class="no-coupons">
       <p>現在、所持しているクーポンはありません。</p>
+    </div>
+  {% endif %}
+
+  <h2 class="mt-5 mb-3">ポイントで交換可能なクーポン</h2>
+  <div class="current-points mb-3">保有ポイント: <strong>{{ user_points }} pt</strong></div>
+
+  {% if available_coupons %}
+    <div class="coupon-grid">
+      {% for coupon in available_coupons %}
+        <div class="coupon-card available-coupon" style="border-color: #aaa; background-color: #f9f9f9;">
+          <h3>{{ coupon.title }}</h3>
+          <p>{{ coupon.description }}</p>
+          <p><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
+          <p class="text-danger font-weight-bold">必要ポイント: {{ coupon.required_points }} pt</p>
+          
+          {% if user_points >= coupon.required_points %}
+            <button class="btn btn-primary acquire-coupon-btn" data-id="{{ coupon.id }}" data-points="{{ coupon.required_points }}">
+              {{ coupon.required_points }}ptで交換する
+            </button>
+          {% else %}
+            <button class="btn btn-secondary" disabled>ポイント不足</button>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="margin-bottom: 50px;">現在交換可能なクーポンはありません。</p>
+  {% endif %}
+
+  {% if used_coupons %}
+    <h2 class="mt-5 mb-3 text-muted">使用済みクーポン</h2>
+    <div class="coupon-grid used-coupons-grid" style="opacity: 0.7;">
+      {% for coupon in used_coupons %}
+        <div class="coupon-card used" style="background-color: #eee; border-color: #ddd; cursor: default;">
+            <div class="coupon-badge" style="background-color: #6c757d;">使用済</div>
+            <h3 class="text-muted">{{ coupon.title }}</h3>
+            <p class="text-muted">{{ coupon.description }}</p>
+            <p class="text-muted"><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
+        </div>
+      {% endfor %}
     </div>
   {% endif %}
 </div>
@@ -54,8 +95,12 @@
     <div class="modal-footer">
       <button id="useCouponBtn" class="use-button">このクーポンを使う</button>
       <button id="closeModalBtn" class="close-button">閉じる</button>
-    </div>
   </div>
+</div>
+
+{# CSRF Token for JS #}
+<div style="display:none;">
+    <form>{% csrf_token %}</form>
 </div>
 
 <script>
@@ -173,13 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         alert('クーポンを使用しました。');
         closeModal();
-        
-        // Mark the card as used instead of removing it
-        const usedCard = document.querySelector(`.coupon-card[data-id='${couponId}']`);
-        if (usedCard) {
-          usedCard.classList.add('used');
-        }
-
+        location.reload(); 
       } else {
         alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
       }
@@ -187,6 +226,70 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => {
       console.error('Error:', error);
       alert('通信中にエラーが発生しました。');
+    });
+  });
+
+  // クーポン取得ボタンのイベントリスナー
+  document.querySelectorAll('.acquire-coupon-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation(); // 親要素のクリックイベント（モーダル表示）を防止
+      
+      const couponId = this.dataset.id;
+      const points = this.dataset.points;
+      
+      if (!confirm(`${points}ポイントを使用してこのクーポンを取得しますか？`)) {
+        return;
+      }
+      
+      const url = `/coupons/acquire/${couponId}/`;
+      // CSRFトークンはモーダル内に隠れているフォーム等がなければ、metaタグか別途取得が必要。
+      // 上記の useCouponBtn ではDOMから取得しているが、このブロック外にある可能性があるため、
+      // 念のため安全に取得する。ここではページ内に存在する前提で querySelector を使う。
+      // base.html などに csrf_token が出力されていると想定。
+      // もしない場合は、formから取るか、cookieから取るか。
+      // 今回は既存コードに合わせて input から取る。もしなければエラーになるので注意。
+      // coupon_list.html 内には post フォームが明示されていないため、
+      // 明示的に csrfInput を探すか、meta を見るか。
+      // 既存の useCouponBtn のロジックでは [name=csrfmiddlewaretoken] を探している。
+      // しかし、テンプレート内に {% csrf_token %} を記述していないと見つからない。
+      // coupon_list.html の body 内には見当たらないので、追加する必要がある。
+      
+      let csrfToken = '';
+      const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+      if (csrfInput) {
+          csrfToken = csrfInput.value;
+      } else {
+          // Cookieから取得
+          const cookies = document.cookie.split(';');
+          for (let cookie of cookies) {
+              const [name, value] = cookie.trim().split('=');
+              if (name === 'csrftoken') {
+                  csrfToken = value;
+                  break;
+              }
+          }
+      }
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('クーポンを取得しました！');
+          location.reload(); // リロードして所有リストに移動させる
+        } else {
+          alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('通信中にエラーが発生しました。');
+      });
     });
   });
 });

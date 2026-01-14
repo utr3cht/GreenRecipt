@@ -3,39 +3,83 @@
 {% block title %}エコ商品一覧{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>エコ商品一覧</h2>
-    <a href="{% url 'core:ecoproduct_create' %}" class="btn btn-success mb-3">新しいエコ商品を追加</a>
-    <a href="{% url 'core:staff_index' %}" class="btn btn-secondary mb-3 ms-2">戻る</a>
+  <div class="container-fluid dashboard-section mt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1>エコ商品一覧</h1>
+      <div class="d-flex gap-2">
+        {% if user.role == 'store' %}
+          <a href="{% url 'core:store_product_create' %}" class="btn btn-success">+ 商品申請</a>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'system' %}
+          <a href="{% url 'core:ecoproduct_create' %}" class="btn btn-primary">新規作成(管理者)</a>
+        {% endif %}
+      </div>
+    </div>
 
-    {% if ecoproducts %}
-    <table class="table table-striped">
-        <thead>
-            <tr>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        {% if ecoproducts %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
                 <th>ID</th>
+                <th>店舗</th>
                 <th>商品名/キーワード</th>
                 <th>JANコード</th>
                 <th>付与ポイント</th>
+                <th>ステータス</th>
                 <th>操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in ecoproducts %}
-            <tr>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in ecoproducts %}
+              <tr>
                 <td>{{ product.pk }}</td>
+                <td>{{ product.store.store_name|default:"-" }}</td>
                 <td>{{ product.name }}</td>
                 <td>{{ product.jan_code|default:"-" }}</td>
                 <td>{{ product.points }}</td>
                 <td>
-                    <a href="{% url 'core:ecoproduct_update' product.pk %}" class="btn btn-sm btn-primary">編集</a>
-                    <a href="{% url 'core:ecoproduct_delete' product.pk %}" class="btn btn-sm btn-danger">削除</a>
+                    {% if product.is_common %}
+                        <span class="badge bg-dark" style="background-color: #212529 !important; color: white !important;">共通</span>
+                    {% endif %}
+                    {% if product.status == 'approved' %}
+                        <span class="badge bg-success">承認済</span>
+                    {% elif product.status == 'rejected' %}
+                        <span class="badge bg-danger">却下</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">申請中</span>
+                    {% endif %}
                 </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>エコ商品はまだ登録されていません。</p>
-    {% endif %}
-</div>
+                <td>
+                  <div class="d-flex gap-2">
+                    {% if user.role != 'store' %}
+                        <a href="{% url 'core:ecoproduct_update' product.pk %}" class="btn btn-secondary btn-sm">編集</a>
+                        <a href="{% url 'core:ecoproduct_delete' product.pk %}" class="btn btn-danger btn-sm">削除</a>
+                    {% else %}
+                        {% if product.store == user.store and not product.is_common %}
+                            <a href="{% url 'core:store_product_update' product.pk %}" class="btn btn-outline-primary btn-sm">編集・再申請</a>
+                            <a href="{% url 'core:store_product_delete' product.pk %}" class="btn btn-outline-danger btn-sm">削除</a>
+                        {% else %}
+                            <span class="text-muted text-sm">操作不可</span>
+                        {% endif %}
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-4">エコ商品はまだ登録されていません。</p>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="mt-3">
+        <a href="{% url 'core:staff_index' %}" class="btn btn-secondary">戻る</a>
+    </div>
+  </div>
 {% endblock %}

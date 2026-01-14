@@ -9,13 +9,13 @@ import googlemaps
 
 
 class Command(BaseCommand):
-    help = 'Geocodes addresses for Store objects that have no lat/lng.'
+    help = '緯度経度がない店舗住所をジオコーディングします。'
 
     def handle(self, *args, **options):
         geolocator = Nominatim(user_agent="GreenRecipt_Geocoder")
         stores = Store.objects.filter(lat=0.0, lng=0.0).exclude(address__isnull=True).exclude(address__exact='')
 
-        self.stdout.write(self.style.SUCCESS(f'Found {stores.count()} stores to geocode.'))
+        self.stdout.write(self.style.SUCCESS(f'{stores.count()} 件の店舗を対象とします。'))
 
         google_maps_calls_made = 0
         google_maps_limit = settings.GOOGLE_MAPS_GEOCODING_LIMIT_PER_RUN
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         for store in stores:
             if store.address:
                 geolocated = False
-                # Try Nominatim first
+                # Nominatimを最初に試行
                 try:
                     encoded_address = store.address.encode('utf-8').decode('utf-8')
                     location = geolocator.geocode(encoded_address, timeout=10, language='ja')
@@ -32,20 +32,20 @@ class Command(BaseCommand):
                         store.lng = location.longitude
                         geolocated = True
                         try:
-                            self.stdout.write(self.style.SUCCESS(f'Nominatim geocoded store {store.store_name}: {store.address} -> ({store.lat}, {store.lng})'))
+                            self.stdout.write(self.style.SUCCESS(f'Nominatim成功 {store.store_name}: {store.address} -> ({store.lat}, {store.lng})'))
                         except UnicodeEncodeError:
-                            self.stdout.write(self.style.SUCCESS(f'Nominatim geocoded store (encoding issue in name/address): ({store.lat}, {store.lng})'))
+                            self.stdout.write(self.style.SUCCESS(f'Nominatim成功 (文字コード問題): ({store.lat}, {store.lng})'))
                     else:
                         try:
-                            self.stdout.write(self.style.WARNING(f'Nominatim could not geocode address for store {store.store_name}: {store.address}'))
+                            self.stdout.write(self.style.WARNING(f'Nominatim失敗 {store.store_name}: {store.address}'))
                         except UnicodeEncodeError:
-                            self.stdout.write(self.style.WARNING(f'Nominatim could not geocode address for store (encoding issue in name/address)'))
+                            self.stdout.write(self.style.WARNING(f'Nominatim失敗 (文字コード問題)'))
                 except (GeocoderTimedOut, GeocoderServiceError, Exception) as e:
                     try:
-                        self.stdout.write(self.style.ERROR(f'Nominatim geocoding failed for store {store.store_name}: {store.address} - {e}'))
+                        self.stdout.write(self.style.ERROR(f'Nominatimエラー {store.store_name}: {store.address} - {e}'))
                     except UnicodeEncodeError:
-                        self.stdout.write(self.style.ERROR(f'Nominatim geocoding failed for store (encoding issue in name/address) - {e}'))
-                time.sleep(1) # Be kind to the Nominatim service
+                        self.stdout.write(self.style.ERROR(f'Nominatimエラー (文字コード問題) - {e}'))
+                time.sleep(1) # 負荷軽減
 
                 # If Nominatim failed, and Google Maps geocoding is enabled and within limit, try Google Maps
                 if not geolocated and settings.GOOGLE_MAPS_GEOCODING_ENABLED and settings.GOOGLE_MAPS_API_KEY and settings.GOOGLE_MAPS_API_KEY != 'YOUR_GOOGLE_MAPS_API_KEY':
@@ -81,11 +81,11 @@ class Command(BaseCommand):
 
 
                 if geolocated:
-                    store.save() # Save only if geocoded by either service
+                    store.save() # どちらかで成功した場合のみ保存
             else:
                 try:
-                    self.stdout.write(self.style.WARNING(f'Store {store.store_name} has no address to geocode.'))
+                    self.stdout.write(self.style.WARNING(f'店舗 {store.store_name} には住所がありません。'))
                 except UnicodeEncodeError:
-                    self.stdout.write(self.style.WARNING(f'Store (encoding issue in name) has no address to geocode.'))
+                    self.stdout.write(self.style.WARNING(f'店舗 (文字コード問題) には住所がありません。'))
 
-        self.stdout.write(self.style.SUCCESS('Geocoding process complete.'))
+        self.stdout.write(self.style.SUCCESS('ジオコーディング処理完了。'))

@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from core.models import Coupon
 
 class Command(BaseCommand):
-    help = 'Creates default coupons for different ranks'
+    help = 'ランク別のデフォルトクーポンを作成します。'
 
     def handle(self, *args, **options):
         coupons_to_create = [
@@ -38,6 +38,6 @@ class Command(BaseCommand):
                 defaults=coupon_data
             )
             if created:
-                self.stdout.write(self.style.SUCCESS(f'Successfully created coupon: "{coupon.title}"'))
+                self.stdout.write(self.style.SUCCESS(f'クーポンを作成しました: "{coupon.title}"'))
             else:
-                self.stdout.write(self.style.WARNING(f'Coupon "{coupon.title}" already exists.'))
+                self.stdout.write(self.style.WARNING(f'クーポンは既に存在します: "{coupon.title}"'))

@@ -4,7 +4,7 @@ from core.models import Coupon
 from django.db.models import Q
 
 class Command(BaseCommand):
-    help = 'Grants coupons to users based on their rank.'
+    help = 'ランクに基づいてユーザーにクーポンを付与します。'
 
     def handle(self, *args, **options):
         # ランクとクーポンのタイトルのマッピング
@@ -19,7 +19,7 @@ class Command(BaseCommand):
             coupons = Coupon.objects.filter(title__in=rank_coupon_map.values())
             coupon_map = {coupon.title: coupon for coupon in coupons}
         except Coupon.DoesNotExist:
-            self.stdout.write(self.style.ERROR('Default coupons not found. Please run "create_default_coupons" first.'))
+            self.stdout.write(self.style.ERROR('デフォルトクーポンが見つかりません。"create_default_coupons" を先に実行してください。'))
             return
 
         # 全てのユーザーを取得
@@ -36,7 +36,7 @@ class Command(BaseCommand):
             # 対応するクーポンオブジェクトを取得
             target_coupon = coupon_map.get(target_coupon_title)
             if not target_coupon:
-                self.stdout.write(self.style.WARNING(f'Coupon "{target_coupon_title}" not found in database.'))
+                self.stdout.write(self.style.WARNING(f'クーポン "{target_coupon_title}" がデータベースに見つかりません。'))
                 continue
 
             # ユーザーが既にそのクーポンを持っているか確認
@@ -44,6 +44,6 @@ class Command(BaseCommand):
                 # クーポンを付与
                 user.current_coupons.add(target_coupon)
                 granted_count += 1
-                self.stdout.write(f'Granted "{target_coupon.title}" to user {user.username}.')
+                self.stdout.write(f'ユーザー {user.username} に "{target_coupon.title}" を付与しました。')
 
-        self.stdout.write(self.style.SUCCESS(f'Successfully granted coupons to {granted_count} users.'))
+        self.stdout.write(self.style.SUCCESS(f'{granted_count} 人のユーザーにクーポン付与が完了しました。'))

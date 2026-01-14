@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from accounts.models import CustomUser
 
 class Command(BaseCommand):
-    help = 'Updates the is_staff status for all users based on their role.'
+    help = '役割に基づいて全ユーザーのis_staffステータスを更新します。'
 
     def handle(self, *args, **options):
         updated_count = 0
@@ -13,6 +13,6 @@ class Command(BaseCommand):
                 user.is_staff = new_is_staff
                 user.save(update_fields=['is_staff'])
                 updated_count += 1
-                self.stdout.write(self.style.SUCCESS(f'Updated user {user.username}'))
+                self.stdout.write(self.style.SUCCESS(f'ユーザー {user.username} を更新しました'))
         
-        self.stdout.write(self.style.SUCCESS(f'Successfully updated {updated_count} users.'))
+        self.stdout.write(self.style.SUCCESS(f'{updated_count} 人のユーザーを正常に更新しました。'))

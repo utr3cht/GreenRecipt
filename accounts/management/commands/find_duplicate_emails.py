@@ -3,17 +3,17 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 class Command(BaseCommand):
-    help = 'Finds and reports duplicate email addresses in the CustomUser model.'
+    help = 'CustomUserモデル内の重複メールアドレスを検索し報告します。'
 
     def handle(self, *args, **options):
         User = get_user_model
-        # Find duplicate emails
+        # 重複メール検索
         duplicates = User.objects.values('email') \
             .annotate(email_count=Count('email')) \
             .filter(email_count__gt=1, email__isnull=False)
 
         if duplicates.exists():
-            self.stdout.write(self.style.WARNING('Found duplicate email addresses:'))
+            self.stdout.write(self.style.WARNING('重複したメールアドレスが見つかりました:'))
             for item in duplicates:
                 email = item['email']
                 count = item['email_count']
@@ -22,13 +22,13 @@ class Command(BaseCommand):
                 for user in users_with_duplicate_email:
                     self.stdout.write(f'  - User ID: {user.id}, Username: {user.username}')
         else:
-            self.stdout.write(self.style.SUCCESS('No duplicate email addresses found.'))
+            self.stdout.write(self.style.SUCCESS('重複したメールアドレスは見つかりませんでした。'))
 
-        # Check for users with null emails (if email field is not null=True)
+        # NULLメールユーザーの確認
         null_emails = User.objects.filter(email__isnull=True)
         if null_emails.exists():
-            self.stdout.write(self.style.WARNING('Found users with NULL email addresses:'))
+            self.stdout.write(self.style.WARNING('メールアドレスがNULLのユーザーが見つかりました:'))
             for user in null_emails:
                 self.stdout.write(f'- User ID: {user.id}, Username: {user.username}')
         else:
-            self.stdout.write(self.style.SUCCESS('No users with NULL email addresses found.'))
+            self.stdout.write(self.style.SUCCESS('メールアドレスがNULLのユーザーは見つかりませんでした。'))

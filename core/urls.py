@@ -8,6 +8,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("menu/", views.main_menu, name="main_menu"),
     path("coupons/", views.coupon_list, name="coupon_list"),
+    path('coupons/acquire/<int:coupon_id>/', views.acquire_coupon, name='acquire_coupon'),
     path('coupons/use/<int:coupon_id>/', views.use_coupon, name='use_coupon'),
     path("map/", views.store_map, name="store_map"),
     path('history/', views.receipt_history, name='receipt_history'),
@@ -57,4 +58,19 @@ urlpatterns = [
     path("staff/ecoproducts/create/", views.EcoProductCreateView.as_view(), name="ecoproduct_create"),
     path("staff/ecoproducts/<int:pk>/edit/", views.EcoProductUpdateView.as_view(), name="ecoproduct_update"),
     path("staff/ecoproducts/<int:pk>/delete/", views.EcoProductDeleteView.as_view(), name="ecoproduct_delete"),
+    
+    # --- 店舗用申請 ---
+    path("store/dashboard/", views.store_dashboard, name="store_dashboard"),
+    path("store/products/add/", views.StoreEcoProductCreateView.as_view(), name="store_product_create"),
+    path("store/products/<int:pk>/edit/", views.StoreEcoProductUpdateView.as_view(), name="store_product_update"),
+    path("store/products/<int:pk>/delete/", views.StoreEcoProductDeleteView.as_view(), name="store_product_delete"),
+    path("store/products/<int:pk>/delete/", views.StoreEcoProductDeleteView.as_view(), name="store_product_delete"),
+    path("store/coupons/add/", views.StoreCouponCreateView.as_view(), name="store_coupon_create"),
+    path("store/coupons/<int:pk>/edit/", views.StoreCouponUpdateView.as_view(), name="store_coupon_update"),
+    path("store/coupons/<int:coupon_id>/request_delete/", views.store_request_coupon_delete, name="store_request_coupon_delete"),
+    
+    # --- 承認管理 ---
+    path("staff/approvals/", views.approval_list, name="approval_list"),
+    path("staff/approvals/approve/<str:type>/<int:id>/", views.approve_item, name="approve_item"),
+    path("staff/approvals/reject/<str:type>/<int:id>/", views.reject_item, name="reject_item"),
 ]

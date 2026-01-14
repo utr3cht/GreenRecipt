@@ -3,7 +3,7 @@ from core.models import Coupon
 from decimal import Decimal
 
 class Command(BaseCommand):
-    help = 'Creates a set of default coupons in the database.'
+    help = 'データベースにデフォルトのクーポンを作成します。'
 
     def handle(self, *args, **options):
         coupons_to_create = [
@@ -22,8 +22,8 @@ class Command(BaseCommand):
             {
                 "title": "ドリンク1杯無料",
                 "description": "お好きなドリンクを1杯無料でご提供。",
-                "type": "absolute", # This could be modeled differently, but for simplicity...
-                "discount_value": Decimal("0.00"), # Or the price of a standard drink
+                "type": "absolute", # 別のモデル化も可能だが簡略化のため
+                "discount_value": Decimal("0.00"), # 標準的なドリンク価格でも可
             },
             {
                 "title": "初回限定！20%オフ",
@@ -33,7 +33,7 @@ class Command(BaseCommand):
             },
         ]
 
-        self.stdout.write("Creating default coupons...")
+        self.stdout.write("デフォルトクーポンを作成中...")
         count = 0
         for coupon_data in coupons_to_create:
             coupon, created = Coupon.objects.get_or_create(
@@ -41,9 +41,9 @@ class Command(BaseCommand):
                 defaults=coupon_data
             )
             if created:
-                self.stdout.write(self.style.SUCCESS(f'Successfully created coupon: "{coupon.title}"'))
+                self.stdout.write(self.style.SUCCESS(f'クーポンを作成しました: "{coupon.title}"'))
                 count += 1
             else:
-                self.stdout.write(self.style.WARNING(f'Coupon "{coupon.title}" already exists.'))
+                self.stdout.write(self.style.WARNING(f'クーポンは既に存在します: "{coupon.title}"'))
 
-        self.stdout.write(self.style.SUCCESS(f'Finished creating coupons. {count} new coupons were added.'))
+        self.stdout.write(self.style.SUCCESS(f'クーポンの作成が完了しました。{count} 件追加されました。'))

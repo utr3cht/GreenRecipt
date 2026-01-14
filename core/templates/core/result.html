@@ -15,22 +15,20 @@
         <p><strong>取引日時:</strong> {{ receipt.transaction_time|date:"Y年m月d日 H:i"|default:"不明" }}</p>
       </div>
 
-      {% if receipt.parsed_data and receipt.parsed_data.items %}
+      {% if receipt.items.all %}
         <h3>商品リスト</h3>
         <table class="items-table">
           <thead>
             <tr>
               <th>商品名</th>
               <th>数量</th>
-              <th>価格</th>
             </tr>
           </thead>
           <tbody>
-            {% for item in receipt.parsed_data.items %}
+            {% for item in receipt.items.all %}
               <tr>
-                <td>{{ item.name }}</td>
+                <td>{{ item.product.name }}</td>
                 <td>{{ item.quantity }}</td>
-                <td>{{ item.price }}円</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -40,12 +38,22 @@
               <td colspan="2"><strong>{{ receipt.total_quantity }}</strong></td>
             </tr>
             <tr>
-              <td><strong>合計金額</strong></td>
-              <td colspan="2"><strong>{{ receipt.total_amount }}円</strong></td>
-            </tr>
-            <tr>
               <td><strong>合計pt</strong></td>
-              <td colspan="2"><strong>{{ receipt.points_earned }}</strong></td>
+              <td colspan="2">
+                <strong>{{ receipt.points_earned }}</strong>
+                {% if receipt.points_earned > 0 %}
+                  <br>
+                  <small>
+                  (内訳: 
+                  {% for item in receipt.items.all %}
+                    {% if item.points > 0 %}
+                      {{ item.product.name }}: {{ item.points }}pt{% if not forloop.last %}、{% endif %}
+                    {% endif %}
+                  {% endfor %}
+                  )
+                  </small>
+                {% endif %}
+              </td>
             </tr>
           </tfoot>
         </table>

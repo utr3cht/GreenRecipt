@@ -15,6 +15,20 @@ class InquiryForm(forms.ModelForm):
         model = Inquiry
         fields = ["reply_to_email", "subject", "body_text", "image"]
 
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if image:
+            # 拡張子の確認
+            allowed_extensions = ['.jpg', '.jpeg', '.png', '.webp']
+            ext = '.' + image.name.split('.')[-1].lower()
+            if ext not in allowed_extensions:
+                raise ValidationError("許可されていないファイル形式です。画像ファイル（jpg, jpeg, png, webp）をアップロードしてください。")
+            
+            # ファイルサイズの確認 (5MB制限)
+            if image.size > 5 * 1024 * 1024:
+                raise ValidationError("ファイルサイズは5MB以下にしてください。")
+        return image
+
 
 class ReplyForm(forms.Form):
     subject = forms.CharField(label='件名', max_length=100)
@@ -31,21 +45,52 @@ class StoreForm(forms.ModelForm):
 class CouponForm(forms.ModelForm):
     class Meta:
         model = Coupon
-        fields = ['title', 'description', 'requirement', 'type', 'discount_value', 'available_stores']
+        fields = ['title', 'description', 'requirement', 'required_points', 'type', 'discount_value', 'available_stores']
         widgets = {
             'available_stores': forms.CheckboxSelectMultiple,
         }
 
 
+from django.db.models import Q
+
 class GrantCouponForm(forms.Form):
+    target_all = forms.BooleanField(
+        required=False, 
+        label="全ユーザー（条件合致者）に配布",
+        help_text="チェックを入れると、必要ポイント数を満たしている全てのユーザーに配布します。"
+    )
     user = forms.ModelChoiceField(
         queryset=CustomUser.objects.filter(role='user'),
-        label="ユーザー"
+        label="ユーザー",
+        required=False
     )
     coupon = forms.ModelChoiceField(
         queryset=Coupon.objects.all(),
         label="クーポン"
     )
+
+    def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)
+        super().__init__(*args, **kwargs)
+        
+        # 店舗スタッフの場合は自店のクーポンまたは運営共通クーポン（store=None）を表示
+        if self.request_user and self.request_user.role == 'store' and self.request_user.store:
+            self.fields['coupon'].queryset = Coupon.objects.filter(
+                Q(store=self.request_user.store) | Q(store__isnull=True)
+            )
+        
+        # 承認済みクーポンのみ表示
+        current_qs = self.fields['coupon'].queryset
+        self.fields['coupon'].queryset = current_qs.filter(status='approved')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        target_all = cleaned_data.get('target_all')
+        user = cleaned_data.get('user')
+
+        if not target_all and not user:
+            raise forms.ValidationError("ユーザーを選択するか、「全ユーザーに配布」にチェックを入れてください。")
+        return cleaned_data
 
 
 from django.core.exceptions import ValidationError
@@ -67,11 +112,15 @@ class AnnouncementForm(forms.ModelForm):
             ext = '.' + file.name.split('.')[-1].lower()
             if ext not in allowed_extensions:
                 raise ValidationError("許可されていないファイル形式です。画像または動画ファイルをアップロードしてください。")
+            
+            # ファイルサイズの確認 (10MB制限)
+            if file.size > 10 * 1024 * 1024:
+                raise ValidationError("ファイルサイズは10MB以下にしてください。")
         return file
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # On create form, there is no instance, so hide the delete checkbox
+        # 作成時は削除フィールドを隠す
         if not self.instance or not self.instance.pk:
             del self.fields['delete_file']
 
@@ -79,4 +128,30 @@ class AnnouncementForm(forms.ModelForm):
 class EcoProductForm(forms.ModelForm):
     class Meta:
         model = EcoProduct
-        fields = ['name', 'jan_code', 'points']
+        fields = ['name', 'jan_code', 'points', 'is_common']
+
+
+class StoreEcoProductForm(forms.ModelForm):
+    class Meta:
+        model = EcoProduct
+        fields = ['name', 'jan_code', 'points', 'remarks']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'jan_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'points': forms.NumberInput(attrs={'class': 'form-control'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': '承認者への申し送り事項など'}),
+        }
+
+class StoreCouponForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = ['title', 'type', 'discount_value', 'requirement', 'required_points', 'description', 'remarks']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'type': forms.Select(attrs={'class': 'form-control'}),
+            'discount_value': forms.NumberInput(attrs={'class': 'form-control'}),
+            'requirement': forms.TextInput(attrs={'class': 'form-control'}),
+            'required_points': forms.NumberInput(attrs={'class': 'form-control'}),
+            'description': forms.TextInput(attrs={'class': 'form-control'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }

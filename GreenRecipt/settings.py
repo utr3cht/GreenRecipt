@@ -10,33 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# プロジェクトのベースディレクトリ
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# セキュリティ設定
+# 本番環境ではシークレットキーを環境変数から読み込むこと
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-xira!$zs_cp!gnq=_(97t0@w6m(6h6$sy4c8h^)j&p6g%r_$--')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xira!$zs_cp!gnq=_(97t0@w6m(6h6$sy4c8h^)j&p6g%r_$--'
+# 本番環境ではデバッグモードを無効にすること
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Google Maps API Key (replace with your actual key)
-GOOGLE_MAPS_API_KEY = 'AIzaSyCU_xWohKWQomFS5W9DQZt0ELigHsYyeE0'
-# Set to True to enable Google Maps geocoding
-GOOGLE_MAPS_GEOCODING_ENABLED = True
-# Max Google Maps geocoding calls per command run
-GOOGLE_MAPS_GEOCODING_LIMIT_PER_RUN = 100
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
-# Application definition
+AUTH_USER_MODEL = 'accounts.CustomUser'
+# アプリケーション定義
 
 INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
@@ -61,6 +53,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# セキュリティヘッダー
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
 ROOT_URLCONF = 'GreenRecipt.urls'
 
 TEMPLATES = [
@@ -81,7 +79,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'GreenRecipt.wsgi.application'
 
 
-# Database
+# データベース設定
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
@@ -92,7 +90,7 @@ DATABASES = {
 }
 
 
-# Password validation
+# パスワード検証
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -111,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# 言語・タイムゾーン設定
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'ja-jp'
@@ -123,7 +121,7 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# 静的ファイル設定 (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
@@ -134,7 +132,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
-# Default primary key field type
+# デフォルトPK設定
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -142,32 +140,39 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Email settings
-# Set to True to send real emails, False to output to console
-SEND_EMAIL = True
+# メール設定
+# True: 実際に送信, False: コンソールに出力
+SEND_EMAIL = os.environ.get('SEND_EMAIL', 'True') == 'True'
 
 if SEND_EMAIL:
-    # Gmail SMTP settings for sending real emails
+    # Gmail SMTP設定
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_HOST = 'smtp.gmail.com'
     EMAIL_PORT = 587
-    EMAIL_HOST_USER = 'utm247700d@gmail.com'  # Replace with your Gmail address
-    # Replace with your generated App Password
-    EMAIL_HOST_PASSWORD = 'iwrw fvwv yeej sukc'
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'utm247700d@gmail.com')
+    # アプリパスワード
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'iwrw fvwv yeej sukc')
     EMAIL_USE_TLS = True
-    DEFAULT_FROM_EMAIL = 'utm247700d@gmail.com'  # Replace with your Gmail address
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 else:
-    # Console backend for development
+    # 開発用コンソールバックエンド
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 LOGIN_URL = '/'
 
-#  - -  Colab API Settings  - -
+#  - -  Colab API設定  - -
 
-USE_COLAB_API = True  # Set to False to disable Colab API and use local processing
+USE_COLAB_API = os.environ.get('USE_COLAB_API', 'True') == 'True'
 
-# Replace with your ngrok URL
-COLAB_API_URL = "https://unhermitic-vivaciously-donya.ngrok-free.dev"
+# ngrok URL
+COLAB_API_URL = os.environ.get('COLAB_API_URL', "https://unhermitic-vivaciously-donya.ngrok-free.dev")
 
-# Gemini API Key
-GEMINI_API_KEY = "AIzaSyA9T6TtCVsHjdoGzfLPHghGWd0tunqbfl0"
+# Gemini APIキー
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', "AIzaSyA9T6TtCVsHjdoGzfLPHghGWd0tunqbfl0")
+
+# Google Maps APIキー
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyCU_xWohKWQomFS5W9DQZt0ELigHsYyeE0')
+# Google Maps ジオコーディング有効化
+GOOGLE_MAPS_GEOCODING_ENABLED = True
+# ジオコーディング実行制限 (1回あたり)
+GOOGLE_MAPS_GEOCODING_LIMIT_PER_RUN = 100

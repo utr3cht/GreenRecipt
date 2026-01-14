@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import os
 
-# Use the key from settings (hardcoded for this check as per user's previous edit)
+# 設定ファイルからキーを使用（ユーザー編集に基づきハードコード）
 api_key = "AIzaSyA9T6TtCVsHjdoGzfLPHghGWd0tunqbfl0"
 genai.configure(api_key=api_key)
 

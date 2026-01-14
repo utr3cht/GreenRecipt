@@ -1,0 +1,150 @@
+{% extends 'admin/admin_base.html' %}
+
+{% block content %}
+<main class="dashboard-main">
+  <div class="container-fluid dashboard-section mt-4 px-4">
+    <h1 class="mb-4">承認待ち一覧</h1>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">エコ商品申請</h5>
+      </div>
+      <div class="card-body">
+        {% if products %}
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>店舗</th>
+                <th>商品名</th>
+                <th>JAN</th>
+                <th>Pt</th>
+                <th>備考</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in products %}
+              <tr>
+                <td>{{ item.store.store_name }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.jan_code }}</td>
+                <td>{{ item.points }}</td>
+                <td class="text-danger">{{ item.remarks }}</td>
+                <td>
+                  <form method="post" action="{% url 'core:approve_item' type='product' id=item.id %}" class="d-flex align-items-center gap-2">
+                    {% csrf_token %}
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="as_common" value="1" id="commonCheck{{ item.id }}">
+                        <label class="form-check-label small" for="commonCheck{{ item.id }}">
+                            共通
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-success">承認</button>
+                  </form>
+                  <form method="post" action="{% url 'core:reject_item' type='product' id=item.id %}" class="mt-1">
+                    {% csrf_token %}
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="text" name="rejection_reason" class="form-control" placeholder="却下理由" required>
+                        <button type="submit" class="btn btn-danger">却下</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-muted">承認待ちの商品はありません。</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">クーポン申請</h5>
+        </div>
+        <div class="card-body">
+          {% if coupons %}
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>店舗</th>
+                  <th>ステータス</th>
+                  <th>タイトル</th>
+                  <th>割引内容</th>
+                  <th>条件</th>
+                  <th>備考</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in coupons %}
+                <tr {% if item.status == 'deletion_requested' %}class="table-danger border-danger"{% endif %}>
+                  <td>{{ item.store.store_name }}</td>
+                  <td>
+                    {% if item.status == 'deletion_requested' %}
+                        <span class="badge bg-danger fs-6">削除申請</span>
+                    {% else %}
+                        <span class="badge bg-success">新規申請</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ item.title }}</td>
+                  <td>
+                      {{ item.get_type_display }}: {{ item.discount_value }}
+                  </td>
+                  <td>
+                      条件: {{ item.requirement }}<br>
+                      必要Pt: {{ item.required_points }}
+                  </td>
+                  <td class="text-danger">{{ item.remarks }}</td>
+                  <td>
+                    <div class="d-flex flex-column gap-1">
+                    {% if item.status == 'deletion_requested' %}
+                       <div class="d-flex gap-1">
+                        <form method="post" action="{% url 'core:approve_item' type='coupon' id=item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-dark fw-bold" onclick="return confirm('本当に削除しますか？')">削除実行</button>
+                        </form>
+                        <form method="post" action="{% url 'core:reject_item' type='coupon' id=item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-secondary">申請却下</button>
+                        </form>
+                       </div>
+                    {% else %}
+                        <form method="post" action="{% url 'core:approve_item' type='coupon' id=item.id %}">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-success w-100 mb-1">承認</button>
+                        </form>
+                        <form method="post" action="{% url 'core:reject_item' type='coupon' id=item.id %}">
+                          {% csrf_token %}
+                          <div class="input-group input-group-sm">
+                             <input type="text" name="rejection_reason" class="form-control" placeholder="却下理由" required>
+                             <button type="submit" class="btn btn-danger">却下</button>
+                          </div>
+                        </form>
+                    {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+            <p class="text-muted">承認待ちのクーポンはありません。</p>
+          {% endif %}
+        </div>
+      </div>
+
+  </div>
+</main>
+{% endblock %}

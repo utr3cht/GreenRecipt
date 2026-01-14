@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from core.models import Store
 
 class Command(BaseCommand):
-    help = 'Inserts initial store data into the database.'
+    help = '初期店舗データをデータベースに挿入します。'
 
     def handle(self, *args, **options):
         stores_data = [
@@ -31,4 +31,4 @@ class Command(BaseCommand):
                 lat=lat,
                 lng=lng
             )
-        self.stdout.write(self.style.SUCCESS('Successfully inserted store data.'))
+        self.stdout.write(self.style.SUCCESS('店舗データの挿入が完了しました。'))

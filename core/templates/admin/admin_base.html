@@ -39,7 +39,9 @@
       <header class="admin-header">
         <div class="admin-header-inner">
           <div class="logo-container">
-            <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" class="logo small" />
+            <a href="{% url 'core:staff_index' %}">
+              <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" class="logo small" />
+            </a>
           </div>
 
           <div class="user-info desktop-only">

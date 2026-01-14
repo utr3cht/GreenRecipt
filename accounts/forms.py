@@ -30,14 +30,14 @@ class CustomAuthenticationForm(AuthenticationForm):
     def confirm_login_allowed(self, user):
         super().confirm_login_allowed(user)
 
-        # 最初に役割をチェック
+        # 役割チェック
         if user.role != 'user':
             raise forms.ValidationError(
-                "ユーザー名もしくはパスワードが正しくありません。", # ご指定のメッセージに変更
+                "ユーザー名もしくはパスワードが正しくありません。", # エラーメッセージ
                 code='invalid_role'
             )
 
-        # 役割が'user'の場合のみ、メール認証をチェック
+        # メール認証チェック
         if not user.is_verified:
             raise forms.ValidationError(
                 "メールアドレスが認証されていません。メールをご確認ください。",

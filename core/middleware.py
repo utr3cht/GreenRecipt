@@ -6,15 +6,15 @@ class AdminAccessMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # We only care about paths starting with /admin/
+        # /admin/パスのみ対象
         if request.path.startswith('/admin/'):
-            # If the user is authenticated
+            # 認証済みユーザー
             if request.user.is_authenticated:
-                # And their role is not admin or system
+                # 管理者/システムロール以外
                 if not request.user.is_superuser and request.user.role not in ['admin', 'system']:
-                    # Redirect them to the index page.
+                    # indexへリダイレクト
                     return redirect('core:index')
         
-        # If the conditions are not met, continue with the normal flow
+        # 通常フローへ
         response = self.get_response(request)
         return response

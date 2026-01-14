@@ -15,6 +15,12 @@ from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .forms import (
+    CouponForm, StoreForm, EcoProductForm, AnnouncementForm, 
+    InquiryForm, StoreEcoProductForm, StoreCouponForm
+)
 from yomitoku.document_analyzer import DocumentAnalyzer
 import cv2
 import re
@@ -30,15 +36,14 @@ import numpy as np  # Add this line
 import google.generativeai as genai
 import calendar
 
-from django.db import transaction
+from django.db import transaction, models
 
 # Forms
 from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponForm, GrantCouponForm, EcoProductForm
-# ⭐️ 修正: StoreUserCreationForm は accounts.forms からインポート
 from accounts.forms import StoreUserCreationForm
 
 # Models
-from .models import Inquiry, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct, CouponUsage, Report
+from .models import Inquiry, InquiryMessage, Store, Announcement, Receipt, Coupon, Product, ReceiptItem, EcoProduct, CouponUsage, Report
 from accounts.models import CustomUser
 
 # --- 認証関連ビュー ---
@@ -59,9 +64,120 @@ def admin_login(request):
     return render(request, 'admin/staff_login.html', {'form': form})
 
 
+@login_required
 def staff_logout(request):
     logout(request)
-    return redirect('core:staff_login')
+    return redirect("core:staff_login")
+
+
+# --- 店舗用ビュー ---
+
+@login_required
+def store_dashboard(request):
+    if request.user.role != 'store':
+        return redirect('core:staff_index')
+    
+    # 自店舗の申請状況
+    if not request.user.store:
+        return render(request, 'core/store/error.html', {'message': '店舗情報が紐付いていません。'})
+        
+    store = request.user.store
+    my_products = EcoProduct.objects.filter(store=store).exclude(status='rejected').order_by('-pk')
+    my_coupons = Coupon.objects.filter(store=store).exclude(status='rejected').order_by('-pk')
+    
+    context = {
+        'products': my_products,
+        'coupons': my_coupons,
+    }
+    return render(request, 'core/store/dashboard.html', context)
+
+class StoreEcoProductCreateView(LoginRequiredMixin, CreateView):
+    model = EcoProduct
+    form_class = StoreEcoProductForm
+    template_name = 'core/store/product_form.html'
+    success_url = reverse_lazy('core:store_dashboard')
+
+    def form_valid(self, form):
+        if self.request.user.role != 'store' or not self.request.user.store:
+            return redirect('core:staff_index') # あるいはエラー表示
+            
+        form.instance.store = self.request.user.store
+        form.instance.status = 'pending'
+        return super().form_valid(form)
+
+class StoreCouponCreateView(LoginRequiredMixin, CreateView):
+    model = Coupon
+    form_class = StoreCouponForm
+    template_name = 'core/store/coupon_form.html'
+    success_url = reverse_lazy('core:store_dashboard')
+
+    def form_valid(self, form):
+        if self.request.user.role != 'store' or not self.request.user.store:
+            return redirect('core:staff_index')
+            
+        form.instance.store = self.request.user.store
+        form.instance.status = 'pending'
+        # available_stores に自店舗を追加する必要がある（保存後）
+        response = super().form_valid(form)
+        self.object.available_stores.add(self.request.user.store)
+        return response
+
+
+# --- 承認管理ビュー ---
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.role == 'admin')
+def approval_list(request):
+    pending_products = EcoProduct.objects.filter(status='pending')
+    pending_coupons = Coupon.objects.filter(status='pending')
+    
+    context = {
+        'products': pending_products,
+        'coupons': pending_coupons
+    }
+    return render(request, 'core/admin/approval_list.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff or u.role == 'admin')
+def approve_item(request, type, id):
+    if request.method == 'POST':
+        if type == 'product':
+            item = get_object_or_404(EcoProduct, pk=id)
+        elif type == 'coupon':
+            item = get_object_or_404(Coupon, pk=id)
+        else:
+            return redirect('core:approval_list')
+        
+        item.status = 'approved'
+        item.save()
+        messages.success(request, f'{item} を承認しました。')
+    return redirect('core:approval_list')
+
+@staff_member_required
+@require_POST
+def reject_item(request, type, id):
+    if type == 'product':
+        item = get_object_or_404(EcoProduct, id=id)
+    elif type == 'coupon':
+        item = get_object_or_404(Coupon, id=id)
+    else:
+        return redirect('core:approval_list')
+    
+    # 削除申請の却下の場合（承認に戻す）
+    if item.status == 'deletion_requested':
+        item.status = 'approved'
+        item.save()
+        messages.info(request, f"{'商品' if type == 'product' else 'クーポン'}「{item.name if type == 'product' else item.title}」の削除申請を却下しました（ステータスを承認済みに戻しました）。")
+    else:
+        # 通常の承認申請の却下
+        item.status = 'rejected'
+        reason = request.POST.get('rejection_reason', '').strip()
+        if reason:
+            item.rejection_reason = reason
+        item.save()
+        messages.warning(request, f"{'商品' if type == 'product' else 'クーポン'}「{item.name if type == 'product' else item.title}」を却下しました。")
+    
+    return redirect('core:approval_list')
 
 # --- 一般ユーザー向けビュー ---
 
@@ -82,6 +198,7 @@ def main_menu(request):
     coupons = Coupon.objects.all()[:3]
     receipts = Receipt.objects.filter(
         user=request.user).order_by('-scanned_at')[:3]
+    MAX_POINTS = 800
     # ランク進捗の計算
     current_points = user.current_points
     next_rank_points = 0
@@ -127,8 +244,88 @@ def main_menu(request):
 
 @login_required
 def coupon_list(request):
-    coupons = request.user.current_coupons.all()
-    return render(request, "core/coupon_list.html", {'coupons': coupons})
+    # 所持クーポン
+    owned_coupons = request.user.current_coupons.all()
+    # 使用済みクーポンID
+    used_coupon_ids = CouponUsage.objects.filter(user=request.user).values_list('coupon_id', flat=True)
+    
+    # 排他制御: 既に所持または使用済みのクーポンと同じ `required_points` を持つクーポンは取得リストに出さない。
+    # 1. ユーザーが関与した（所持 or 使用済み）クーポンのIDリスト
+    involved_coupon_ids = list(owned_coupons.values_list('id', flat=True)) + list(used_coupon_ids)
+    
+    # 2. それらのクーポンの `required_points` を取得
+    #    (未設定(0)などは除外するか要検討だが、一旦すべて対象とする)
+    acquired_point_thresholds = Coupon.objects.filter(
+        id__in=involved_coupon_ids
+    ).values_list('required_points', flat=True).distinct()
+    
+    # 3. 取得可能なクーポン
+    #    - ステータスが承認済み ('approved')
+    #    - まだ関与していない (exclude involved_coupon_ids)
+    #    - かつ、既に関与したポイント帯ではない (exclude required_points__in=acquired_point_thresholds)
+    available_coupons = Coupon.objects.filter(status='approved').exclude(
+        id__in=involved_coupon_ids
+    ).exclude(
+        required_points__in=acquired_point_thresholds
+    ).order_by('required_points')
+
+    # 使用済みクーポンオブジェクトの取得
+    used_coupons = Coupon.objects.filter(id__in=used_coupon_ids)
+
+    context = {
+        'coupons': owned_coupons,
+        'available_coupons': available_coupons,
+        'used_coupons': used_coupons,
+        'user_points': request.user.current_points
+    }
+    return render(request, "core/coupon_list.html", context)
+
+
+@login_required
+@require_POST
+def acquire_coupon(request, coupon_id):
+    try:
+        coupon = Coupon.objects.get(pk=coupon_id)
+        user = request.user
+        
+        # 承認済みか確認
+        if coupon.status != 'approved':
+            return JsonResponse({'success': False, 'error': 'このクーポンはまだ承認されていません。'}, status=400)
+        
+        # 既に持っていないか確認
+        if user.current_coupons.filter(pk=coupon_id).exists():
+            return JsonResponse({'success': False, 'error': '既にこのクーポンを持っています。'}, status=400)
+            
+        # 過去に使用していないか確認
+        if CouponUsage.objects.filter(user=user, coupon=coupon).exists():
+             return JsonResponse({'success': False, 'error': 'このクーポンは既に使用済みです。'}, status=400)
+
+        # 排他制御: 同じ required_points のクーポンを既に持っているか、使用済みならNG
+        # 現在所持している他のクーポンで、同じポイントのものがあるか
+        if user.current_coupons.filter(required_points=coupon.required_points).exists():
+            return JsonResponse({'success': False, 'error': 'このポイント帯のクーポンは既に取得済みです。'}, status=400)
+
+        # 過去に使用したクーポンで、同じポイントのものがあるか
+        # CouponUsage -> coupon -> required_points
+        if CouponUsage.objects.filter(user=user, coupon__required_points=coupon.required_points).exists():
+            return JsonResponse({'success': False, 'error': 'このポイント帯のクーポンは既に利用済みです。'}, status=400)
+
+        # ポイント確認 (消費はしないが条件として確認)
+        if user.current_points < coupon.required_points:
+            return JsonResponse({'success': False, 'error': f'ポイントが不足しています。必要ポイント: {coupon.required_points}pt'}, status=400)
+        
+        with transaction.atomic():
+            # ポイント消費はしない
+            
+            # クーポン付与
+            user.current_coupons.add(coupon)
+            
+        return JsonResponse({'success': True, 'new_points': user.current_points})
+        
+    except Coupon.DoesNotExist:
+        return JsonResponse({'success': False, 'error': '指定されたクーポンが見つかりません。'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'エラーが発生しました: {str(e)}'}, status=500)
 
 
 @login_required
@@ -138,6 +335,10 @@ def use_coupon(request, coupon_id):
         coupon_to_use = request.user.current_coupons.get(pk=coupon_id)
         
         # 店舗IDを取得（JSONリクエストを想定）
+        # リクエストボディのサイズ制限 (10KB)
+        if len(request.body) > 10 * 1024:
+             return JsonResponse({'success': False, 'error': 'リクエストサイズが大きすぎます。'}, status=400)
+
         import json
         store_id = None
         if request.body:
@@ -323,6 +524,10 @@ def scan(request):
         if not image_file:
             return JsonResponse({'success': False, 'error': '画像ファイルが選択されていません。'})
 
+        # ファイルサイズ制限 (5MB)
+        if image_file.size > 5 * 1024 * 1024:
+            return JsonResponse({'success': False, 'error': 'ファイルサイズは5MB以下にしてください。'})
+
         image_bytes = image_file.read()
         ocr_text = None
         fs = FileSystemStorage()
@@ -372,14 +577,14 @@ def scan(request):
                     raise ValueError(
                         "画像ファイルのデコードに失敗しました。ファイルが破損しているか、サポートされていない形式の可能性があります。")
 
-                # --- DEBUGGING: Save decoded image ---
+                # --- デバッグ: 復号画像の保存 ---
                 debug_image_path = os.path.join(
                     settings.MEDIA_ROOT, 'debug_images', f'decoded_{safe_filename}')
                 os.makedirs(os.path.dirname(debug_image_path), exist_ok=True)
                 cv2.imwrite(debug_image_path, img)
                 print(f"[DEBUG] デコードされた画像を保存しました: {debug_image_path}")
                 print(f"[DEBUG] デコードされた画像の形状: {img.shape}")
-                # --- END DEBUGGING ---
+                # --- デバッグ終了 ---
 
                 print("[INFO] Initializing DocumentAnalyzer...")
                 analyzer = DocumentAnalyzer()
@@ -475,7 +680,7 @@ def scan(request):
                             product, created = Product.objects.get_or_create(
                                 name=item_data['name']
                             )
-                            ReceiptItem.objects.create(
+                            receipt_item = ReceiptItem(
                                 receipt=receipt,
                                 product=product,
                                 # quantityがない場合のデフォルト値
@@ -485,6 +690,7 @@ def scan(request):
                             )
 
                             # ポイント加算ロジック
+                            item_points = 0
                             # まだこの商品でポイント加算していなければ処理
                             if product.id not in processed_products:
                                 # 商品名を正規化（NFKC）して空白削除、小文字化
@@ -496,10 +702,16 @@ def scan(request):
                                     
                                     # 商品名にエコ商品のキーワードが含まれているかチェック
                                     if normalized_eco_name in normalized_product_name:
-                                        total_eco_points_to_add += eco_product.points
-                                        processed_products.add(product.id)
-                                        # 1つの商品が複数のエコ商品にマッチしても、最初の1つで抜ける
-                                        break
+                                        # 共通商品 または レシートの店舗とエコ商品の店舗が一致する場合のみ付与
+                                        if eco_product.is_common or (receipt.store and eco_product.store == receipt.store):
+                                            item_points = eco_product.points * receipt_item.quantity # 数量分ポイント加算
+                                            total_eco_points_to_add += item_points
+                                            processed_products.add(product.id)
+                                            # 1つの商品が複数のエコ商品にマッチしても、最初の1つで抜ける
+                                            break
+                            
+                            receipt_item.points = item_points
+                            receipt_item.save()
 
                     # 合計ポイントを加算してユーザー情報を更新
                     if total_eco_points_to_add > 0:
@@ -527,24 +739,35 @@ def scan(request):
 
 @login_required
 def ai_report(request):
-    # 1. Determine Month
+    # 1. 対象月の決定
     today = timezone.now()
     try:
         year = int(request.GET.get('year', today.year))
         month = int(request.GET.get('month', today.month))
-    except ValueError:
+    except (ValueError, TypeError):
         year = today.year
         month = today.month
 
-    # Normalize month
+    # 年の検証 (datetimeの安全な範囲)
+    if not (2000 <= year <= 2100):
+        year = today.year
+
+    # 月の正規化
     if month < 1:
         month = 12
         year -= 1
     elif month > 12:
         month = 1
         year += 1
+
+    # 未来の月へのアクセスを制限
+    if year > today.year or (year == today.year and month > today.month):
+        year = today.year
+        month = today.month
+
+    is_latest_month = (year == today.year and month == today.month)
     
-    # 2. Filter Receipts
+    # 2. レシートのフィルタリング
     # scanned_at is DateField
     start_date = datetime(year, month, 1).date()
     last_day = calendar.monthrange(year, month)[1]
@@ -555,18 +778,18 @@ def ai_report(request):
         scanned_at__range=(start_date, end_date)
     )
     
-    # 3. Aggregate Products & Calculate Score
+    # 3. 商品の集計とスコア計算
     purchased_products_display = []
     total_quantity = 0
     total_eco_points = 0
     eco_quantity = 0
     
-    # Get Eco Products Map (Name -> Points)
+    # エコ商品マップの取得 (名前 -> ポイント)
     eco_product_map = dict(EcoProduct.objects.values_list('name', 'points'))
     eco_product_names = list(eco_product_map.keys())
 
     for receipt in receipts:
-        # Try ReceiptItem first
+        # ReceiptItemを優先
         items = receipt.items.all()
         if items.exists():
             for item in items:
@@ -574,14 +797,14 @@ def ai_report(request):
                 total_quantity += qty
                 purchased_products_display.append(f"{item.product.name} ({qty}点)")
                 
-                # Check if eco product
-                # Simple substring match for now, ideally should be exact or smarter
+                # エコ商品チェック
+                # 単純な部分一致
                 matched_eco = next((eco for eco in eco_product_names if eco in item.product.name), None)
                 if matched_eco:
                     eco_quantity += qty
                     total_eco_points += qty * eco_product_map[matched_eco]
                     
-        # Fallback to parsed_data
+        # parsed_dataへのフォールバック
         elif receipt.parsed_data and isinstance(receipt.parsed_data, dict) and 'items' in receipt.parsed_data:
              for item in receipt.parsed_data['items']:
                  name = item.get('name', 'Unknown')
@@ -594,9 +817,17 @@ def ai_report(request):
                      eco_quantity += qty
                      total_eco_points += qty * eco_product_map[matched_eco]
     
-    # Check if report already exists for this month
-    # We assume one report per month. We can check generated_at range.
-    # Note: generated_at is DateTimeField, so we check range.
+    # 月間獲得ポイントの計算
+    from django.db.models import Sum
+    monthly_receipts = Receipt.objects.filter(
+        user=request.user,
+        scanned_at__year=year,
+        scanned_at__month=month
+    )
+    calculated_monthly_points = monthly_receipts.aggregate(Sum('points_earned'))['points_earned__sum'] or 0
+    current_rank_display = request.user.get_rank_display()
+
+    # 既存レポートのチェック
     existing_report = Report.objects.filter(
         user=request.user,
         generated_at__year=year,
@@ -606,20 +837,28 @@ def ai_report(request):
     report_text = ""
     score = 0
     report_exists = False
+    
+    # 表示用のランクとポイント（初期値は計算値/現在値）
+    display_rank = current_rank_display
+    display_monthly_points = calculated_monthly_points
 
     if existing_report:
         report_text = existing_report.description
         score = existing_report.score
         report_exists = True
+        
+        # レポートに保存された値があればそれを使う（アーカイブとしての役割）
+        if existing_report.rank:
+            display_rank = existing_report.rank
+        if existing_report.monthly_points is not None:
+             display_monthly_points = existing_report.monthly_points
     
-    # Handle Generation Request
+    # 生成リクエストの処理
     elif request.method == 'POST' and 'generate' in request.POST:
-        # Calculate Score (Weighted)
-        # Formula: (Total Eco Points / (Total Items * 10)) * 100
-        # Assuming baseline is 10 points per item.
+        # スコア計算 (加重)
         if total_quantity > 0:
             raw_score = (total_eco_points / (total_quantity * 10)) * 100
-            score = int(min(raw_score, 100)) # Cap at 100
+            score = int(min(raw_score, 100)) # 100点キャップ
         else:
             score = 0
         
@@ -628,6 +867,10 @@ def ai_report(request):
                 genai.configure(api_key=settings.GEMINI_API_KEY)
                 model = genai.GenerativeModel('gemini-flash-latest')
                 
+                # ユーザー入力のサニタイズ
+                safe_products = purchased_products_display
+                safe_eco_products = eco_product_names
+
                 prompt = f"""
                 あなたは環境保護のエキスパートです。
                 ユーザーの今月のエコスコアは【{score}点】です。
@@ -641,41 +884,30 @@ def ai_report(request):
                 文脈から正式な商品名を推測し、どのような商品を購入したかを理解した上でアドバイスを行ってください。
                 
                 # 購入商品リスト:
-                {', '.join(purchased_products_display)}
+                \"\"\"
+                {', '.join(safe_products)}
+                \"\"\"
                 
                 # エコ商品データベース:
-                {', '.join(eco_product_names)}
+                \"\"\"
+                {', '.join(safe_eco_products)}
+                \"\"\"
                 """
                 
                 response = model.generate_content(prompt)
                 report_text = response.text.strip()
                 
-                # Save Report
-                # We need to set generated_at to be within the month if we want to query it back correctly by month?
-                # Actually, auto_now_add=True sets it to NOW.
-                # If user generates report for PAST month, it will be saved with CURRENT date.
-                # This might be an issue if we strictly filter by generated_at__month.
-                # However, the requirement says "Once a month", implying "Current month".
-                # If viewing past months, maybe we shouldn't allow generation if it wasn't generated then?
-                # For now, let's assume generation is allowed for the displayed month, 
-                # but we should probably override generated_at if it's a past month report?
-                # Or just let it be generated now.
-                # Let's just save it. If the user is viewing "May" and generates it in "June", 
-                # strictly speaking it's a "May Report" generated in "June".
-                # But our query `generated_at__month=month` will fail to find it next time if we save it as June.
-                # So we should manually set generated_at to the end of that month or something?
-                # Or we can just rely on the fact that users usually generate report for the current month.
-                # Let's stick to simple implementation: Save it. 
-                # If we want to support "Report for May", we might need a 'target_month' field in Report model.
-                # For now, let's just save it.
-                
+                # レポート保存
                 Report.objects.create(
                     user=request.user,
                     description=report_text,
-                    score=score
-                    # generated_at will be now
+                    score=score,
+                    rank=current_rank_display,
+                    monthly_points=calculated_monthly_points
                 )
                 report_exists = True
+                
+                # 表示用変数の更新は不要（初期値と同じ）
 
             except Exception as e:
                 print(f"Gemini API Error: {e}")
@@ -683,7 +915,7 @@ def ai_report(request):
         else:
             report_text = "今月の購入履歴がありません。"
 
-    # Calculate Average Score for the month
+    # 月間平均スコアの計算
     from django.db.models import Avg
     avg_score_data = Report.objects.filter(
         generated_at__year=year,
@@ -704,6 +936,9 @@ def ai_report(request):
         'eco_products': eco_product_names,
         'report_exists': report_exists,
         'average_score': average_score,
+        'is_latest_month': is_latest_month,
+        'rank': display_rank,
+        'monthly_points': display_monthly_points,
     }
     return render(request, "core/ai_report.html", context)
 
@@ -867,20 +1102,43 @@ def coupon_delete(request, coupon_id):
 @staff_member_required
 def grant_coupon_admin(request):
     if request.method == 'POST':
-        form = GrantCouponForm(request.POST)
+        form = GrantCouponForm(request.POST, request_user=request.user)
         if form.is_valid():
-            user = form.cleaned_data['user']
             coupon = form.cleaned_data['coupon']
-            if user.current_coupons.filter(pk=coupon.pk).exists():
-                messages.warning(
-                    request, f'ユーザー「{user.username}」は既にクーポン「{coupon.title}」を所持しています。')
+            target_all = form.cleaned_data['target_all']
+            
+            if target_all:
+                # 全ユーザーのうち、必要ポイントを満たしているユーザーを取得
+                required_points = coupon.required_points
+                users = CustomUser.objects.filter(role='user', current_points__gte=required_points)
+                
+                count = 0
+                skip_count = 0
+                for user in users:
+                    if user.current_coupons.filter(pk=coupon.pk).exists():
+                        skip_count += 1
+                    else:
+                        user.current_coupons.add(coupon)
+                        count += 1
+                
+                msg = f'条件（{required_points}pt以上）を満たす{count}人のユーザーにクーポン「{coupon.title}」を付与しました。'
+                if skip_count > 0:
+                    msg += f'（{skip_count}人は既に所持していたためスキップ）'
+                messages.success(request, msg)
+                
             else:
-                user.current_coupons.add(coupon)
-                messages.success(
-                    request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
+                user = form.cleaned_data['user']
+                if user.current_coupons.filter(pk=coupon.pk).exists():
+                    messages.warning(
+                        request, f'ユーザー「{user.username}」は既にクーポン「{coupon.title}」を所持しています。')
+                else:
+                    user.current_coupons.add(coupon)
+                    messages.success(
+                        request, f'ユーザー「{user.username}」にクーポン「{coupon.title}」を付与しました。')
+            
             return redirect('core:grant_coupon_admin')
     else:
-        form = GrantCouponForm()
+        form = GrantCouponForm(request_user=request.user)
     return render(request, 'admin/grant_coupon_admin.html', {'form': form})
 
 
@@ -906,7 +1164,16 @@ def admin_inquiry_dashboard(request):
 @staff_member_required
 def inquiry_detail(request, inquiry_id):
     inquiry = get_object_or_404(Inquiry, id=inquiry_id)
+    messages_list = inquiry.messages.all().order_by('created_at')
+
     if request.method == 'POST':
+        # 完了ボタンが押された場合
+        if 'complete' in request.POST:
+            inquiry.status = 'completed'
+            inquiry.save()
+            messages.success(request, 'お問い合わせを完了としました。')
+            return redirect('core:admin_inquiry_dashboard')
+            
         form = ReplyForm(request.POST)
         if form.is_valid():
             subject = form.cleaned_data['subject']
@@ -923,22 +1190,48 @@ def inquiry_detail(request, inquiry_id):
             html_content = render_to_string('admin/inquiry_reply_email.html', context)
 
             # Create and send the email
-            email = EmailMultiAlternatives(
-                subject,
-                text_content,
-                settings.DEFAULT_FROM_EMAIL,
-                [inquiry.reply_to_email]
-            )
-            email.attach_alternative(html_content, "text/html")
-            email.send()
+            try:
+                email = EmailMultiAlternatives(
+                    subject,
+                    text_content,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [inquiry.reply_to_email]
+                )
+                email.attach_alternative(html_content, "text/html")
+                email.send()
+                
+                # 返信メッセージを保存
+                InquiryMessage.objects.create(
+                    inquiry=inquiry,
+                    sender_type='admin',
+                    message=message
+                )
 
-            inquiry.is_replied = True
-            inquiry.reply_message = message
-            inquiry.save()
-            return redirect('core:admin_inquiry_dashboard')
+                # ステータスを更新 (未対応 -> 対応中)
+                if inquiry.status == 'unanswered':
+                    inquiry.status = 'in_progress'
+                
+                inquiry.is_replied = True
+                inquiry.reply_message = message # 後方互換性のため残す
+                inquiry.save()
+                
+                messages.success(request, '返信メールを送信しました。')
+                return redirect('core:inquiry_detail', inquiry_id=inquiry.id)
+
+            except Exception as e:
+                print(f"Email send error: {e}")
+                messages.error(request, 'メール送信に失敗しました。')
+
     else:
-        form = ReplyForm(initial={'subject': f'Re: {inquiry.subject}'})
-    return render(request, 'admin/inquiry_detail.html', {'inquiry': inquiry, 'form': form})
+        # 返信フォームの初期値設定（件名にRe:をつける）
+        initial_subject = f"Re: {inquiry.subject}" if not inquiry.subject.startswith("Re:") else inquiry.subject
+        form = ReplyForm(initial={'subject': initial_subject})
+
+    return render(request, 'admin/inquiry_detail.html', {
+        'inquiry': inquiry, 
+        'form': form,
+        'messages_list': messages_list
+    })
 
 
 @login_required
@@ -1124,11 +1417,98 @@ def store_delete_user(request, user_id):
 
 
 # EcoProduct管理ビュー
+class StoreEcoProductUpdateView(LoginRequiredMixin, UpdateView):
+    model = EcoProduct
+    form_class = StoreEcoProductForm
+    template_name = 'core/store/product_form.html'
+    success_url = reverse_lazy('core:store_dashboard')
+
+    def get_queryset(self):
+        # 自店舗の商品のみ編集可能
+        if not self.request.user.store:
+            return EcoProduct.objects.none()
+        return EcoProduct.objects.filter(store=self.request.user.store)
+
+    def form_valid(self, form):
+        # 更新時にステータスを申請中に戻す（再申請）
+        if self.object.status == 'rejected':
+            form.instance.status = 'pending'
+            form.instance.rejection_reason = ''  # 理由をクリア
+            messages.info(self.request, '修正内容で再申請しました。')
+        else:
+            messages.success(self.request, 'エコ商品を更新しました。')
+        return super().form_valid(form)
+
+
+class StoreCouponUpdateView(LoginRequiredMixin, UpdateView):
+    model = Coupon
+    form_class = StoreCouponForm
+    template_name = 'core/store/coupon_form.html'
+    success_url = reverse_lazy('core:store_dashboard')
+
+    def get_queryset(self):
+        # 自店舗のクーポンのみ編集可能
+        if not self.request.user.store:
+            return Coupon.objects.none()
+        return Coupon.objects.filter(store=self.request.user.store)
+
+    def form_valid(self, form):
+        # 更新時にステータスを申請中に戻す（再申請）
+        if self.object.status == 'rejected':
+            form.instance.status = 'pending'
+            form.instance.rejection_reason = ''  # 理由をクリア
+            messages.info(self.request, '修正内容で再申請しました。')
+        else:
+            messages.success(self.request, 'クーポンを更新しました。')
+        return super().form_valid(form)
+
+
+class StoreEcoProductDeleteView(LoginRequiredMixin, DeleteView):
+    model = EcoProduct
+    success_url = reverse_lazy('core:store_dashboard')
+    
+    def get_queryset(self):
+        if not self.request.user.store:
+            return EcoProduct.objects.none()
+        return EcoProduct.objects.filter(store=self.request.user.store)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'エコ商品を削除しました。')
+        return super().delete(request, *args, **kwargs)
+
+
+class StoreEcoProductDeleteView(LoginRequiredMixin, DeleteView):
+    model = EcoProduct
+    template_name = 'core/store/product_confirm_delete.html'
+    success_url = reverse_lazy('core:store_dashboard')
+    
+    def get_queryset(self):
+        if not self.request.user.store:
+            return EcoProduct.objects.none()
+        # 自店舗の商品はステータスに関わらず削除可能とする
+        return EcoProduct.objects.filter(store=self.request.user.store)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'エコ商品を削除しました。')
+        return super().delete(request, *args, **kwargs)
+
+
 @method_decorator(staff_member_required, name='dispatch')
 class EcoProductListView(ListView):
     model = EcoProduct
     template_name = 'admin/ecoproduct_list.html'
     context_object_name = 'ecoproducts'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        if user.role == 'store' and user.store:
+            # 共通商品 または 自店の申請商品（ただし却下を除く）
+            return queryset.filter(
+                (models.Q(is_common=True) | models.Q(store=user.store)) & ~models.Q(status='rejected')
+            )
+        # 管理者側も却下済みの商品は表示しない
+        return queryset.exclude(status='rejected')
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -1152,3 +1532,142 @@ class EcoProductDeleteView(DeleteView):
     model = EcoProduct
     template_name = 'admin/ecoproduct_confirm_delete.html'
     success_url = reverse_lazy('core:ecoproduct_list')
+
+
+# --- 店舗申請・承認フロー関連ビュー ---
+
+@login_required
+def store_dashboard(request):
+    if request.user.role != 'store' or not request.user.store:
+        return redirect('core:index')
+    
+    # 自店舗の申請済みアイテム または 共通商品 を取得
+    products = EcoProduct.objects.filter(
+        (models.Q(store=request.user.store) | models.Q(is_common=True))
+    ).order_by('-id')
+    coupons = Coupon.objects.filter(store=request.user.store).order_by('-id')
+    
+    return render(request, 'core/store/dashboard.html', {
+        'products': products,
+        'coupons': coupons,
+    })
+
+
+@method_decorator(login_required, name='dispatch')
+class StoreEcoProductCreateView(CreateView):
+    model = EcoProduct
+    form_class = StoreEcoProductForm
+    template_name = 'core/store/product_form.html'
+    success_url = reverse_lazy('core:store_dashboard')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role != 'store' or not request.user.store:
+            return redirect('core:index')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        form.instance.store = self.request.user.store
+        form.instance.status = 'pending'
+        messages.success(self.request, 'エコ商品の登録申請を行いました。承認をお待ちください。')
+        return super().form_valid(form)
+
+
+@method_decorator(login_required, name='dispatch')
+class StoreCouponCreateView(CreateView):
+    model = Coupon
+    form_class = StoreCouponForm
+    template_name = 'core/store/coupon_form.html'
+    success_url = reverse_lazy('core:store_dashboard')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role != 'store' or not request.user.store:
+            return redirect('core:index')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            form.instance.store = self.request.user.store
+            form.instance.status = 'pending'
+            self.object = form.save()
+            # 利用可能店舗に自店舗のみ追加
+            self.object.available_stores.add(self.request.user.store)
+            
+        messages.success(self.request, 'クーポンの発行申請を行いました。承認をお待ちください。')
+        return redirect(self.success_url)
+
+
+@staff_member_required
+def approval_list(request):
+    # 申請中（pending）のアイテムを取得
+    products = EcoProduct.objects.filter(status='pending').order_by('id')
+    # 承認申請中または削除申請中のクーポンを取得
+    coupons = Coupon.objects.filter(models.Q(status='pending') | models.Q(status='deletion_requested')).order_by('id')
+    
+    return render(request, 'core/admin/approval_list.html', {
+        'products': products,
+        'coupons': coupons,
+    })
+
+
+@login_required
+def store_request_coupon_delete(request, coupon_id):
+    if request.user.role != 'store' or not request.user.store:
+        return redirect('core:index')
+        
+    coupon = get_object_or_404(Coupon, id=coupon_id, store=request.user.store)
+    
+    if request.method == 'POST':
+        coupon.status = 'deletion_requested'
+        coupon.save()
+        messages.success(request, f'{coupon.title} の削除申請を行いました。')
+        
+    return redirect('core:store_dashboard')
+
+
+@staff_member_required
+def approve_item(request, type, id):
+    if request.method == 'POST':
+        if type == 'product':
+            item = get_object_or_404(EcoProduct, id=id)
+        elif type == 'coupon':
+            item = get_object_or_404(Coupon, id=id)
+        else:
+            return redirect('core:approval_list')
+        
+        if type == 'coupon' and item.status == 'deletion_requested':
+            item.delete()
+            messages.success(request, f'クーポンを削除しました。')
+        else:
+            # エコ商品の承認時、共通フラグのチェックを確認
+            if type == 'product' and request.POST.get('as_common'):
+                item.is_common = True
+                messages.success(request, f'{item} を【共通商品】として承認しました。')
+            else:
+                messages.success(request, f'{item} を承認しました。')
+            
+            item.status = 'approved'
+            item.save()
+        
+    return redirect('core:approval_list')
+
+
+@staff_member_required
+def reject_item(request, type, id):
+    if request.method == 'POST':
+        if type == 'product':
+            item = get_object_or_404(EcoProduct, id=id)
+        elif type == 'coupon':
+            item = get_object_or_404(Coupon, id=id)
+        else:
+            return redirect('core:approval_list')
+        
+        if type == 'coupon' and item.status == 'deletion_requested':
+            item.status = 'approved' # 削除却下時は承認済みに戻す
+            item.save()
+            messages.warning(request, f'{item} の削除申請を却下しました（承認済みに戻しました）。')
+        else:
+            item.status = 'rejected'
+            item.save()
+            messages.warning(request, f'{item} を却下しました。')
+        
+    return redirect('core:approval_list')

@@ -11,9 +11,9 @@
 
   <section class="rank-box">
     <h2>あなたのランク</h2>
-    <div class="rank-image-container" style="text-align: center; margin: 10px 0;">
+    <div class="rank-image-container" style="text-align: center; margin: 20px 0;">
       {% load static %}
-      <img src="{% static 'img/rank_'|add:rank|add:'.png' %}" alt="{{ user.get_rank_display }}" style="max-width: 100px; height: auto;">
+      <img src="{% static 'img/rank_'|add:rank|add:'.png' %}" alt="{{ user.get_rank_display }}" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
     </div>
     <h2>{{ user.get_rank_display }}</h2>
     <div class="eco-point">{{ current_points }} エコポイント</div>

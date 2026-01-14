@@ -3,36 +3,36 @@ from django.core.management.base import BaseCommand
 from core.views import parse_receipt_data
 
 class Command(BaseCommand):
-    help = 'Tests the receipt parsing logic with RECIPT.TXT'
+    help = 'RECIPT.TXTを使用してレシート解析ロジックをテストします。'
 
     def handle(self, *args, **options):
         try:
             with open('RECIPT.TXT', 'r', encoding='utf-8') as f:
                 receipt_text = f.read()
         except FileNotFoundError:
-            self.stdout.write(self.style.ERROR('RECIPT.TXT not found in the root directory.'))
+            self.stdout.write(self.style.ERROR('RECIPT.TXT がルートディレクトリに見つかりません。'))
             return
 
-        # Find the start of the actual receipt text
+        # 実際のレシートテキストの開始位置を検索
         start_keyword = '元の文字起こし結果を表示'
         if start_keyword in receipt_text:
             receipt_text = receipt_text.split(start_keyword, 1)[1]
 
-        self.stdout.write("--- Parsing RECIPT.TXT with the improved logic ---")
+        self.stdout.write("--- 改良されたロジックで RECIPT.TXT を解析中 ---")
         
         parsed_data = parse_receipt_data(receipt_text)
         
-        # Convert datetime to string for JSON serialization
+        # JSONシリアライズ用に日時を文字列変換
         if parsed_data.get('transaction_time'):
             parsed_data['transaction_time'] = parsed_data['transaction_time'].isoformat()
 
-        self.stdout.write(self.style.SUCCESS("Parsing complete. Here is the result:"))
+        self.stdout.write(self.style.SUCCESS("解析完了。結果:"))
         
-        # Pretty print the JSON-like structure
+        # JSON形式で出力
         self.stdout.write(json.dumps(parsed_data, indent=2, ensure_ascii=False))
 
-        # Also print a summary of items
-        self.stdout.write("\n--- Summary of Items ---")
+        # 商品サマリーを出力
+        self.stdout.write("\n--- 商品サマリー ---")
         if parsed_data.get('items'):
             for item in parsed_data['items']:
                 self.stdout.write(
@@ -41,7 +41,7 @@ class Command(BaseCommand):
                     f"Price: {item.get('price', 'N/A')}"
                 )
         else:
-            self.stdout.write("No items were extracted.")
+            self.stdout.write("商品が抽出されませんでした。")
         
-        self.stdout.write("\n--- End of Test ---")
+        self.stdout.write("\n--- テスト終了 ---")
 
