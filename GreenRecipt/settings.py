@@ -142,7 +142,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # メール設定
 # True: 実際に送信, False: コンソールに出力
-SEND_EMAIL = os.environ.get('SEND_EMAIL', 'True') == 'True'
+SEND_EMAIL = os.environ.get('SEND_EMAIL', 'False') == 'True'
 
 if SEND_EMAIL:
     # Gmail SMTP設定
@@ -165,13 +165,13 @@ LOGIN_URL = '/'
 USE_COLAB_API = os.environ.get('USE_COLAB_API', 'True') == 'True'
 
 # ngrok URL
-COLAB_API_URL = os.environ.get('COLAB_API_URL', "https://unhermitic-vivaciously-donya.ngrok-free.dev")
+COLAB_API_URL = os.environ.get('COLAB_API_URL')
 
 # Gemini APIキー
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', "AIzaSyA9T6TtCVsHjdoGzfLPHghGWd0tunqbfl0")
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Google Maps APIキー
-GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY', 'AIzaSyCU_xWohKWQomFS5W9DQZt0ELigHsYyeE0')
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
 # Google Maps ジオコーディング有効化
 GOOGLE_MAPS_GEOCODING_ENABLED = True
 # ジオコーディング実行制限 (1回あたり)

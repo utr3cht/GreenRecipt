@@ -172,6 +172,7 @@ def reject_item(request, type, id):
         # 通常の承認申請の却下
         item.status = 'rejected'
         reason = request.POST.get('rejection_reason', '').strip()
+        print(f"Rejecting item {item} with reason: '{reason}'")  # Debug Logging
         if reason:
             item.rejection_reason = reason
         item.save()

@@ -19,7 +19,14 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from .forms import CustomUserCreationForm, CustomUserChangeForm, CustomAuthenticationForm
+from .forms import CustomUserCreationForm, CustomUserChangeForm, CustomAuthenticationForm
 from .models import CustomUser
+import random
+from django.utils import timezone
+from datetime import timedelta
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(FormView):
@@ -193,19 +200,114 @@ class ActivateAccountView(TemplateView):
         else:
             return render(request, 'accounts/activation_invalid.html')
 
-class EmailChangeConfirmView(TemplateView):
-    template_name = 'accounts/email_change_complete.html'
+class EmailChangeConfirmView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/email_change_success.html'
 
     def get(self, request, *args, **kwargs):
-        token = self.kwargs.get('token')
+        token = kwargs.get('token')
         try:
             user = CustomUser.objects.get(email_change_token=token)
+            if user.new_email:
+                user.email = user.new_email
+                user.new_email = None
+                user.email_change_token = None
+                user.save()
+                messages.success(request, 'メールアドレスの変更が完了しました。')
+            else:
+                messages.error(request, '無効なリクエストです。')
+                return redirect('core:index') # または適切なページ
         except CustomUser.DoesNotExist:
-            return render(request, 'accounts/email_change_invalid.html')
-
-        user.email = user.new_email
-        user.new_email = None
-        user.email_change_token = None
-        user.save()
+            messages.error(request, '無効なトークンです。')
+            return redirect('core:index')
 
         return super().get(request, *args, **kwargs)
+
+
+class RequestWithdrawalView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/request_withdrawal.html'
+
+    def post(self, request, *args, **kwargs):
+        # 現在のパスワード確認
+        password = request.POST.get('password')
+        if not password:
+            messages.error(request, 'パスワードを入力してください。')
+            return render(request, self.template_name)
+        
+        if not request.user.check_password(password):
+            messages.error(request, 'パスワードが正しくありません。')
+            return render(request, self.template_name)
+
+        # 確認コード生成
+        code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        request.user.withdrawal_code = code
+        request.user.withdrawal_code_expires_at = timezone.now() + timedelta(minutes=10) # 10分有効
+        request.user.save()
+
+        # メール送信
+        subject = '【GreenRecipt】退会確認コード'
+        message = f"""
+        GreenReciptをご利用いただきありがとうございます。
+
+        退会手続きを進めるには、以下の確認コードを入力画面に入力してください。
+
+        確認コード: {code}
+
+        ※このコードは10分間有効です。
+        ※お心当たりのない場合は、そのまま破棄してください。
+        """
+        
+        # コンソール/メール送信（設定依存）
+        if settings.SEND_EMAIL:
+            try:
+                email = EmailMessage(
+                    subject,
+                    message,
+                    settings.EMAIL_HOST_USER,
+                    [request.user.email]
+                )
+                email.send()
+            except Exception as e:
+                logger.error(f"Failed to send withdrawal email: {e}")
+                messages.error(request, "メール送信に失敗しました。時間をおいて再度お試しください。")
+                return redirect('accounts:request_withdrawal')
+        else:
+            print(f"--- Withdrawal Code for {request.user.email}: {code} ---")
+        
+        messages.info(request, '確認コードをメールで送信しました。')
+        return redirect('accounts:confirm_withdrawal')
+
+
+class ConfirmWithdrawalView(LoginRequiredMixin, TemplateView):
+    template_name = 'accounts/confirm_withdrawal.html'
+
+    def post(self, request, *args, **kwargs):
+        code = request.POST.get('withdrawal_code')
+        
+        if not code:
+            messages.error(request, '確認コードを入力してください。')
+            return render(request, self.template_name)
+
+        if not request.user.withdrawal_code or str(request.user.withdrawal_code) != str(code):
+            messages.error(request, '確認コードが正しくありません。')
+            return render(request, self.template_name)
+        
+        if not request.user.withdrawal_code_expires_at or request.user.withdrawal_code_expires_at < timezone.now():
+            messages.error(request, '確認コードの有効期限が切れています。再度申請してください。')
+            return render(request, self.template_name)
+
+        # 退会処理
+        try:
+            # 物理削除または論理削除。ここではユーザー要望に従い「退会」＝削除とするが、
+            # 関連データへの影響を考慮し、論理削除(is_active=False)の方が安全かも知れないが、
+            # 特に指定がないためdelete()する。
+            user = request.user
+            # ログアウトしてから削除しないとセッションが残る場合があるが、削除すれば消えるはず
+            from django.contrib.auth import logout
+            logout(request)
+            user.delete()
+            messages.success(request, '退会処理が完了しました。ご利用ありがとうございました。')
+            return redirect('core:index') # トップページへ
+        except Exception as e:
+            logger.error(f"Failed to delete user {request.user.id}: {e}")
+            messages.error(request, '退会処理中にエラーが発生しました。管理者にお問い合わせください。')
+            return redirect('accounts:confirm_withdrawal')

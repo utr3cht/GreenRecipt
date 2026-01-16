@@ -50,6 +50,12 @@ class CustomUser(AbstractUser):
     email_change_token = models.CharField(
         max_length=100, blank=True, null=True, unique=True, verbose_name='メール変更認証トークン'
     )
+    withdrawal_code = models.CharField(
+        max_length=6, blank=True, null=True, verbose_name='退会確認コード'
+    )
+    withdrawal_code_expires_at = models.DateTimeField(
+        blank=True, null=True, verbose_name='退会確認コード有効期限'
+    )
 
     # ランク階層を定義
     RANK_HIERARCHY = {'seed': 0, 'sprout': 1, 'tree': 2, 'apple_tree': 3}

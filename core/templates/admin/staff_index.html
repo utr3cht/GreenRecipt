@@ -8,6 +8,37 @@
 {% block content %}
   <div class="container-fluid dashboard-section mt-4 px-4">
     
+    <!-- Row 0: Announcements -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">お知らせ一覧</h2>
+            {% if user.role == 'admin' or user.is_superuser %}
+            <a href="{% url 'core:announcement_list' %}" class="btn btn-sm btn-outline-primary">管理</a>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            {% if announcements %}
+              <div class="announcement-list">
+                {% for announcement in announcements %}
+                  <a href="{% url 'core:announcement_detail' announcement.id %}" class="announcement-item d-flex justify-content-between align-items-center p-3 mb-2 bg-light rounded text-decoration-none text-dark">
+                    <div>
+                      <h6 class="mb-1 fw-bold">{{ announcement.title }}</h6>
+                      <small class="text-muted">{{ announcement.created_at|date:'Y/m/d' }}</small>
+                    </div>
+                    <i class="fas fa-chevron-right text-muted"></i>
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted text-center py-4">現在、お知らせはありません。</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 1: Main Menu Tiles -->
     <div class="row mb-4">
       <div class="col-12">
@@ -48,6 +79,7 @@
                   <span>申請承認</span>
                 </a>
               {% endif %}
+              
               {% if user.role == 'store' %}
                 <a href="{% url 'core:staff_inquiry' %}" class="dashboard-tile">
                   <i class="fas fa-question-circle"></i>
@@ -74,46 +106,21 @@
                   <span>エコ商品管理</span>
                 </a>
               {% endif %}
+
+              {% if not user.role == 'admin' and not user.is_superuser and not user.role == 'store' %}
+                <div class="alert alert-warning">
+                    権限が正しく設定されていません。(Role: {{ user.role }})
+                </div>
+              {% endif %}
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Row 2: Two Columns (Announcements & Coupon Stats) -->
+    <!-- Row 2: Coupon Statistics (Full Width) -->
     <div class="row">
-      
-      <!-- Left Column: Announcements -->
-      <div class="col-lg-6 mb-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h2 class="h5 mb-0">お知らせ一覧</h2>
-            {% if user.role == 'admin' or user.is_superuser %}
-            <a href="{% url 'core:announcement_list' %}" class="btn btn-sm btn-outline-primary">管理</a>
-            {% endif %}
-          </div>
-          <div class="card-body">
-            {% if announcements %}
-              <div class="announcement-list">
-                {% for announcement in announcements %}
-                  <a href="{% url 'core:announcement_detail' announcement.id %}" class="announcement-item d-flex justify-content-between align-items-center p-3 mb-2 bg-light rounded text-decoration-none text-dark">
-                    <div>
-                      <h6 class="mb-1 fw-bold">{{ announcement.title }}</h6>
-                      <small class="text-muted">{{ announcement.created_at|date:'Y/m/d' }}</small>
-                    </div>
-                    <i class="fas fa-chevron-right text-muted"></i>
-                  </a>
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-muted text-center py-4">現在、お知らせはありません。</p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: Coupon Statistics -->
-      <div class="col-lg-6 mb-4">
+      <div class="col-12 mb-4">
         <div class="card h-100 shadow-sm">
           <div class="card-header bg-white">
             <h2 class="h5 mb-0">クーポン利用統計</h2>
@@ -158,7 +165,6 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -186,7 +192,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
       flex: 1 1 180px; /* Grow, Shrink, Basis */
       min-width: 180px;
-      max-width: 250px; /* Optional: Prevent too wide on large screens if desired, or remove */
+      max-width: 250px; 
       min-height: 160px;
     }
     

@@ -17,5 +17,10 @@
       <button type="button" onclick="history.back()">戻る</button>
       <button type="submit">更新</button>
     </div>
+    
+    <hr class="my-4">
+    <div class="text-end mt-3">
+        <a href="{% url 'accounts:request_withdrawal' %}" class="text-danger small" onclick="return confirm('本当に退会手続きに進みますか？')">退会手続きはこちら</a>
+    </div>
   </form>
 {% endblock %}

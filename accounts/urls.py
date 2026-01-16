@@ -17,4 +17,6 @@ urlpatterns = [
     path('email_sent/', TemplateView.as_view(template_name='accounts/email_sent.html'), name='email_sent'),
     path('verification_complete/', TemplateView.as_view(template_name='accounts/verification_complete.html'), name='verification_complete'),
     path('profile/email_change_confirm/<str:token>/', views.EmailChangeConfirmView.as_view(), name='email_change_confirm'),
+    path('withdrawal/request/', views.RequestWithdrawalView.as_view(), name='request_withdrawal'),
+    path('withdrawal/confirm/', views.ConfirmWithdrawalView.as_view(), name='confirm_withdrawal'),
 ]
