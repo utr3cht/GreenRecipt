@@ -142,7 +142,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # メール設定
 # True: 実際に送信, False: コンソールに出力
-SEND_EMAIL = os.environ.get('SEND_EMAIL', 'False') == 'True'
+SEND_EMAIL = os.environ.get('SEND_EMAIL', 'True') == 'True'
 
 if SEND_EMAIL:
     # Gmail SMTP設定
@@ -154,6 +154,11 @@ if SEND_EMAIL:
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+    # IMAP設定 (受信)
+    EMAIL_IMAP_HOST = 'imap.gmail.com'
+    EMAIL_IMAP_USER = EMAIL_HOST_USER
+    EMAIL_IMAP_PASSWORD = EMAIL_HOST_PASSWORD
 else:
     # 開発用コンソールバックエンド
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

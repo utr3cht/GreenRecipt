@@ -9,9 +9,14 @@
     <div class="container-fluid dashboard-section mt-4 px-4">
       <div class="header-with-button">
         <h1>お問い合わせダッシュボード</h1>
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item">
-                <a href="{% url 'core:staff_index' %}">戻る</a>
+        <ul class="list-group list-group-flush" style="flex-direction: row; gap: 10px;">
+            <li class="list-group-item" style="border: none; padding: 0;">
+                <a href="{% url 'core:fetch_emails' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-sync-alt"></i> メール更新
+                </a>
+            </li>
+            <li class="list-group-item" style="border: none; padding: 0;">
+                <a href="{% url 'core:staff_index' %}" class="btn btn-outline-secondary btn-sm">戻る</a>
             </li>
         </ul>
       </div>
@@ -52,6 +57,9 @@
                   <td>{{ inquiry.reply_to_email }}</td>
                   <td>{{ inquiry.body_text|truncatechars:40 }}</td>
                   <td>
+                    {% if inquiry.last_message_is_user %}
+                        <span class="badge bg-danger">新着返信あり</span>
+                    {% endif %}
                     {% if inquiry.image %}
                       <a href="{{ inquiry.image.url }}" target="_blank" onclick="event.stopPropagation();">表示</a>
                     {% else %}

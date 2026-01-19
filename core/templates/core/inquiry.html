@@ -109,14 +109,14 @@
     <h1 class="page-title">お問い合わせ</h1>
     <p class="page-desc">ご不明な点やご要望がございましたら、<br>お気軽にお問い合わせください。</p>
 
-    <form method="post" enctype="multipart/form-data" class="inquiry-form" onsubmit="return confirm('この内容で送信してもよろしいですか？');">
+    <form method="post" enctype="multipart/form-data" class="inquiry-form">
       {% csrf_token %}
       
       <!-- Manually rendering fields could be better, but as_p with CSS is sufficient for now -->
       {{ form.as_p }}
       
       <div class="actions">
-        <button type="submit" class="submit-btn" id="submit-btn">送信する</button>
+        <button type="submit" name="action" value="confirm" class="submit-btn" id="submit-btn" style="display: block; margin: 20px auto; width: 100%; max-width: 300px; background: #22c55e; color: white; padding: 15px; border-radius: 50px; font-weight: bold; border: none; font-size: 1.2rem;">確認画面へ進む</button>
       </div>
     </form>
   </div>

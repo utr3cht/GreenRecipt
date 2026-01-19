@@ -948,13 +948,79 @@ def ai_report(request):
 
 def inquiry(request):
     if request.method == "POST":
-        form = InquiryForm(request.POST, request.FILES)
-        if form.is_valid():
-            inquiry = form.save(commit=False)
-            if request.user.is_authenticated:
-                inquiry.user = request.user
-            inquiry.save()
-            return redirect("core:inquiry_complete")
+        action = request.POST.get('action', 'confirm')
+
+        if action == 'confirm':
+            form = InquiryForm(request.POST, request.FILES)
+            if form.is_valid():
+                # 画像の一時保存
+                temp_image_name = ""
+                if 'image' in request.FILES:
+                    image_file = request.FILES['image']
+                    # 一時保存ディレクトリ (media/temp_inquiry)
+                    temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_inquiry')
+                    os.makedirs(temp_dir, exist_ok=True)
+                    fs = FileSystemStorage(location=temp_dir)
+                    # Unique filename
+                    ext = os.path.splitext(image_file.name)[1]
+                    filename = f"{uuid.uuid4().hex}{ext}"
+                    temp_image_name = fs.save(filename, image_file)
+
+                return render(request, "core/inquiry_confirm.html", {
+                    "form": form,
+                    "temp_image_name": temp_image_name
+                })
+        
+        elif action == 'back':
+            # 確認画面から戻る場合（データを復元してフォーム表示）
+            initial_data = {
+                'reply_to_email': request.POST.get('reply_to_email'),
+                'subject': request.POST.get('subject'),
+                'body_text': request.POST.get('body_text'),
+            }
+            # 画像は復元できないので、再アップロードを促すか、あるいは「画像あり」を表示するかだが
+            # ここではシンプルに再アップロードしてもらう形にする（セキュリティ・実装簡易性のため）
+            form = InquiryForm(initial=initial_data)
+            # 既存のtemp_imageがある場合は引継ぎたいが、Formの一部として表示するのは難しい
+            # ユーザー体験的には「画像は再選択してください」が無難
+            return render(request, "core/inquiry.html", {"form": form})
+
+        elif action == 'send':
+            # 送信処理
+            # フォームデータを再構築
+            data = {
+                'reply_to_email': request.POST.get('reply_to_email'),
+                'subject': request.POST.get('subject'),
+                'body_text': request.POST.get('body_text'),
+            }
+            form = InquiryForm(data) # ファイルなしでバリデーション
+            # imageフィールドは必須ではない想定（モデルでblank=Trueなら）
+            
+            if form.is_valid():
+                inquiry = form.save(commit=False)
+                if request.user.is_authenticated:
+                    inquiry.user = request.user
+                
+                # 画像の処理
+                temp_image_name = request.POST.get('temp_image_name')
+                if temp_image_name:
+                    temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_inquiry')
+                    temp_path = os.path.join(temp_dir, temp_image_name)
+                    if os.path.exists(temp_path):
+                        with open(temp_path, 'rb') as f:
+                            inquiry.image.save(temp_image_name, ContentFile(f.read()), save=False)
+                        # 一時ファイル削除
+                        try:
+                            os.remove(temp_path)
+                        except:
+                            pass
+                
+                inquiry.save()
+                return redirect("core:inquiry_complete")
+            else:
+                # 万が一バリデーションエラーの場合
+                return render(request, "core/inquiry.html", {"form": form})
+
     else:
         form = InquiryForm()
     return render(request, "core/inquiry.html", {"form": form})
@@ -1151,6 +1217,10 @@ def announcement_detail(request, announcement_id):
 
 @staff_member_required
 def admin_inquiry_dashboard(request):
+    # ダッシュボード表示時に自動でメールを取り込む
+    from core.utils import fetch_emails_from_gmail
+    fetch_emails_from_gmail() # 結果はメッセージ表示せず、静かに更新する（またはログに出すだけでも良いが、今回はサイレント実行）
+
     status = request.GET.get('status', 'unanswered')
     if status not in ['unanswered', 'in_progress', 'completed']:
         status = 'unanswered'
@@ -1164,6 +1234,10 @@ def admin_inquiry_dashboard(request):
 
 @staff_member_required
 def inquiry_detail(request, inquiry_id):
+    # 詳細画面表示時にも自動でメールを取り込む
+    from core.utils import fetch_emails_from_gmail
+    fetch_emails_from_gmail()
+
     inquiry = get_object_or_404(Inquiry, id=inquiry_id)
     messages_list = inquiry.messages.all().order_by('created_at')
 
@@ -1180,9 +1254,12 @@ def inquiry_detail(request, inquiry_id):
             subject = form.cleaned_data['subject']
             message = form.cleaned_data['message']
             
+            # 件名にRef IDを付与 (スレッド追跡用)
+            subject_with_ref = f"{subject} [Ref:{inquiry.id}]"
+
             context = {
                 'user': inquiry.user if inquiry.user else {'username': 'ゲスト'},
-                'subject': subject,
+                'subject': subject, # 本文内表示用は元の件名
                 'message': message,
             }
 
@@ -1193,7 +1270,7 @@ def inquiry_detail(request, inquiry_id):
             # Create and send the email
             try:
                 email = EmailMultiAlternatives(
-                    subject,
+                    subject_with_ref, # Ref付き件名を使用
                     text_content,
                     settings.DEFAULT_FROM_EMAIL,
                     [inquiry.reply_to_email]
@@ -1672,3 +1749,21 @@ def reject_item(request, type, id):
             messages.warning(request, f'{item} を却下しました。')
         
     return redirect('core:approval_list')
+
+
+from core.utils import fetch_emails_from_gmail
+
+@staff_member_required
+def fetch_emails(request):
+    """手動メール取り込みビュー"""
+    success, message = fetch_emails_from_gmail()
+    if success:
+        messages.success(request, message)
+    else:
+        messages.error(request, message)
+    
+    # 元のページに戻る（なければダッシュボード）
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    return redirect('core:admin_inquiry_dashboard')

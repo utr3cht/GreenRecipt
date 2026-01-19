@@ -21,6 +21,11 @@
                 <div style="text-align: right; color: #7f8c8d; font-size: 0.9rem;">
                     <p style="margin: 0;">ID: {{ inquiry.id }}</p>
                     <p style="margin: 0;">{{ inquiry.created_at|date:'Y年n月j日 H:i' }}</p>
+                    <div style="margin-top: 10px;">
+                        <a href="{% url 'core:fetch_emails' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-sync-alt"></i> メール更新
+                        </a>
+                    </div>
                 </div>
             </header>
             

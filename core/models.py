@@ -173,6 +173,11 @@ class Inquiry(models.Model):
     def __str__(self):
         return self.subject
 
+    @property
+    def last_message_is_user(self):
+        last_msg = self.messages.order_by('-created_at').first()
+        return last_msg and last_msg.sender_type == 'user'
+
     class Meta:
         verbose_name = 'お問い合わせ'
         verbose_name_plural = 'お問い合わせ'

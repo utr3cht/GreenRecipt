@@ -43,6 +43,7 @@ urlpatterns = [
 
     # --- お問い合わせ管理 ---
     path("staff/inquiries/dashboard/", views.admin_inquiry_dashboard, name="admin_inquiry_dashboard"),
+    path("inquiries/fetch-emails/", views.fetch_emails, name="fetch_emails"),
     path("staff/inquiries/<int:inquiry_id>/", views.inquiry_detail, name="inquiry_detail"),
 
     # --- 店舗管理 ---
