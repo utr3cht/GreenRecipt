@@ -6,8 +6,9 @@
     <div class="row justify-content-center">
       <div class="col-md-8">
         <div class="card shadow-sm">
-          <div class="card-header bg-white">
-            <h2 class="h4 mb-0">エコ商品登録申請</h2>
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h2 class="h4 mb-0">{% if form.instance.pk %}エコ商品編集{% else %}エコ商品登録申請{% endif %}</h2>
+            <a href="{% url 'core:store_dashboard' %}" class="btn btn-outline-secondary btn-sm">戻る</a>
           </div>
           <div class="card-body">
             <form method="post" enctype="multipart/form-data">
@@ -29,8 +30,8 @@
               {% endfor %}
 
               <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'core:store_dashboard' %}" class="btn btn-outline-secondary">キャンセル</a>
-                <button type="submit" class="btn btn-success px-4">申請する</button>
+                <a href="{% url 'core:store_dashboard' %}" class="btn btn-outline-secondary">戻る</a>
+                <button type="submit" class="btn btn-success px-4">{% if form.instance.pk %}更新する{% else %}申請する{% endif %}</button>
               </div>
             </form>
           </div>
