@@ -1,14 +1,86 @@
 {% extends 'core/base.html' %}
 
-{% block title %}お問い合わせ完了 | GreenRecipt{% endblock %}
+{% block title %}送信完了 | GreenReceipt{% endblock %}
+
+{% block extra_css %}
+<style>
+  .complete-page {
+    max-width: 1000px; /* Same wide width as inquiry form */
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .complete-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    padding: 60px 40px;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .icon-check {
+    width: 80px;
+    height: 80px;
+    background: #dcfce7;
+    color: #22c55e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 24px;
+    box-shadow: 0 10px 20px rgba(34, 197, 94, 0.15);
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 16px;
+  }
+
+  .page-msg {
+    color: #64748b;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  .home-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+    color: #fff;
+    font-weight: 700;
+    padding: 14px 40px;
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .home-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 24px rgba(59, 130, 246, 0.25);
+    color: #fff;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="alert alert-success" role="alert">
-        <h4 class="alert-heading">お問い合わせありがとうございます！</h4>
-        <p>お問い合わせを受け付けました。内容を確認の上、担当者よりご連絡させていただきます。</p>
-        <hr>
-        <p class="mb-0">トップページに戻るには<a href="{% url 'core:index' %}">こちら</a>をクリックしてください。</p>
+<div class="complete-page">
+    <div class="complete-card">
+        <div class="icon-check">✓</div>
+        <h1 class="page-title">送信完了しました</h1>
+        <p class="page-msg">
+            お問い合わせありがとうございます。<br>
+            内容を確認の上、担当者よりご連絡させていただきます。<br>
+            しばらくお待ちください。
+        </p>
+        <a href="{% url 'core:main_menu' %}" class="home-btn">ホームへ戻る</a>
     </div>
 </div>
 {% endblock %}

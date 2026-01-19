@@ -1,37 +1,154 @@
-{% extends 'admin/admin_base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}退会確認 | GreenRecipt{% endblock %}
 
+{% block extra_css %}
+<style>
+  .auth-page {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px;
+  }
+
+  .auth-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+
+  .card-header {
+    background: #ef4444; 
+    color: white;
+    padding: 20px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+
+  .card-body {
+    padding: 30px;
+  }
+
+  .step-desc {
+    text-align: left;
+    color: #475569;
+    margin-bottom: 24px;
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .form-label {
+    display: block;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+  }
+  .form-control {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 1.2rem; /* Larger font for code */
+    letter-spacing: 0.1em;
+    text-align: center;
+    transition: all 0.2s;
+    background: #f8fafc;
+  }
+  .form-control:focus {
+    background: #fff;
+    border-color: #ef4444; 
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    outline: none;
+  }
+
+  .danger-alert {
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #fca5a5;
+    margin-top: 20px;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    gap: 15px;
+  }
+
+  .btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    transition: background 0.2s;
+  }
+  .btn-cancel:hover { background: #e2e8f0; color: #475569; }
+
+  .btn-danger-submit {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-danger-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(239, 68, 68, 0.25);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">退会確認</h4>
-                </div>
-                <div class="card-body">
-                    <p>メールに送信された確認コードを入力してください。</p>
-
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="withdrawal_code" class="form-label">確認コード (6桁の数字)</label>
-                            <input type="text" class="form-control" id="withdrawal_code" name="withdrawal_code" required maxlength="6" pattern="\d{6}">
-                        </div>
-
-                        <div class="alert alert-danger mt-4">
-                            <strong>最終確認:</strong> 本当に退会しますか？この操作は取り消せません。
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'accounts:request_withdrawal' %}" class="btn btn-secondary">戻る</a>
-                            <button type="submit" class="btn btn-danger font-weight-bold">退会する</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="card-header">
+      退会確認（最終）
     </div>
+    <div class="card-body">
+      
+      <div class="step-desc">
+        ご登録のメールアドレスに<strong>確認コード（6桁）</strong>を送信しました。<br>
+        メールを確認し、コードを入力してください。
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="withdrawal_code" class="form-label">確認コード</label>
+          <input type="text" class="form-control" id="withdrawal_code" name="withdrawal_code" required maxlength="6" pattern="\d{6}" placeholder="123456" inputmode="numeric">
+        </div>
+
+        <div class="danger-alert">
+          <strong>最終確認:</strong><br>
+          「退会する」を押すと、アカウントは即座に削除されます。<br>この操作は取り消せません。
+        </div>
+
+        <div class="actions">
+          <a href="{% url 'accounts:request_withdrawal' %}" class="btn-cancel">戻る</a>
+          <button type="submit" class="btn-danger-submit">退会する</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

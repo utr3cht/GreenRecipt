@@ -1,32 +1,244 @@
 {% extends 'core/base.html' %}
 
-{% block content %}
+{% block title %}レシートスキャン | GreenReceipt{% endblock %}
 
-<div class="scan-container">
-  <div id="loading-overlay">
-    <div class="spinner"></div>
-    <p>処理中です...</p>
+{% block extra_css %}
+<style>
+  .scan-page {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Instruction Card */
+  .instruction-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  
+  .instruction-title {
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+  }
+  
+  .instruction-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .instruction-list li {
+    display: flex;
+    align-items: start;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  
+  .check-icon {
+    color: #22c55e;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* Scan Box */
+  .scan-box {
+    background: #fff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 20px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .scan-box:hover {
+    border-color: #79ca69;
+    background-color: #f8fafc;
+  }
+
+  .camera-icon {
+    font-size: 48px;
+    color: #64748b;
+    margin-bottom: 16px;
+    display: block;
+  }
+  
+  .scan-label {
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  .scan-sublabel {
+    color: #94a3b8;
+    font-size: 0.85rem;
+  }
+
+  /* File Input (Hidden) */
+  .file-input-wrapper {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Preview */
+  #image-preview {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 12px;
+    margin-top: 20px;
+    display: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    object-fit: contain;
+    background: #000;
+  }
+
+  /* Actions */
+  .actions {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .submit-btn {
+    background: linear-gradient(135deg, #79ca69, #22c55e);
+    color: white;
+    font-weight: 700;
+    padding: 14px 40px;
+    border-radius: 50px;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+    display: none;
+  }
+  
+  .submit-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Loading Overlay */
+  #loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+  }
+  
+  .loader-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  
+  .spinner-modern {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #22c55e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+  }
+  
+  .loader-text {
+    color: #334155;
+    font-weight: 600;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="scan-page">
+  
+  <h1 class="mb-4 text-center fw-bold" style="color: #0f172a;">レシートスキャン</h1>
+
+  <!-- Instructions -->
+  <div class="instruction-card">
+    <div class="instruction-title">
+      💡 撮影のポイント
+    </div>
+    <ul class="instruction-list">
+      <li>
+        <span class="check-icon">✓</span>
+        <span><strong>レシート全体</strong>が写るようにしてください。長いレシートは折りたたまず、遠くから撮影してください。</span>
+      </li>
+      <li>
+        <span class="check-icon">✓</span>
+        <span>商品名と価格が<strong>はっきり読める</strong>明るさで撮影してください。</span>
+      </li>
+      <li>
+        <span class="check-icon">✓</span>
+        <span>背景は<strong>無地で暗め</strong>の場所がおすすめです。</span>
+      </li>
+    </ul>
   </div>
-  <h1>レシートをスキャン</h1>
-  <p>カメラでレシートを撮影してください。</p>
 
   <form id="scan-form" method="post" enctype="multipart/form-data" action="{% url 'core:scan' %}">
     {% csrf_token %}
-    <div class="btn file-input-wrapper">
-      <span>カメラを起動</span>
-      <input type="file" name="receipt_image" id="receipt_image" accept="image/*" capture="environment" required>
+    
+    <div class="scan-box" id="scan-box">
+      <input type="file" name="receipt_image" id="receipt_image" accept="image/*" capture="environment" class="file-input-wrapper" required>
+      <div id="placeholder-content">
+        <span class="camera-icon">📷</span>
+        <span class="scan-label">カメラを起動 / 選択</span>
+        <span class="scan-sublabel">タップしてレシートを撮影またはアップロード</span>
+      </div>
     </div>
 
-    <img id="image-preview" src="#" alt="Image Preview"/>
+    <img id="image-preview" src="#" alt="プレビュー"/>
 
-    <button type="submit" class="submit-btn" id="submit-button">この画像をアップロード</button>
+    <div class="actions">
+      <button type="submit" class="submit-btn" id="submit-button">
+        解析を実行する
+      </button>
+    </div>
   </form>
 </div>
 
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+  <div class="loader-content">
+    <div class="spinner-modern"></div>
+    <p class="loader-text">AIがレシートを解析中...<br>そのままお待ちください</p>
+  </div>
+</div>
+
 <script>
+  // File Input Change
   document.getElementById('receipt_image').addEventListener('change', function(event) {
     const preview = document.getElementById('image-preview');
     const submitButton = document.getElementById('submit-button');
+    const scanBox = document.getElementById('scan-box');
+    const boxContent = document.getElementById('placeholder-content');
     const file = event.target.files[0];
     
     if (file) {
@@ -35,21 +247,27 @@
       reader.onload = function(e) {
         preview.src = e.target.result;
         preview.style.display = 'block';
-        submitButton.style.display = 'inline-block';
+        submitButton.style.display = 'block';
+        
+        // Change box style slightly to indicate file selected
+        scanBox.style.borderColor = '#22c55e';
+        scanBox.style.background = '#f0fdf4';
+        boxContent.style.opacity = '0.6';
       }
       
       reader.readAsDataURL(file);
     }
   });
 
+  // Form Submit
   document.getElementById('scan-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent default form submission
+    event.preventDefault();
 
     const overlay = document.getElementById('loading-overlay');
     const form = event.target;
     const formData = new FormData(form);
 
-    overlay.style.display = 'block'; // Show overlay
+    overlay.style.display = 'block';
 
     fetch(form.action, {
       method: 'POST',
@@ -61,17 +279,20 @@
     })
     .then(response => response.json())
     .then(data => {
-      overlay.style.display = 'none'; // Hide overlay
-      if (data.success) {
-        window.location.href = data.redirect_url;
-      } else {
-        alert('エラーが発生しました: ' + data.error);
-      }
+      // 少し待機させて読み込み感演出（なくてもいいがユーザー体験的に）
+      setTimeout(() => {
+          overlay.style.display = 'none';
+          if (data.success) {
+            window.location.href = data.redirect_url;
+          } else {
+            alert('エラーが発生しました: ' + data.error);
+          }
+      }, 500); 
     })
     .catch(error => {
-      overlay.style.display = 'none'; // Hide overlay
+      overlay.style.display = 'none';
       console.error('Error:', error);
-      alert('スキャン処理中にエラーが発生しました。');
+      alert('通信エラーが発生しました。もう一度お試しください。');
     });
   });
 </script>

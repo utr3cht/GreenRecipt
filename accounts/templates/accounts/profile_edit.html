@@ -1,26 +1,171 @@
-{% extends 'accounts/base.html' %}
+{% extends 'core/base.html' %}
 {% load static %}
 
 {% block title %}プロフィール編集 | GreenReceipt{% endblock %}
 
+{% block extra_css %}
+<style>
+  .profile-page {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px;
+  }
+
+  .profile-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Soft shadow */
+    padding: 40px 30px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .page-header img {
+    width: 140px;
+    margin-bottom: 20px;
+    transition: transform 0.3s;
+  }
+  .page-header img:hover { transform: scale(1.05); }
+  
+  .page-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  /* Form styling */
+  .profile-form p {
+    margin-bottom: 20px;
+  }
+  .profile-form label {
+    display: block;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+  }
+  .profile-form input[type="text"],
+  .profile-form input[type="email"],
+  .profile-form input[type="password"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: #0f172a;
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .profile-form input:focus {
+    background: #fff;
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    outline: none;
+  }
+  
+  /* Help text styling */
+  .helptext {
+    display: block;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-top: 5px;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 40px;
+  }
+  
+  .btn-submit {
+    background: linear-gradient(135deg, #79ca69, #22c55e);
+    color: white;
+    font-weight: 700;
+    padding: 12px 36px;
+    border-radius: 50px;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(34, 197, 94, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+    min-width: 140px;
+  }
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px rgba(34, 197, 94, 0.25);
+  }
+  
+  .btn-back {
+    background: #fff;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+    font-weight: 700;
+    padding: 12px 36px;
+    border-radius: 50px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 140px;
+  }
+  .btn-back:hover {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+  }
+
+  .withdrawal-section {
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px dashed #cbd5e1;
+    text-align: right;
+  }
+  .withdrawal-link {
+    color: #ef4444;
+    font-size: 0.9rem;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: background 0.2s;
+  }
+  .withdrawal-link:hover {
+    background: #fef2f2;
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <form method="post" class="full">
-    {% csrf_token %}
-    <div style="text-align:center;">
-      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;">
-    </div>
-    <h2>プロフィール編集</h2>
-    <div class="form-container">
-      {{ form.as_p }}
-    </div>
-    <div class="actions">
-      <button type="button" onclick="history.back()">戻る</button>
-      <button type="submit">更新</button>
-    </div>
+<div class="profile-page">
+  <div class="profile-card">
     
-    <hr class="my-4">
-    <div class="text-end mt-3">
-        <a href="{% url 'accounts:request_withdrawal' %}" class="text-danger small" onclick="return confirm('本当に退会手続きに進みますか？')">退会手続きはこちら</a>
+    <div class="page-header">
+      <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ">
+      <h1 class="page-title">プロフィール編集</h1>
     </div>
-  </form>
+
+    <form method="post" class="profile-form">
+      {% csrf_token %}
+      
+      {{ form.as_p }}
+      
+      <div class="actions">
+        <button type="button" class="btn-back" onclick="location.href='{% url 'core:main_menu' %}'">戻る</button>
+        <button type="submit" class="btn-submit">更新する</button>
+      </div>
+
+      <div class="withdrawal-section">
+        <a href="{% url 'accounts:request_withdrawal' %}" class="withdrawal-link" onclick="return confirm('本当に退会手続きに進みますか？')">
+          退会手続きはこちら &rarr;
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

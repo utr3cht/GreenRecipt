@@ -302,7 +302,6 @@ form {
   padding: 26px 22px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  text-align: left;
   animation: scaleIn 0.5s ease-out;
   position: relative;
   overflow: hidden;
@@ -988,7 +987,6 @@ main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 
 .leaf {
   position: absolute;
   width: 20px; height: 20px;
-  background-color: ;
   border-radius: 0 50% 50% 50%;
   transform: rotate(45deg);
   opacity: 0;

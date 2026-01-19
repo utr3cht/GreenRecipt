@@ -1,17 +1,242 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}所持クーポン一覧 | GreenReceipt{% endblock %}
+{% block title %}クーポン一覧 | GreenReceipt{% endblock %}
+
+{% block extra_css %}
+<style>
+  .coupon-page {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px;
+  }
+
+  /* Header Section */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+  }
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+  .points-balance {
+    background: #0f172a;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+  }
+  .points-balance span { color: #4ade80; }
+
+  /* Section Styles */
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 16px;
+    border-left: 4px solid #22c55e;
+    padding-left: 12px;
+    margin-top: 40px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* Grid */
+  .coupon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  /* Coupon Card */
+  .coupon-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    cursor: pointer;
+  }
+  .coupon-card:hover:not(.disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+  }
+
+  /* Card Top (Decoration) */
+  .card-top {
+    height: 8px;
+    background: linear-gradient(90deg, #79ca69, #22c55e);
+  }
+  .card-top.exchange { background: linear-gradient(90deg, #3b82f6, #0ea5e9); }
+  .card-top.used { background: #94a3b8; }
+
+  /* Card Body */
+  .card-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .coupon-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    width: fit-content;
+  }
+  .badge-owned { background: #dcfce7; color: #166534; }
+  .badge-exchange { background: #dbeafe; color: #1e40af; }
+  .badge-used { background: #f1f5f9; color: #64748b; }
+
+  .coupon-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .coupon-desc {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 16px;
+    flex: 1;
+  }
+
+  .coupon-benefit {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+  .coupon-benefit span { color: #ef4444; }
+
+  /* Card Footer (Action) */
+  .card-footer {
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    text-align: center;
+  }
+
+  .action-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-use {
+    background: #22c55e; color: #fff;
+    box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2);
+  }
+  .btn-use:hover { background: #16a34a; transform: translateY(-1px); }
+  
+  .btn-acquire {
+    background: #3b82f6; color: #fff;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+  }
+  .btn-acquire:hover { background: #2563eb; transform: translateY(-1px); }
+
+  .btn-disabled {
+    background: #e2e8f0; color: #94a3b8; cursor: not-allowed;
+  }
+
+  /* Empty State */
+  .empty-box {
+    text-align: center;
+    padding: 40px;
+    background: #f8fafc;
+    border-radius: 16px;
+    color: #64748b;
+    border: 2px dashed #e2e8f0;
+  }
+
+  /* Modal Styling */
+  .modal {
+    display: none; 
+    position: fixed; 
+    z-index: 2000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.5); 
+    backdrop-filter: blur(5px);
+  }
+  
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; 
+    padding: 0;
+    border: 1px solid #888;
+    width: 90%; 
+    max-width: 500px;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.3s ease-out;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal-header { padding: 20px; border-bottom: 1px solid #e2e8f0; }
+  .modal-header h2 { margin: 0; color: #0f172a; font-size: 1.25rem; }
+  
+  .modal-body { padding: 24px; color: #334155; line-height: 1.6; }
+  .modal-body strong { color: #0f172a; }
+  
+  .modal-footer { padding: 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end; }
+  
+  .use-button { background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+  .close-button { background: #f1f5f9; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+  @media (max-width: 600px) {
+      .modal-content { margin: 30% auto; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="coupon-page">
+  <div class="page-header">
+    <h1 class="page-title">クーポン</h1>
+    <div class="points-balance">
+      <span>🌿</span> {{ user_points }} pt
+    </div>
+  </div>
 
-
-<div class="container">
-  <h1>所持クーポン一覧</h1>
-
+  <!-- Owned Coupons -->
+  <h2 class="section-title">所持しているクーポン</h2>
   {% if coupons %}
     <div class="coupon-grid">
       {% for coupon in coupons %}
-        <div class="coupon-card"
+        <div class="coupon-card owned-trigger"
              data-id="{{ coupon.id }}"
              data-title="{{ coupon.title }}"
              data-description="{{ coupon.description }}"
@@ -19,89 +244,110 @@
              data-requirement="{{ coupon.requirement }}"
              data-stores="{% for store in coupon.available_stores.all %}{{ store.store_name }}{% if not forloop.last %}, {% endif %}{% endfor %}"
              data-store-ids="{% for store in coupon.available_stores.all %}{{ store.store_id }}:{{ store.store_name }}{% if not forloop.last %},{% endif %}{% endfor %}">
-          <div class="coupon-badge">所持中</div>
-          <h3>{{ coupon.title }}</h3>
-          <p><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
-          <p><strong>条件:</strong> {{ coupon.requirement }}</p>
+          <div class="card-top"></div>
+          <div class="card-body">
+            <span class="coupon-badge badge-owned">所持中</span>
+            <h3 class="coupon-title">{{ coupon.title }}</h3>
+            <div class="coupon-benefit">
+               {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}
+            </div>
+            <p class="coupon-desc">{{ coupon.description|truncatechars:40 }}</p>
+          </div>
+          <div class="card-footer">
+            <button class="action-btn btn-use">使う</button>
+          </div>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <div class="no-coupons">
-      <p>現在、所持しているクーポンはありません。</p>
+    <div class="empty-box">
+      所持しているクーポンはありません。ポイントを貯めて交換しよう！
     </div>
   {% endif %}
 
-  <h2 class="mt-5 mb-3">ポイントで交換可能なクーポン</h2>
-  <div class="current-points mb-3">保有ポイント: <strong>{{ user_points }} pt</strong></div>
-
+  <!-- Available Coupons -->
+  <h2 class="section-title">ポイントで交換可能なクーポン</h2>
   {% if available_coupons %}
     <div class="coupon-grid">
       {% for coupon in available_coupons %}
-        <div class="coupon-card available-coupon" style="border-color: #aaa; background-color: #f9f9f9;">
-          <h3>{{ coupon.title }}</h3>
-          <p>{{ coupon.description }}</p>
-          <p><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
-          <p class="text-danger font-weight-bold">必要ポイント: {{ coupon.required_points }} pt</p>
-          
-          {% if user_points >= coupon.required_points %}
-            <button class="btn btn-primary acquire-coupon-btn" data-id="{{ coupon.id }}" data-points="{{ coupon.required_points }}">
-              {{ coupon.required_points }}ptで交換する
-            </button>
-          {% else %}
-            <button class="btn btn-secondary" disabled>ポイント不足</button>
-          {% endif %}
+        <div class="coupon-card">
+          <div class="card-top exchange"></div>
+          <div class="card-body">
+            <span class="coupon-badge badge-exchange">{{ coupon.required_points }} pt</span>
+            <h3 class="coupon-title">{{ coupon.title }}</h3>
+            <div class="coupon-benefit">
+               {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}
+            </div>
+            <p class="coupon-desc">{{ coupon.description|truncatechars:40 }}</p>
+          </div>
+          <div class="card-footer">
+            {% if user_points >= coupon.required_points %}
+              <button class="action-btn btn-acquire acquire-coupon-btn" data-id="{{ coupon.id }}" data-points="{{ coupon.required_points }}">
+                交換する
+              </button>
+            {% else %}
+              <button class="action-btn btn-disabled" disabled>ポイント不足 ({{ coupon.required_points }}pt)</button>
+            {% endif %}
+          </div>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <p style="margin-bottom: 50px;">現在交換可能なクーポンはありません。</p>
+    <div class="empty-box">
+      現在交換可能なクーポンはありません。
+    </div>
   {% endif %}
 
+  <!-- Used Coupons -->
   {% if used_coupons %}
-    <h2 class="mt-5 mb-3 text-muted">使用済みクーポン</h2>
-    <div class="coupon-grid used-coupons-grid" style="opacity: 0.7;">
+    <h2 class="section-title text-muted" style="border-color: #cbd5e1; margin-top: 60px;">使用済みのクーポン</h2>
+    <div class="coupon-grid" style="opacity: 0.6;">
       {% for coupon in used_coupons %}
-        <div class="coupon-card used" style="background-color: #eee; border-color: #ddd; cursor: default;">
-            <div class="coupon-badge" style="background-color: #6c757d;">使用済</div>
-            <h3 class="text-muted">{{ coupon.title }}</h3>
-            <p class="text-muted">{{ coupon.description }}</p>
-            <p class="text-muted"><strong>特典:</strong> {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}</p>
+        <div class="coupon-card disabled used">
+          <div class="card-top used"></div>
+          <div class="card-body">
+            <span class="coupon-badge badge-used">使用済</span>
+            <h3 class="coupon-title">{{ coupon.title }}</h3>
+            <div class="coupon-benefit">
+               {% if coupon.discount_amount %}{{ coupon.discount_amount }}円引き{% else %}{{ coupon.discount_rate }}% OFF{% endif %}
+            </div>
+          </div>
         </div>
       {% endfor %}
     </div>
   {% endif %}
 </div>
 
-<!-- モーダル本体 -->
+<!-- Modal -->
 <div id="couponModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
       <h2 id="modalTitle"></h2>
     </div>
     <div class="modal-body">
-      <p id="modalDescription"></p>
-      <p><strong>特典:</strong> <span id="modalDiscount"></span></p>
-      <p><strong>ご利用条件:</strong> <span id="modalRequirement"></span></p>
-      <p><strong>利用可能店舗:</strong> <span id="modalStores"></span></p>
+      <p id="modalDescription" style="margin-bottom: 20px;"></p>
+      <div style="background:#f8fafc; padding:15px; border-radius:12px; margin-bottom:20px;">
+        <p style="margin:5px 0;"><strong>特典:</strong> <span id="modalDiscount" style="color:#ef4444; font-weight:700;"></span></p>
+        <p style="margin:5px 0;"><strong>条件:</strong> <span id="modalRequirement"></span></p>
+        <p style="margin:5px 0;"><strong>店舗:</strong> <span id="modalStores"></span></p>
+      </div>
       
-      <div id="storeSelectionContainer" style="margin-top: 15px; display: none;">
-        <label for="storeSelect">利用する店舗を選択してください:</label>
-        <select id="storeSelect" class="form-control" style="width: 100%; padding: 8px; margin-top: 5px;">
+      <div id="storeSelectionContainer" style="display: none;">
+        <label for="storeSelect" style="display:block; font-weight:600; margin-bottom:8px;">利用する店舗を選択:</label>
+        <select id="storeSelect" class="form-control" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
           <option value="">店舗を選択...</option>
         </select>
       </div>
     </div>
     <div class="modal-footer">
-      <button id="useCouponBtn" class="use-button">このクーポンを使う</button>
       <button id="closeModalBtn" class="close-button">閉じる</button>
+      <button id="useCouponBtn" class="use-button">このクーポンを使う</button>
+    </div>
   </div>
 </div>
 
 {# CSRF Token for JS #}
-<div style="display:none;">
-    <form>{% csrf_token %}</form>
-</div>
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -109,26 +355,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalBtn = document.getElementById('closeModalBtn');
   const useCouponBtn = document.getElementById('useCouponBtn');
 
-  // モーダルを閉じる処理
-  const closeModal = () => {
-    modal.style.display = 'none';
-  };
-
+  // Modal logic
+  const closeModal = () => { modal.style.display = 'none'; };
   closeModalBtn.addEventListener('click', closeModal);
-  window.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
+  window.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
-  // クーポンカードのクリックイベント
-  document.querySelectorAll('.coupon-card').forEach(card => {
-    card.addEventListener('click', function() {
-      // If card is already used, do nothing
-      if (this.classList.contains('used')) {
-        return;
-      }
-
+  // Use (Owned) Coupon Click
+  document.querySelectorAll('.owned-trigger').forEach(card => {
+    card.addEventListener('click', function(e) {
+      // Prevent if clicking actual button inside (though bubble is fine, button has own handler usually? No, here card is trigger)
+      // Actually, we made the button visual only in CSS structure, but we want the whole card actionable or just button.
+      // Let's make the whole card actionable for 'Owned'.
+      
       const id = this.dataset.id;
       const title = this.dataset.title;
       const description = this.dataset.description;
@@ -142,16 +380,11 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('modalRequirement').textContent = requirement;
       
       const storesSpan = document.getElementById('modalStores');
-      if (stores) {
-        storesSpan.textContent = stores;
-      } else {
-        storesSpan.textContent = '全店舗で利用可能';
-      }
+      storesSpan.textContent = stores ? stores : '全店舗で利用可能';
 
-      // 'use'ボタンにcoupon-idをセット
       useCouponBtn.dataset.couponId = id;
 
-      // 店舗選択肢の生成
+      // Store Selection Generation
       const storeIdsStr = this.dataset.storeIds;
       const storeSelect = document.getElementById('storeSelect');
       const storeSelectionContainer = document.getElementById('storeSelectionContainer');
@@ -161,28 +394,22 @@ document.addEventListener('DOMContentLoaded', () => {
       if (storeIdsStr) {
         const storesList = storeIdsStr.split(',');
         storesList.forEach(storeStr => {
-          const [id, name] = storeStr.split(':');
-          if (id && name) {
+          const [sid, sname] = storeStr.split(':');
+          if (sid && sname) {
             const option = document.createElement('option');
-            option.value = id;
-            option.textContent = name;
+            option.value = sid;
+            option.textContent = sname;
             storeSelect.appendChild(option);
           }
         });
         
         if (storesList.length > 0) {
             storeSelectionContainer.style.display = 'block';
-            // 1店舗しかない場合は自動選択
-            if (storesList.length === 1) {
-                storeSelect.selectedIndex = 1;
-            }
+            if (storesList.length === 1) storeSelect.selectedIndex = 1;
         } else {
             storeSelectionContainer.style.display = 'none';
         }
       } else {
-        // 利用可能店舗の指定がない場合（全店舗など）
-        // ここでは単純化のため、選択なし（null）で送信するか、
-        // あるいは全店舗リストを取得する必要があるが、現状は非表示にする
         storeSelectionContainer.style.display = 'none';
       }
 
@@ -190,14 +417,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 「クーポンを使う」ボタンのクリックイベント
+  // Confirm Use
   useCouponBtn.addEventListener('click', () => {
     const couponId = useCouponBtn.dataset.couponId;
     if (!couponId) return;
 
-    if (!confirm('このクーポンを使用しますか？使用後は元に戻せません。')) {
-      return;
-    }
+    if (!confirm('このクーポンを使用しますか？使用後は元に戻せません。')) return;
 
     const url = `/coupons/use/${couponId}/`;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -205,15 +430,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
-      body: JSON.stringify({
-        store_id: storeId
-      }),
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      body: JSON.stringify({ store_id: storeId }),
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
       if (data.success) {
         alert('クーポンを使用しました。');
@@ -223,73 +443,36 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
       }
     })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('通信中にエラーが発生しました。');
-    });
+    .catch(e => { console.error(e); alert('通信エラー'); });
   });
 
-  // クーポン取得ボタンのイベントリスナー
+  // Acquire Coupon
   document.querySelectorAll('.acquire-coupon-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
-      e.stopPropagation(); // 親要素のクリックイベント（モーダル表示）を防止
+      e.stopPropagation(); // Stop bubbling if needed
       
       const couponId = this.dataset.id;
       const points = this.dataset.points;
       
-      if (!confirm(`${points}ポイントを使用してこのクーポンを取得しますか？`)) {
-        return;
-      }
+      if (!confirm(`${points}ポイントを使用してこのクーポンを取得しますか？`)) return;
       
       const url = `/coupons/acquire/${couponId}/`;
-      // CSRFトークンはモーダル内に隠れているフォーム等がなければ、metaタグか別途取得が必要。
-      // 上記の useCouponBtn ではDOMから取得しているが、このブロック外にある可能性があるため、
-      // 念のため安全に取得する。ここではページ内に存在する前提で querySelector を使う。
-      // base.html などに csrf_token が出力されていると想定。
-      // もしない場合は、formから取るか、cookieから取るか。
-      // 今回は既存コードに合わせて input から取る。もしなければエラーになるので注意。
-      // coupon_list.html 内には post フォームが明示されていないため、
-      // 明示的に csrfInput を探すか、meta を見るか。
-      // 既存の useCouponBtn のロジックでは [name=csrfmiddlewaretoken] を探している。
-      // しかし、テンプレート内に {% csrf_token %} を記述していないと見つからない。
-      // coupon_list.html の body 内には見当たらないので、追加する必要がある。
-      
-      let csrfToken = '';
-      const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-      if (csrfInput) {
-          csrfToken = csrfInput.value;
-      } else {
-          // Cookieから取得
-          const cookies = document.cookie.split(';');
-          for (let cookie of cookies) {
-              const [name, value] = cookie.trim().split('=');
-              if (name === 'csrftoken') {
-                  csrfToken = value;
-                  break;
-              }
-          }
-      }
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
       fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
       })
-      .then(response => response.json())
+      .then(r => r.json())
       .then(data => {
         if (data.success) {
           alert('クーポンを取得しました！');
-          location.reload(); // リロードして所有リストに移動させる
+          location.reload();
         } else {
-          alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+          alert('エラー: ' + (data.error || '不明なエラー'));
         }
       })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('通信中にエラーが発生しました。');
-      });
+      .catch(e => { console.error(e); alert('通信エラー'); });
     });
   });
 });

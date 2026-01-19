@@ -1,126 +1,335 @@
 {% extends 'core/base.html' %}
 
+{% block title %}加盟店マップ | GreenReceipt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+  .map-page {
+    /* Mobile: Full height minus header */
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 140px);
+    width: 100%;
+    position: relative;
+    padding-bottom: 0;
+  }
+
+  .map-content-wrapper {
+    position: relative;
+    flex: 1; 
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+  }
+
+  /* 
+     Search Container - Top Full Width 
+     Replaces the title.
+  */
+  .search-container {
+    width: 100%;
+    padding: 0 0 15px 0;
+    z-index: 100;
+  }
+  
+  .search-box {
+    background: #fff;
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Lighter shadow since it's cleaner */
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .search-input {
+    flex: 2;
+    min-width: 0; /* Allow shrinking */
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: #22c55e; }
+  
+  .search-select {
+    flex: 1;
+    min-width: 80px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 4px;
+    font-size: 0.9rem;
+    outline: none;
+    background: #fff;
+  }
+  
+  .btn-filter {
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    transition: background 0.2s;
+  }
+  .btn-filter:hover { background: #16a34a; }
+
+  /* Map Element */
+  #map {
+    width: 100%;
+    height: 100%; 
+    z-index: 1;
+    min-height: 400px; 
+  }
+
+  /* Desktop Adjustments */
+  @media (min-width: 768px) {
+    .map-page {
+      height: auto;
+      min-height: 600px;
+      padding-bottom: 20px;
+      display: block; 
+    }
+    .map-content-wrapper {
+        height: 600px; 
+    }
+  }
+
+  .leaflet-bar { border: none !important; box-shadow: none !important; }
+  .leaflet-bar a {
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    color: #444;
+    display: block;
+    height: 36px;
+    width: 36px;
+    line-height: 36px;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15) !important;
+  }
+  .store-popup .store-name {
+    font-weight: 700; color: #0f172a; font-size: 1.1rem;
+    border-bottom: 2px solid #22c55e; padding-bottom: 4px; display: inline-block; margin-bottom: 4px;
+  }
+  .store-popup .info-label { font-weight: 600; color: #64748b; font-size: 0.85rem; }
+  
+  .leaflet-control-custom {
+      margin-top: 10px !important;
+      margin-bottom: 0 !important;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <div id="map"></div>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div class="map-page">
+    
+    <!-- Title removed, Search Container added here -->
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" id="keyword-input" class="search-input" placeholder="店舗名で検索..." list="store-names" autocomplete="off">
+            <datalist id="store-names"></datalist>
+            
+            <select id="category-select" class="search-select">
+                <option value="">全種別</option>
+                <option value="restaurant">飲食店</option> 
+                <option value="retail">小売</option>
+                <option value="service">サービス</option>
+                <option value="other">その他</option>
+            </select>
+            <button class="btn-filter" onclick="filterMarkers()">🔍</button>
+        </div>
+    </div>
+    
+    <div class="map-content-wrapper">
+        <div id="map"></div>
+    </div>
+</div>
 
-  <script>
-    // --- 初期地図設定 ---
-    var map = L.map('map').setView([36.555, 139.882], 15)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  // --- Initialize Map ---
+  const mapElement = document.getElementById('map');
+  
+  var map = L.map('map', {
+      zoomControl: false 
+  }).setView([35.6895, 139.6917], 13)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map)
+  
+  // Keep controls at topright as it's a good place
+  L.control.zoom({ position: 'topright' }).addTo(map);
+  
+  let currentMarker = null
+  let currentCircle = null
+  let currentPosition = null
+  
+  const currentLocationIcon = L.divIcon({
+    html: '<div style="width:20px;height:20px;background:#22c55e;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,0.3);"></div>',
+    className: 'current-loc-icon',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+  });
+
+  function showCurrentLocation(lat, lon, accuracy) {
+    if (currentMarker) map.removeLayer(currentMarker)
+    if (currentCircle) map.removeLayer(currentCircle)
+  
+    currentMarker = L.marker([lat, lon], { icon: currentLocationIcon }).addTo(map)
+    currentCircle = L.circle([lat, lon], {
+      radius: accuracy,
+      color: '#22c55e',
+      fillColor: '#22c55e',
+      fillOpacity: 0.15,
+      weight: 1
     }).addTo(map)
-    
-    let currentMarker = null
-    let currentCircle = null
-    let currentPosition = null
-    
-    function showCurrentLocation(lat, lon, accuracy) {
-      if (currentMarker) map.removeLayer(currentMarker)
-      if (currentCircle) map.removeLayer(currentCircle)
-    
-      const icon = L.divIcon({
-        html: '<div style="width:18px;height:18px;background:#007b3a;border:2px solid white;border-radius:50%;box-shadow:0 0 6px #007b3a;"></div>',
-        className: ''
-      })
-    
-      currentMarker = L.marker([lat, lon], { icon: icon }).addTo(map)
-      currentCircle = L.circle([lat, lon], {
-        radius: accuracy,
-        color: '#007b3a',
-        fillColor: '#00ff88',
-        fillOpacity: 0.15
-      }).addTo(map)
-    }
-    
-    function moveToCurrentLocation() {
-      if (currentPosition) {
-        map.flyTo(currentPosition, 17, { animate: true, duration: 0.3 })
-      } else {
-        alert('現在地を取得中です。少しお待ちください。')
-      }
-    }
-    
-    // --- 現在地追跡 ---
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(
-        function (pos) {
-          const lat = pos.coords.latitude
-          const lon = pos.coords.longitude
-          const acc = pos.coords.accuracy
-          if (!currentPosition || Math.abs(currentPosition[0] - lat) > 0.00005 || Math.abs(currentPosition[1] - lon) > 0.00005) {
-            currentPosition = [lat, lon]
-            showCurrentLocation(lat, lon, acc)
-          }
-        },
-        function (err) {
-          console.warn('位置情報取得エラー:', err)
-        },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 }
-      )
+  }
+  
+  function moveToCurrentLocation() {
+    if (currentPosition) {
+      map.flyTo(currentPosition, 16, { animate: true, duration: 0.8 })
     } else {
-      alert('このブラウザは位置情報に対応していません。')
+      alert('現在地を取得中です。少しお待ちください。')
     }
-    
-    // --- 📍ボタン ---
-    const locateControl = L.control({ position: 'topleft' })
-    locateControl.onAdd = function () {
-      const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
-      div.innerHTML = '<a href="#" title="現在地へ移動" style="font-size:18px;line-height:26px;">📍</a>'
-      div.style.background = 'white'
-      div.style.textAlign = 'center'
-      div.style.cursor = 'pointer'
-      L.DomEvent.disableClickPropagation(div)
-      L.DomEvent.on(div, 'click', function (e) {
-        e.preventDefault()
-        moveToCurrentLocation()
-      })
-      return div
-    }
-    locateControl.addTo(map)
-    
-    // --- 店舗マーカー ---
-    var stores = []
-    try {
-      stores = JSON.parse('{{ stores_json|default:"[]"|safe }}')
-    } catch (e) {
-      console.warn('stores_json parse error:', e)
-    }
-    
-    stores.forEach(function (s) {
-      // lat / lng 両方が有効な場合のみ
-      if (s.fields.lat && s.fields.lng && s.fields.lat !== 0 && s.fields.lng !== 0) {
-        var open_time = s.fields.open_time ? s.fields.open_time.substring(0, 5) : '';
-        var close_time = s.fields.close_time ? s.fields.close_time.substring(0, 5) : '';
-        var hours = (open_time && close_time) ? `${open_time} - ${close_time}` : '－';
-
-        var popup = `
-              <div class="popup-content">
-                <div class="store-name">${s.fields.store_name}</div>
-                カテゴリ：${s.fields.category}<br>
-                住所：${s.fields.address}<br>
-                電話：${s.fields.tel || '－'}<br>
-                営業時間：${hours}
-              </div>`
-        L.marker([s.fields.lat, s.fields.lng]).addTo(map).bindPopup(popup)
-      }
-    })
-    
-    // --- 初回位置取得 ---
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        function (pos) {
-          const lat = pos.coords.latitude
-          const lon = pos.coords.longitude
+  }
+  
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+      function (pos) {
+        const lat = pos.coords.latitude
+        const lon = pos.coords.longitude
+        const acc = pos.coords.accuracy
+        if (!currentPosition || Math.abs(currentPosition[0] - lat) > 0.00005 || Math.abs(currentPosition[1] - lon) > 0.00005) {
           currentPosition = [lat, lon]
-          showCurrentLocation(lat, lon, pos.coords.accuracy)
-        },
-        function (err) {
-          console.warn('初回位置取得エラー:', err)
-        },
-        { enableHighAccuracy: true, timeout: 3000 }
-      )
+          showCurrentLocation(lat, lon, acc)
+        }
+      },
+      function (err) { console.warn('位置情報取得エラー:', err) },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 }
+    )
+  }
+  
+  const LocateControl = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd: function(map) {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        container.style.backgroundColor = 'white';
+        container.style.width = '40px';
+        container.style.height = '40px';
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.cursor = 'pointer';
+        container.style.borderRadius = '50%'; 
+        container.style.marginBottom = '10px';
+        container.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)';
+        container.innerHTML = '<span style="font-size:20px;">📍</span>';
+        container.title = "現在地へ移動";
+        container.onclick = function(e){ e.preventDefault(); moveToCurrentLocation(); }
+        L.DomEvent.disableClickPropagation(container);
+        return container;
     }
-  </script>
+  });
+  map.addControl(new LocateControl());
+  
+  // Store Markers
+  var stores = []
+  try {
+    stores = JSON.parse('{{ stores_json|default:"[]"|escapejs }}')
+  } catch (e) {
+    console.warn('stores_json parse error:', e)
+  }
+  
+  const storeIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+  });
+
+  var markersLayer = L.layerGroup().addTo(map);
+
+  function renderMarkers(filteredStores) {
+      markersLayer.clearLayers();
+      const categoryMap = { 'restaurant': '飲食店', 'retail': '小売店', 'service': 'サービス業', 'other': 'その他' };
+
+      filteredStores.forEach(function (s) {
+        if (s.fields.lat && s.fields.lng && s.fields.lat !== 0 && s.fields.lng !== 0) {
+          var open_time = s.fields.open_time ? s.fields.open_time.substring(0, 5) : '';
+          var close_time = s.fields.close_time ? s.fields.close_time.substring(0, 5) : '';
+          var hours = (open_time && close_time) ? `${open_time} - ${close_time}` : '営業時間情報なし';
+          var categoryLabel = categoryMap[s.fields.category] || s.fields.category;
+
+          var popupContent = `
+                <div class="store-popup">
+                  <div class="store-name">${s.fields.store_name}</div>
+                  <div class="info-row"><span class="info-label">カテゴリ:</span> ${categoryLabel}</div>
+                  <div class="info-row"><span class="info-label">住所:</span> ${s.fields.address}</div>
+                  <div class="info-row"><span class="info-label">電話:</span> ${s.fields.tel || '－'}</div>
+                  <div class="info-row"><span class="info-label">時間:</span> ${hours}</div>
+                </div>`
+          L.marker([s.fields.lat, s.fields.lng], {icon: storeIcon}).bindPopup(popupContent).addTo(markersLayer)
+        }
+      });
+  }
+
+  function filterMarkers() {
+      const keyword = document.getElementById('keyword-input').value.toLowerCase();
+      const category = document.getElementById('category-select').value;
+      const filtered = stores.filter(function(s) {
+          const matchKeyword = !keyword || s.fields.store_name.toLowerCase().includes(keyword);
+          const matchCategory = !category || s.fields.category === category;
+          return matchKeyword && matchCategory;
+      });
+      renderMarkers(filtered);
+  }
+
+  function initAutocomplete() {
+    const datalist = document.getElementById('store-names');
+    const uniqueNames = new Set(stores.map(s => s.fields.store_name));
+    uniqueNames.forEach(name => {
+      const option = document.createElement('option');
+      option.value = name;
+      datalist.appendChild(option);
+    });
+  }
+
+  renderMarkers(stores);
+  initAutocomplete();
+  
+  document.getElementById('keyword-input').addEventListener('input', filterMarkers);
+  document.getElementById('category-select').addEventListener('change', filterMarkers);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        const lat = pos.coords.latitude
+        const lon = pos.coords.longitude
+        currentPosition = [lat, lon]
+        showCurrentLocation(lat, lon, pos.coords.accuracy)
+        map.setView([lat, lon], 14, { animate: true })
+      },
+      function (err) { console.warn('初回位置取得エラー:', err) },
+      { enableHighAccuracy: true, timeout: 5000 }
+    )
+  }
+  
+  setTimeout(function(){ map.invalidateSize(); }, 200);
+</script>
 {% endblock %}

@@ -1,27 +1,257 @@
 {% extends 'core/base.html' %}
 
-{% block content %}
-<div class="history-container">
-  <h1>レシート履歴</h1>
+{% block title %}読み取り履歴 | GreenReceipt{% endblock %}
+
+{% block extra_css %}
+<style>
+  .history-page {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px; /* nav bar space */
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
+  }
   
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+  
+  .scan-btn-mini {
+    background: #0f172a;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  
+  .scan-btn-mini:hover {
+    background: #334155;
+    color: #fff;
+  }
+
+  /* Receipt Grid */
+  .receipt-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  /* Receipt Card */
+  .receipt-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0; /* Subtle border */
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  
+  .receipt-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Image Section */
+  .receipt-img-wrapper {
+    height: 160px;
+    background: #f1f5f9;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  .receipt-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transition: transform 0.3s;
+  }
+  
+  .receipt-card:hover .receipt-img {
+    transform: scale(1.05);
+  }
+  
+  .receipt-date-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    backdrop-filter: blur(4px);
+  }
+
+  /* Content Section */
+  .receipt-body {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .store-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #0f172a;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .receipt-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto; /* Push to bottom */
+    padding-top: 12px;
+  }
+  
+  .total-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .total-amount span {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: #64748b;
+    margin-right: 2px;
+  }
+  
+  .points-badge {
+    background: #f0fdf4;
+    color: #22c55e;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .points-badge::before {
+    content: "🌱";
+    font-size: 0.8rem;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border-radius: 16px;
+    border: 2px dashed #e2e8f0;
+    color: #64748b;
+  }
+  
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+    opacity: 0.5;
+  }
+  
+  .scan-btn-large {
+    background: linear-gradient(135deg, #79ca69, #22c55e);
+    color: #fff;
+    padding: 12px 32px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    display: inline-block;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    transition: transform 0.2s;
+  }
+  
+  .scan-btn-large:hover {
+    transform: translateY(-2px);
+    color: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-page">
+  <div class="page-header">
+    <h1 class="page-title">読み取り履歴</h1>
+    <a href="{% url 'core:scan' %}" class="scan-btn-mini">
+      <span>📷</span> スキャン
+    </a>
+  </div>
+
   {% if receipts %}
-    <div class="receipt-list">
+    <div class="receipt-grid">
       {% for receipt in receipts %}
-        <div class="receipt-item">
-          <a href="{% url 'core:receipt_detail' receipt.id %}">
-            <img src="{{ receipt.image_url }}" alt="レシート画像" class="receipt-thumbnail">
-            <div class="receipt-info">
-              <p><strong>スキャン日時:</strong> {{ receipt.scanned_at|date:"Y年m月d日" }}</p>
-              <p class="ocr-preview">{{ receipt.ocr_text|truncatechars:50 }}</p>
+        <a href="{% url 'core:receipt_detail' receipt.id %}" class="receipt-card">
+          <div class="receipt-img-wrapper">
+            {% if receipt.image_url %}
+              <img src="{{ receipt.image_url }}" alt="レシート" class="receipt-img" loading="lazy">
+            {% else %}
+              <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#94a3b8;">No Image</div>
+            {% endif %}
+            <span class="receipt-date-badge">{{ receipt.scanned_at|date:"Y/m/d" }}</span>
+          </div>
+          
+          <div class="receipt-body">
+            <div class="store-name">
+              {% if receipt.store %}
+                {{ receipt.store.store_name }}
+              {% else %}
+                <span class="text-muted" style="font-weight:400;">店舗不明</span>
+              {% endif %}
             </div>
-          </a>
-        </div>
+            
+            <div class="receipt-meta">
+              <div class="total-amount">
+                <span>¥</span>{{ receipt.total_amount|default:"--" }}
+              </div>
+              <div class="points-badge">
+                +{{ receipt.points_earned }} pt
+              </div>
+            </div>
+          </div>
+        </a>
       {% endfor %}
     </div>
   {% else %}
-    <p>スキャン履歴はありません。</p>
+    <div class="empty-state">
+      <span class="empty-icon">🧾</span>
+      <h3>履歴がありません</h3>
+      <p class="mb-0">レシートをスキャンして、エコポイントを貯めましょう！</p>
+      <a href="{% url 'core:scan' %}" class="scan-btn-large">
+        レシートをスキャンする
+      </a>
+    </div>
   {% endif %}
-
-  <a href="{% url 'core:scan' %}" class="btn">新しくスキャンする</a>
 </div>
 {% endblock %}

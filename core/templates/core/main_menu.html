@@ -1,39 +1,232 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}
   メインメニュー | GreenReceipt
 {% endblock %}
 
+{% block extra_css %}
+<style>
+  .home-page {
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    padding-bottom: 80px;
+  }
+
+  /* Welcome Section */
+  .welcome-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-top: 10px;
+  }
+  .welcome-title {
+    font-size: 1.25rem;
+    color: #475569;
+    font-weight: 500;
+  }
+  .user-name {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 1.5rem;
+  }
+
+  /* Rank Section */
+  .rank-section {
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .rank-section::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 6px;
+    background: linear-gradient(90deg, #79ca69, #22c55e);
+  }
+
+  .rank-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .rank-image {
+    max-width: 160px;
+    height: auto;
+    margin: 0 auto 16px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    transition: transform 0.3s;
+  }
+  .rank-section:hover .rank-image {
+    transform: scale(1.05);
+  }
+
+  .rank-name {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+  }
+  
+  .points-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    padding: 8px 16px;
+    border-radius: 50px;
+    color: #15803d;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+
+  /* Progress Bar */
+  .progress-wrapper {
+    background: #f1f5f9;
+    border-radius: 999px;
+    height: 12px;
+    width: 100%;
+    margin: 0 auto 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #79ca69, #22c55e);
+    border-radius: 999px;
+    transition: width 1s ease-out;
+  }
+  
+  .next-rank-info {
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  /* Menu Grid */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .menu-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    text-decoration: none;
+    color: #0f172a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  
+  .menu-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+  
+  .menu-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+  }
+  
+  .menu-title {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  
+  .menu-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  @media (max-width: 480px) {
+    .menu-grid {
+      grid-template-columns: 1fr;
+    }
+    .menu-card {
+      padding: 16px;
+      flex-direction: row;
+      text-align: left;
+      align-items: center;
+      gap: 16px;
+    }
+    .menu-icon {
+      margin-bottom: 0;
+      font-size: 2rem;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <div class="welcome-container">
-    <h1 style="font-size: 24px;">ようこそ、{{ user.username }}さん</h1>
+<div class="home-page">
+  
+  <div class="welcome-header">
+    <div class="welcome-title">ようこそ</div>
+    <div class="user-name">{{ user.username }} さん</div>
   </div>
 
-  <section class="rank-box">
-    <h2>あなたのランク</h2>
-    <div class="rank-image-container" style="text-align: center; margin: 20px 0;">
-      {% load static %}
-      <img src="{% static 'img/rank_'|add:rank|add:'.png' %}" alt="{{ user.get_rank_display }}" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
+  <section class="rank-section">
+    <div class="rank-label">Current Rank</div>
+    <img src="{% static 'img/rank_'|add:rank|add:'.png' %}" alt="{{ user.get_rank_display }}" class="rank-image">
+    <div class="rank-name">{{ user.get_rank_display }}</div>
+    <div class="points-display">
+      <span>🌿</span> {{ current_points }} pt
     </div>
-    <h2>{{ user.get_rank_display }}</h2>
-    <div class="eco-point">{{ current_points }} エコポイント</div>
 
-    <div class="rank-progress-container" style="margin-top: 15px;">
+    <div class="rank-progress-container px-3">
       {% if next_rank_points %}
-        <div class="progress-bar-wrapper" style="background-color: #e0e0e0; border-radius: 10px; height: 20px; width: 100%; overflow: hidden;">
-          <div class="progress-bar" style="background-color: #4caf50; height: 100%; width: {{ progress_percentage }}%;"></div>
+        <div class="progress-wrapper">
+          <div class="progress-fill" style="width: {{ progress_percentage }}%;"></div>
         </div>
-        <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
-          次のランクまであと {{ points_to_next }} ポイント
+        <p class="next-rank-info">
+          次のランクまであと <strong>{{ points_to_next }}</strong> pt
         </p>
       {% else %}
-        <p style="font-size: 0.9em; color: #4caf50; font-weight: bold;">最高ランク到達！</p>
+        <div class="progress-wrapper">
+          <div class="progress-fill" style="width: 100%;"></div>
+        </div>
+        <p class="text-success fw-bold">最高ランク到達！おめでとうございます！</p>
       {% endif %}
     </div>
   </section>
 
-  <div class="buttons">
-    <a href="{% url 'core:coupon_list' %}" class="btn">所持クーポン一覧</a>
-    <a href="{% url 'core:store_map' %}" class="btn">加盟店マップ</a>
+  <h2 class="h5 mb-3 fw-bold ps-2 border-start border-4 border-success">メニュー</h2>
+  <div class="menu-grid">
+    <a href="{% url 'core:coupon_list' %}" class="menu-card">
+      <span class="menu-icon">🎫</span>
+      <div>
+        <div class="menu-title">クーポン</div>
+        <div class="menu-desc">一定ポイント達成でクーポンGET!</div>
+      </div>
+    </a>
+    <a href="{% url 'core:store_map' %}" class="menu-card">
+      <span class="menu-icon">🗺️</span>
+      <div>
+        <div class="menu-title">加盟店マップ</div>
+        <div class="menu-desc">使えるお店を探す</div>
+      </div>
+    </a>
   </div>
+
+</div>
 {% endblock %}
