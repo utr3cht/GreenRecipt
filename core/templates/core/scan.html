@@ -153,6 +153,8 @@
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
+    width: 90%; /* Ensure it does not overflow horizontally */
+    max-width: 400px;
   }
   
   .spinner-modern {
@@ -168,6 +170,8 @@
   .loader-text {
     color: #334155;
     font-weight: 600;
+    line-height: 1.6;
+    word-break: break-all; /* Ensure wrapping even for long alphanumeric strings */
   }
 
   @keyframes spin {
