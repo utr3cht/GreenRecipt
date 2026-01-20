@@ -266,7 +266,7 @@
   {% endif %}
 
   <!-- Available Coupons -->
-  <h2 class="section-title">ポイントで交換可能なクーポン</h2>
+  <h2 class="section-title">ポイントで取得可能なクーポン</h2>
   {% if available_coupons %}
     <div class="coupon-grid">
       {% for coupon in available_coupons %}
@@ -454,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const couponId = this.dataset.id;
       const points = this.dataset.points;
       
-      if (!confirm(`${points}ポイントを使用してこのクーポンを取得しますか？`)) return;
+      if (!confirm(`${points}このクーポンを取得しますか？`)) return;
       
       const url = `/coupons/acquire/${couponId}/`;
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;

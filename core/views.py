@@ -423,11 +423,14 @@ def parse_receipt_data(text):
     transaction_time = None
     date_line_index = -1
     date_pattern = re.compile(
-        r'(\d{2,4})[年/](\d{1,2})[月/](\d{1,2})日?\(?\w?\)?\s*(\d{1,2}):(\d{2})'
+        r'(\d{4})[年/]\s*(\d{1,2})[月/]\s*(\d{1,2})日.*\s*(\d{1,2}):(\d{2})'
     )
     for i, line in enumerate(lines):
+        print(f"[DEBUG] Date parsing - Processing line: '{line}'") # デバッグ追加
         match = date_pattern.search(line)
         if match:
+            print(f"[DEBUG] Date parsing - Match found for line: '{line}'") # デバッグ追加
+            print(f"[DEBUG] Date parsing - Matched groups: {match.groups()}") # デバッグ追加
             try:
                 year_str, month_str, day_str, hour_str, minute_str = match.groups()
                 year, month, day, hour, minute = map(
@@ -436,8 +439,10 @@ def parse_receipt_data(text):
                     year += 2000
                 transaction_time = datetime(year, month, day, hour, minute)
                 date_line_index = i
+                print(f"[DEBUG] Date parsing - Successfully extracted: {transaction_time}") # デバッグ追加
                 break
-            except (ValueError, IndexError):
+            except (ValueError, IndexError) as e: # エラー出力も追加
+                print(f"[DEBUG] Date parsing - Error converting date parts: {e} for groups: {match.groups()}") # デバッグ追加
                 continue
 
     total_quantity_from_receipt = 0
@@ -543,6 +548,10 @@ def scan(request):
         colab_url = getattr(settings, 'COLAB_API_URL', '')
 
         if use_colab and colab_url and colab_url != 'YOUR_COLAB_NGROK_URL_HERE':
+            # URLにスキームが含まれていない場合、HTTPSを追加
+            if not colab_url.startswith('http://') and not colab_url.startswith('https://'):
+                colab_url = f'https://{colab_url}'
+
             try:
                 print(f"Calling Colab API at {colab_url} to upload image.")
                 # Colab APIには元のファイル名を渡す (API側で処理されるため)
@@ -695,11 +704,11 @@ def scan(request):
                             # まだこの商品でポイント加算していなければ処理
                             if product.id not in processed_products:
                                 # 商品名を正規化（NFKC）して空白削除、小文字化
-                                normalized_product_name = unicodedata.normalize('NFKC', product.name).replace(' ', '').replace('　', '').lower()
+                                normalized_product_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', product.name)).lower()
                                 
                                 for eco_product in eco_products:
                                     # エコ商品名も同様に正規化
-                                    normalized_eco_name = unicodedata.normalize('NFKC', eco_product.name).replace(' ', '').replace('　', '').lower()
+                                    normalized_eco_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', eco_product.name)).lower()
                                     
                                     # 商品名にエコ商品のキーワードが含まれているかチェック
                                     if normalized_eco_name in normalized_product_name:
@@ -785,9 +794,15 @@ def ai_report(request):
     total_eco_points = 0
     eco_quantity = 0
     
-    # エコ商品マップの取得 (名前 -> ポイント)
-    eco_product_map = dict(EcoProduct.objects.values_list('name', 'points'))
-    eco_product_names = list(eco_product_map.keys())
+    # エコ商品リストを取得
+    eco_product_names = list(EcoProduct.objects.values_list('name', flat=True))
+    
+    # エコ商品マップを正規化して作成 (名前 -> ポイント)
+    import unicodedata
+    eco_product_normalized_map = {
+        re.sub(r'\s+', '', unicodedata.normalize('NFKC', name)).lower(): points 
+        for name, points in EcoProduct.objects.values_list('name', 'points')
+    }
 
     for receipt in receipts:
         # ReceiptItemを優先
@@ -798,25 +813,31 @@ def ai_report(request):
                 total_quantity += qty
                 purchased_products_display.append(f"{item.product.name} ({qty}点)")
                 
-                # エコ商品チェック
-                # 単純な部分一致
-                matched_eco = next((eco for eco in eco_product_names if eco in item.product.name), None)
-                if matched_eco:
-                    eco_quantity += qty
-                    total_eco_points += qty * eco_product_map[matched_eco]
+                # エコ商品チェック（正規化して比較）
+                normalized_item_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', item.product.name)).lower()
+                
+                for eco_name_normalized, points in eco_product_normalized_map.items():
+                    if eco_name_normalized in normalized_item_name:
+                        eco_quantity += qty
+                        total_eco_points += qty * points
+                        break # 1つの商品が複数のエコ商品にマッチしても最初の一つで抜ける
                     
         # parsed_dataへのフォールバック
         elif receipt.parsed_data and isinstance(receipt.parsed_data, dict) and 'items' in receipt.parsed_data:
-             for item in receipt.parsed_data['items']:
-                 name = item.get('name', 'Unknown')
-                 qty = item.get('quantity', 1)
+             for item_data in receipt.parsed_data['items']:
+                 name = item_data.get('name', 'Unknown')
+                 qty = item_data.get('quantity', 1)
                  total_quantity += qty
                  purchased_products_display.append(f"{name} ({qty}点)")
                  
-                 matched_eco = next((eco for eco in eco_product_names if eco in name), None)
-                 if matched_eco:
-                     eco_quantity += qty
-                     total_eco_points += qty * eco_product_map[matched_eco]
+                 # エコ商品チェック（正規化して比較）
+                 normalized_item_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', name)).lower()
+
+                 for eco_name_normalized, points in eco_product_normalized_map.items():
+                    if eco_name_normalized in normalized_item_name:
+                        eco_quantity += qty
+                        total_eco_points += qty * points
+                        break
     
     # 月間獲得ポイントの計算
     from django.db.models import Sum
@@ -1198,10 +1219,6 @@ def admin_inquiry_dashboard(request):
 
 @staff_member_required
 def inquiry_detail(request, inquiry_id):
-    # 詳細画面表示時にも自動でメールを取り込む
-    from core.utils import fetch_emails_from_gmail
-    fetch_emails_from_gmail()
-
     inquiry = get_object_or_404(Inquiry, id=inquiry_id)
     messages_list = inquiry.messages.all().order_by('created_at')
 

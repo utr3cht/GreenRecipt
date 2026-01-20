@@ -6,7 +6,7 @@
 {% block content %}
   <form method="post" action="{% url 'accounts:login' %}" class="full">
     {% csrf_token %}
-    
+
     <div class="form-container">
       <p>
         <label for="id_username">ユーザー名:</label>
@@ -44,8 +44,8 @@
     </script>
     
     <div class="actions">
-      <button type="button" onclick="location.href='{% url 'core:index' %}'">戻る</button>
       <button type="submit">ログイン</button>
+      <button type="button" onclick="location.href='{% url 'core:index' %}'">戻る</button>
     </div>
     <div style="text-align:center; margin-top: 1rem;">
       <a href="{% url 'password_reset' %}">パスワードを忘れましたか？</a>

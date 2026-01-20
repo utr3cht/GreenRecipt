@@ -64,7 +64,6 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   padding-bottom: calc(var(--nav-h, 64px) + env(safe-area-inset-bottom));
-  padding-top: 80px; /* 固定ヘッダー分の余白 */
   animation: fadeUp 0.5s ease-out;
   box-shadow: var(--shadow);
 }

@@ -10,8 +10,8 @@
         {% if user.role == 'store' %}
           <a href="{% url 'core:store_product_create' %}" class="btn btn-success">+ 商品申請</a>
         {% endif %}
-        {% if user.role == 'admin' or user.role == 'system' %}
-          <a href="{% url 'core:ecoproduct_create' %}" class="btn btn-primary">新規作成(管理者)</a>
+        {% if user.role == 'admin' or user.role == 'system' or user.is_superuser %}
+          <a href="{% url 'core:ecoproduct_create' %}" class="btn btn-primary">新規作成</a>
         {% endif %}
       </div>
     </div>
