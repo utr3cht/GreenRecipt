@@ -946,6 +946,8 @@ def ai_report(request):
 # --- 問い合わせ関連ビュー ---
 
 
+from core.services import InquiryService
+
 def inquiry(request):
     if request.method == "POST":
         action = request.POST.get('action', 'confirm')
@@ -953,72 +955,34 @@ def inquiry(request):
         if action == 'confirm':
             form = InquiryForm(request.POST, request.FILES)
             if form.is_valid():
-                # 画像の一時保存
-                temp_image_name = ""
-                if 'image' in request.FILES:
-                    image_file = request.FILES['image']
-                    # 一時保存ディレクトリ (media/temp_inquiry)
-                    temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_inquiry')
-                    os.makedirs(temp_dir, exist_ok=True)
-                    fs = FileSystemStorage(location=temp_dir)
-                    # Unique filename
-                    ext = os.path.splitext(image_file.name)[1]
-                    filename = f"{uuid.uuid4().hex}{ext}"
-                    temp_image_name = fs.save(filename, image_file)
-
-                return render(request, "core/inquiry_confirm.html", {
-                    "form": form,
-                    "temp_image_name": temp_image_name
-                })
+                # サービス層で確認ステップ処理（画像一時保存など）
+                context = InquiryService.handle_confirm_step(request, form)
+                return render(request, "core/inquiry_confirm.html", context)
         
         elif action == 'back':
-            # 確認画面から戻る場合（データを復元してフォーム表示）
             initial_data = {
                 'reply_to_email': request.POST.get('reply_to_email'),
                 'subject': request.POST.get('subject'),
                 'body_text': request.POST.get('body_text'),
             }
-            # 画像は復元できないので、再アップロードを促すか、あるいは「画像あり」を表示するかだが
-            # ここではシンプルに再アップロードしてもらう形にする（セキュリティ・実装簡易性のため）
             form = InquiryForm(initial=initial_data)
-            # 既存のtemp_imageがある場合は引継ぎたいが、Formの一部として表示するのは難しい
-            # ユーザー体験的には「画像は再選択してください」が無難
             return render(request, "core/inquiry.html", {"form": form})
 
         elif action == 'send':
-            # 送信処理
-            # フォームデータを再構築
             data = {
                 'reply_to_email': request.POST.get('reply_to_email'),
                 'subject': request.POST.get('subject'),
                 'body_text': request.POST.get('body_text'),
             }
-            form = InquiryForm(data) # ファイルなしでバリデーション
-            # imageフィールドは必須ではない想定（モデルでblank=Trueなら）
+            temp_image_name = request.POST.get('temp_image_name')
             
-            if form.is_valid():
-                inquiry = form.save(commit=False)
-                if request.user.is_authenticated:
-                    inquiry.user = request.user
-                
-                # 画像の処理
-                temp_image_name = request.POST.get('temp_image_name')
-                if temp_image_name:
-                    temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp_inquiry')
-                    temp_path = os.path.join(temp_dir, temp_image_name)
-                    if os.path.exists(temp_path):
-                        with open(temp_path, 'rb') as f:
-                            inquiry.image.save(temp_image_name, ContentFile(f.read()), save=False)
-                        # 一時ファイル削除
-                        try:
-                            os.remove(temp_path)
-                        except:
-                            pass
-                
-                inquiry.save()
+            try:
+                # サービス層で作成
+                InquiryService.create_inquiry(request.user, data, temp_image_name)
                 return redirect("core:inquiry_complete")
-            else:
-                # 万が一バリデーションエラーの場合
+            except ValueError:
+                # バリデーションエラーなどで失敗した場合
+                form = InquiryForm(data)
                 return render(request, "core/inquiry.html", {"form": form})
 
     else:
@@ -1254,45 +1218,9 @@ def inquiry_detail(request, inquiry_id):
             subject = form.cleaned_data['subject']
             message = form.cleaned_data['message']
             
-            # 件名にRef IDを付与 (スレッド追跡用)
-            subject_with_ref = f"{subject} [Ref:{inquiry.id}]"
-
-            context = {
-                'user': inquiry.user if inquiry.user else {'username': 'ゲスト'},
-                'subject': subject, # 本文内表示用は元の件名
-                'message': message,
-            }
-
-            # Render plain text and HTML content
-            text_content = render_to_string('admin/inquiry_reply_email.txt', context)
-            html_content = render_to_string('admin/inquiry_reply_email.html', context)
-
-            # Create and send the email
             try:
-                email = EmailMultiAlternatives(
-                    subject_with_ref, # Ref付き件名を使用
-                    text_content,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [inquiry.reply_to_email]
-                )
-                email.attach_alternative(html_content, "text/html")
-                email.send()
-                
-                # 返信メッセージを保存
-                InquiryMessage.objects.create(
-                    inquiry=inquiry,
-                    sender_type='admin',
-                    message=message
-                )
-
-                # ステータスを更新 (未対応 -> 対応中)
-                if inquiry.status == 'unanswered':
-                    inquiry.status = 'in_progress'
-                
-                inquiry.is_replied = True
-                inquiry.reply_message = message # 後方互換性のため残す
-                inquiry.save()
-                
+                # サービス層で返信処理
+                InquiryService.reply_to_inquiry(inquiry, subject, message)
                 messages.success(request, '返信メールを送信しました。')
                 return redirect('core:inquiry_detail', inquiry_id=inquiry.id)
 

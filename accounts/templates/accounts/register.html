@@ -7,10 +7,6 @@
 <form method="post" action="{% url 'accounts:register' %}" class="full">
   {% csrf_token %}
 
-  <div style="text-align:center;">
-    <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" style="width:200px;margin-bottom:15px;">
-  </div>
-
   {% for field in form.visible_fields %}
     <div class="form-group">
       {{ field.label_tag }}
@@ -23,10 +19,10 @@
         {{ field }}
       {% endif %}
       {% if field.help_text %}
-        <small class="form-text text-muted">{{ field.help_text }}</small>
+        <small class="form-text text-muted list-none">{{ field.help_text }}</small>
       {% endif %}
       {% for error in field.errors %}
-        <div class="alert alert-danger">{{ error }}</div>
+        <div class="alert alert-danger" >{{ error }}</div>
       {% endfor %}
     </div>
   {% endfor %}

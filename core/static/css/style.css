@@ -381,7 +381,6 @@ main p { font-size: 15px; color: var(--muted); font-weight: 500; }
   form.full, .wrapper.full {
     width: 100%;
     max-width: none;
-    min-height: 100svh;
     margin: 0;
     border-radius: 0;
     box-shadow: none;
@@ -587,6 +586,17 @@ main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 
   .inquiry-form-container, .inquiry-confirm-container { padding: 26px 16px 54px; border-radius: 0; box-shadow: none; }
   .inquiry-form .actions { flex-direction: column; }
   .inquiry-form .actions button { width: 100%; }
+}
+
+/* Utility to remove list styles */
+.list-none,
+.list-none ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.list-none li {
+  list-style-type: none;
 }
 
 .inquiry-confirm-container .confirm-message { font-size: 1rem; color: #0f3d60; margin-bottom: 30px; }
@@ -1191,4 +1201,8 @@ main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 
 .store-name {
   font-weight: bold;
   color: #007b3a;
+}
+
+.list-none{
+  list-style: none;
 }

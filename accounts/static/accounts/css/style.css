@@ -645,3 +645,7 @@ main.inquiry-main { justify-content: flex-start; align-items: stretch; padding: 
 @media (max-width: 767px) {
   .coupon-page, .coupon-detail { margin: 16px; padding: 24px 18px; border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.08); }
 }
+
+.list-none{
+  list-style: none;
+}
