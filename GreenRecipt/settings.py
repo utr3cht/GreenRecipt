@@ -142,7 +142,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # メール設定
 # True: 実際に送信, False: コンソールに出力
-SEND_EMAIL = os.environ.get('SEND_EMAIL', 'True') == 'True'
+SEND_EMAIL = os.environ.get('SEND_EMAIL', 'False') == 'True'
 
 if SEND_EMAIL:
     # Gmail SMTP設定
