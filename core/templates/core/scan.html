@@ -208,7 +208,7 @@
     {% csrf_token %}
     
     <div class="scan-box" id="scan-box">
-      <input type="file" name="receipt_image" id="receipt_image" capture="environment" class="file-input-wrapper" required>
+      <input type="file" name="receipt_image" id="receipt_image" accept="image/jpeg,image/png" capture="environment" class="file-input-wrapper" required>
       <div id="placeholder-content">
         <span class="camera-icon">📷</span>
         <span class="scan-label">カメラを起動 / 選択</span>
