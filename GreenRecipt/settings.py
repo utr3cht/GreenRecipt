@@ -26,7 +26,10 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
-AUTH_USER_MODEL = 'accounts.CustomUser'
+CSRF_TRUSTED_ORIGINS = [
+    'https://greenrecipt.f5.si', 'https://www.greenrecipt.f5.si',
+]
+
 AUTH_USER_MODEL = 'accounts.CustomUser'
 # アプリケーション定義
 
@@ -49,6 +52,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'core.middleware.AdminAccessMiddleware',
+    'core.middleware.MonthlyPointResetMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

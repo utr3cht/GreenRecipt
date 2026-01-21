@@ -423,7 +423,7 @@ def parse_receipt_data(text):
     transaction_time = None
     date_line_index = -1
     date_pattern = re.compile(
-        r'(\d{4})[年/]\s*(\d{1,2})[月/]\s*(\d{1,2})日.*\s*(\d{1,2}):(\d{2})'
+        r'(\d{4})[年/]\s*(\d{1,2})[月/]\s*(\d{1,2})日.*?\s*(\d{1,2}):(\d{2})'
     )
     for i, line in enumerate(lines):
         print(f"[DEBUG] Date parsing - Processing line: '{line}'") # デバッグ追加
@@ -676,9 +676,6 @@ def scan(request):
                     # エコ商品のリストを事前に取得
                     eco_products = list(EcoProduct.objects.all())
                     total_eco_points_to_add = 0
-                    # 同じ商品での重複加算を防ぐ
-                    processed_products = set()
-
                     # パースされたアイテムをReceiptItemモデルに保存
                     if parsed_data['items']:
                         import unicodedata
@@ -701,24 +698,21 @@ def scan(request):
 
                             # ポイント加算ロジック
                             item_points = 0
-                            # まだこの商品でポイント加算していなければ処理
-                            if product.id not in processed_products:
-                                # 商品名を正規化（NFKC）して空白削除、小文字化
-                                normalized_product_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', product.name)).lower()
+                            # 商品名を正規化（NFKC）して空白削除、小文字化
+                            normalized_product_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', product.name)).lower()
+                            
+                            for eco_product in eco_products:
+                                # エコ商品名も同様に正規化
+                                normalized_eco_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', eco_product.name)).lower()
                                 
-                                for eco_product in eco_products:
-                                    # エコ商品名も同様に正規化
-                                    normalized_eco_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', eco_product.name)).lower()
-                                    
-                                    # 商品名にエコ商品のキーワードが含まれているかチェック
-                                    if normalized_eco_name in normalized_product_name:
-                                        # 共通商品 または レシートの店舗とエコ商品の店舗が一致する場合のみ付与
-                                        if eco_product.is_common or (receipt.store and eco_product.store == receipt.store):
-                                            item_points = eco_product.points * receipt_item.quantity # 数量分ポイント加算
-                                            total_eco_points_to_add += item_points
-                                            processed_products.add(product.id)
-                                            # 1つの商品が複数のエコ商品にマッチしても、最初の1つで抜ける
-                                            break
+                                # 商品名にエコ商品のキーワードが含まれているかチェック
+                                if normalized_eco_name in normalized_product_name:
+                                    # 共通商品 または レシートの店舗とエコ商品の店舗が一致する場合のみ付与
+                                    if eco_product.is_common or (receipt.store and eco_product.store == receipt.store):
+                                        item_points = eco_product.points * receipt_item.quantity # 数量分ポイント加算
+                                        total_eco_points_to_add += item_points
+                                        # 1つの商品行が複数のエコ商品キーワードにマッチしても、最初の1つで抜ける
+                                        break
                             
                             receipt_item.points = item_points
                             receipt_item.save()
@@ -749,6 +743,7 @@ def scan(request):
 
 @login_required
 def ai_report(request):
+    from django.db.models import Sum
     # 1. 対象月の決定
     today = timezone.now()
     try:
@@ -778,7 +773,6 @@ def ai_report(request):
     is_latest_month = (year == today.year and month == today.month)
     
     # 2. レシートのフィルタリング
-    # scanned_at is DateField
     start_date = datetime(year, month, 1).date()
     last_day = calendar.monthrange(year, month)[1]
     end_date = datetime(year, month, last_day).date()
@@ -789,67 +783,40 @@ def ai_report(request):
     )
     
     # 3. 商品の集計とスコア計算
-    purchased_products_display = []
+    product_aggregation = {} # 商品名ごとの数量集計用
     total_quantity = 0
-    total_eco_points = 0
+    total_eco_points = receipts.aggregate(Sum('points_earned'))['points_earned__sum'] or 0
     eco_quantity = 0
     
-    # エコ商品リストを取得
-    eco_product_names = list(EcoProduct.objects.values_list('name', flat=True))
-    
-    # エコ商品マップを正規化して作成 (名前 -> ポイント)
-    import unicodedata
-    eco_product_normalized_map = {
-        re.sub(r'\s+', '', unicodedata.normalize('NFKC', name)).lower(): points 
-        for name, points in EcoProduct.objects.values_list('name', 'points')
-    }
-
     for receipt in receipts:
-        # ReceiptItemを優先
+        # 商品数の集計
         items = receipt.items.all()
         if items.exists():
             for item in items:
+                name = item.product.name
                 qty = item.quantity
                 total_quantity += qty
-                purchased_products_display.append(f"{item.product.name} ({qty}点)")
-                
-                # エコ商品チェック（正規化して比較）
-                normalized_item_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', item.product.name)).lower()
-                
-                for eco_name_normalized, points in eco_product_normalized_map.items():
-                    if eco_name_normalized in normalized_item_name:
-                        eco_quantity += qty
-                        total_eco_points += qty * points
-                        break # 1つの商品が複数のエコ商品にマッチしても最初の一つで抜ける
-                    
-        # parsed_dataへのフォールバック
+                product_aggregation[name] = product_aggregation.get(name, 0) + qty
+                if item.points > 0:
+                    eco_quantity += qty
         elif receipt.parsed_data and isinstance(receipt.parsed_data, dict) and 'items' in receipt.parsed_data:
              for item_data in receipt.parsed_data['items']:
                  name = item_data.get('name', 'Unknown')
                  qty = item_data.get('quantity', 1)
                  total_quantity += qty
-                 purchased_products_display.append(f"{name} ({qty}点)")
-                 
-                 # エコ商品チェック（正規化して比較）
-                 normalized_item_name = re.sub(r'\s+', '', unicodedata.normalize('NFKC', name)).lower()
+                 product_aggregation[name] = product_aggregation.get(name, 0) + qty
+                 # parsed_dataの場合は簡易的に判定
+                 if receipt.points_earned > 0:
+                     # ここでは正確な判定が難しいため、レシート全体にポイントがあれば暫定的にカウント
+                     eco_quantity += qty 
 
-                 for eco_name_normalized, points in eco_product_normalized_map.items():
-                    if eco_name_normalized in normalized_item_name:
-                        eco_quantity += qty
-                        total_eco_points += qty * points
-                        break
-    
-    # 月間獲得ポイントの計算
-    from django.db.models import Sum
-    monthly_receipts = Receipt.objects.filter(
-        user=request.user,
-        scanned_at__year=year,
-        scanned_at__month=month
-    )
-    calculated_monthly_points = monthly_receipts.aggregate(Sum('points_earned'))['points_earned__sum'] or 0
+    purchased_products_display = [f"{name} ({qty}点)" for name, qty in product_aggregation.items()]
+
+    # 月間獲得ポイント (最新月の場合は現在の所持ポイントを優先)
+    calculated_monthly_points = request.user.current_points if is_latest_month else total_eco_points
     current_rank_display = request.user.get_rank_display()
 
-    # 既存レポートのチェック
+    # 4. 既存レポートのチェック
     existing_report = Report.objects.filter(
         user=request.user,
         generated_at__year=year,
@@ -860,23 +827,37 @@ def ai_report(request):
     score = 0
     report_exists = False
     
-    # 表示用のランクとポイント（初期値は計算値/現在値）
+    # 表示用のランクとポイント
     display_rank = current_rank_display
     display_monthly_points = calculated_monthly_points
+    display_held_points = request.user.current_points
 
     if existing_report:
         report_text = existing_report.description
         score = existing_report.score
         report_exists = True
         
-        # レポートに保存された値があればそれを使う（アーカイブとしての役割）
-        if existing_report.rank:
-            display_rank = existing_report.rank
-        if existing_report.monthly_points is not None:
-             display_monthly_points = existing_report.monthly_points
+        # 過去の月のレポートは保存された値を使用
+        if not is_latest_month:
+            if existing_report.rank:
+                display_rank = existing_report.rank
+            if existing_report.monthly_points is not None:
+                display_monthly_points = existing_report.monthly_points
+            display_held_points = existing_report.held_points
+        # 最新月の場合は、計算されたリアルタイム値を優先する場合がある（今回は一貫性のためここで上書きを調整）
     
-    # 生成リクエストの処理
-    elif request.method == 'POST' and 'generate' in request.POST:
+    # レポート生成または再生成（最新月のみ許可）
+    if is_latest_month and request.method == 'POST' and 'generate' in request.POST:
+        # 既存レポートを削除して再生成
+        Report.objects.filter(
+            user=request.user,
+            generated_at__year=year,
+            generated_at__month=month
+        ).delete()
+
+        # エコ商品リストを取得（プロンプト用）
+        eco_product_names = list(EcoProduct.objects.values_list('name', flat=True))
+        
         # スコア計算 (加重)
         if total_quantity > 0:
             raw_score = (total_eco_points / (total_quantity * 10)) * 100
@@ -925,12 +906,11 @@ def ai_report(request):
                     description=report_text,
                     score=score,
                     rank=current_rank_display,
-                    monthly_points=calculated_monthly_points
+                    monthly_points=calculated_monthly_points,
+                    held_points=request.user.current_points
                 )
                 report_exists = True
                 
-                # 表示用変数の更新は不要（初期値と同じ）
-
             except Exception as e:
                 print(f"Gemini API Error: {e}")
                 report_text = "AIレポートの生成中にエラーが発生しました。時間をおいて再度お試しください。"
@@ -949,18 +929,21 @@ def ai_report(request):
     else:
         average_score = 0
 
+    # コンテキスト用エコ商品名（空リストでも良い）
+    eco_product_names_for_context = list(EcoProduct.objects.values_list('name', flat=True))
+
     context = {
+        'report_text': report_text,
+        'report_exists': report_exists,
         'year': year,
         'month': month,
-        'score': score,
-        'report_text': report_text,
-        'purchased_products': purchased_products_display,
-        'eco_products': eco_product_names,
-        'report_exists': report_exists,
-        'average_score': average_score,
         'is_latest_month': is_latest_month,
+        'score': score,
+        'purchased_products': purchased_products_display,
+        'eco_products': eco_product_names_for_context,
+        'average_score': round(average_score, 1) if average_score else 0,
         'rank': display_rank,
-        'monthly_points': display_monthly_points,
+        'held_points': display_held_points,
     }
     return render(request, "core/ai_report.html", context)
 

@@ -114,10 +114,9 @@ header {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  transition: transform 0.3s ease, color 0.3s ease;
   color: var(--text);
 }
-.hamburger-icon:hover { transform: scale(1.1); color: var(--accent); }
+.hamburger-icon:hover { color: var(--accent); }
 .menu-items {
   display: none;
   position: absolute;

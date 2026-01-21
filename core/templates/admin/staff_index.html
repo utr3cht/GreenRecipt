@@ -6,161 +6,53 @@
 {% endblock %}
 
 {% block content %}
-  <div class="container-fluid dashboard-section mt-4 px-4">
-    
-    <!-- Row 0: Announcements -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h2 class="h5 mb-0">お知らせ一覧</h2>
-            {% if user.role == 'admin' or user.is_superuser %}
-            <a href="{% url 'core:announcement_list' %}" class="btn btn-sm btn-outline-primary">管理</a>
-            {% endif %}
-          </div>
-          <div class="card-body">
-            {% if announcements %}
-              <div class="announcement-list">
-                {% for announcement in announcements %}
-                  <a href="{% url 'core:announcement_detail' announcement.id %}" class="announcement-item d-flex justify-content-between align-items-center p-3 mb-2 bg-light rounded text-decoration-none text-dark">
-                    <div>
-                      <h6 class="mb-1 fw-bold">{{ announcement.title }}</h6>
-                      <small class="text-muted">{{ announcement.created_at|date:'Y/m/d' }}</small>
-                    </div>
-                    <i class="fas fa-chevron-right text-muted"></i>
-                  </a>
-                {% endfor %}
-              </div>
-            {% else %}
-              <p class="text-muted text-center py-4">現在、お知らせはありません。</p>
-            {% endif %}
-          </div>
-        </div>
+  <div class="dashboard-section mt-5">
+    <div class="card">
+      <div class="card-header">
+        <h2>お知らせ一覧</h2>
       </div>
-    </div>
-
-    <!-- Row 1: Main Menu Tiles -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="card shadow-sm">
-          <div class="card-header bg-white">
-            <h2 class="h4 mb-0">メインメニュー</h2>
-          </div>
-          <div class="card-body">
-            <p class="text-muted">以下の機能にアクセスできます。</p>
-            <div class="dashboard-grid">
-              {% if user.role == 'admin' or user.is_superuser %}
-                <a href="{% url 'core:store_list' %}" class="dashboard-tile">
-                  <i class="fas fa-store"></i>
-                  <span>加盟店舗一覧</span>
-                </a>
-                <a href="{% url 'core:admin_inquiry_dashboard' %}" class="dashboard-tile">
-                  <i class="fas fa-envelope-open-text"></i>
-                  <span>お問い合わせ</span>
-                </a>
-                <a href="{% url 'core:announcement_list' %}" class="dashboard-tile">
-                  <i class="fas fa-bullhorn"></i>
-                  <span>お知らせ編集</span>
-                </a>
-                <a href="{% url 'core:coupon_list_admin' %}" class="dashboard-tile">
-                  <i class="fas fa-ticket-alt"></i>
-                  <span>クーポン管理</span>
-                </a>
-                <a href="{% url 'core:grant_coupon_admin' %}" class="dashboard-tile">
-                  <i class="fas fa-gift"></i>
-                  <span>クーポン付与</span>
-                </a>
-                <a href="{% url 'core:ecoproduct_list' %}" class="dashboard-tile">
-                  <i class="fas fa-leaf"></i>
-                  <span>エコ商品管理</span>
-                </a>
-                <a href="{% url 'core:approval_list' %}" class="dashboard-tile">
-                  <i class="fas fa-check-circle"></i>
-                  <span>申請承認</span>
-                </a>
-              {% endif %}
-              
-              {% if user.role == 'store' %}
-                <a href="{% url 'core:staff_inquiry' %}" class="dashboard-tile">
-                  <i class="fas fa-question-circle"></i>
-                  <span>お問い合わせ</span>
-                </a>
-                <a href="{% url 'core:store_detail' user.store.store_id %}" class="dashboard-tile">
-                  <i class="fas fa-store"></i>
-                  <span>店舗情報</span>
-                </a>
-                <a href="{% url 'core:store_dashboard' %}" class="dashboard-tile">
-                  <i class="fas fa-clipboard-list"></i>
-                  <span>申請ダッシュボード</span>
-                </a>
-                <a href="{% url 'core:store_coupon_create' %}" class="dashboard-tile">
-                  <i class="fas fa-ticket-alt"></i>
-                  <span>クーポン申請</span>
-                </a>
-                <a href="{% url 'core:store_help' %}" class="dashboard-tile">
-                  <i class="fas fa-info-circle"></i>
-                  <span>ヘルプFAQ</span>
-                </a>
-                <a href="{% url 'core:ecoproduct_list' %}" class="dashboard-tile">
-                  <i class="fas fa-leaf"></i>
-                  <span>エコ商品管理</span>
-                </a>
-              {% endif %}
-
-              {% if not user.role == 'admin' and not user.is_superuser and not user.role == 'store' %}
-                <div class="alert alert-warning">
-                    権限が正しく設定されていません。(Role: {{ user.role }})
+      <div class="card-body">
+        {% if announcements %}
+          <div class="announcement-grid">
+            {% for announcement in announcements %}
+              <a href="{% url 'core:announcement_detail' announcement.id %}" class="announcement-card">
+                <div class="announcement-content">
+                  <h5 class="announcement-title">{{ announcement.title }}</h5>
+                  <small class="announcement-date">{{ announcement.created_at|date:'Y/m/d' }}</small>
                 </div>
-              {% endif %}
-            </div>
+              </a>
+            {% endfor %}
           </div>
-        </div>
+        {% else %}
+          <p>現在、お知らせはありません。</p>
+        {% endif %}
       </div>
     </div>
+  </div>
 
-    <!-- Row 2: Coupon Statistics (Full Width) -->
-    <div class="row">
-      <div class="col-12 mb-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header bg-white">
-            <h2 class="h5 mb-0">クーポン利用統計</h2>
-          </div>
-          <div class="card-body p-0">
-            {% if coupon_stats %}
-              <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th class="ps-4">クーポン名</th>
-                      <th class="text-center">発行</th>
-                      <th class="text-center">利用</th>
-                      <th class="text-center">率</th>
-                      {% if user.role == 'store' %}
-                        <th class="text-center pe-4">自店</th>
-                      {% endif %}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for stat in coupon_stats %}
-                      <tr data-href="{% url 'core:coupon_stats_detail' stat.coupon.id %}" class="clickable-row">
-                        <td class="ps-4 fw-bold">{{ stat.coupon.title }}</td>
-                        <td class="text-center">{{ stat.issued_count }}</td>
-                        <td class="text-center">{{ stat.usage_count }}</td>
-                        <td class="text-center">
-                            <span class="badge {% if stat.usage_ratio > 30 %}bg-success{% elif stat.usage_ratio > 10 %}bg-primary{% else %}bg-secondary{% endif %}">
-                                {{ stat.usage_ratio }}%
-                            </span>
-                        </td>
-                        {% if user.role == 'store' %}
-                          <td class="text-center pe-4">{{ stat.used_at_my_store }}</td>
-                        {% endif %}
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            {% else %}
-              <p class="text-muted text-center py-4">現在、クーポンの統計データはありません。</p>
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h1>メインメニュー</h1>
+        </div>
+        <div class="card-body">
+          <p>ここは管理者および店舗スタッフ専用のページです。</p>
+          <hr />
+          <p>以下の機能にアクセスできます。</p>
+          <div class="d-flex flex-wrap gap-3">
+            {% if user.role == 'admin' or user.is_superuser %}
+              <a href="{% url 'core:store_list' %}" class="btn btn-primary">加盟店舗一覧</a>
+              <a href="{% url 'core:admin_inquiry_dashboard' %}" class="btn btn-primary">お問い合わせ一覧</a>
+              <a href="{% url 'core:announcement_list' %}" class="btn btn-primary">お知らせ編集</a>
+              <a href="{% url 'core:coupon_list_admin' %}" class="btn btn-primary">クーポン管理</a>
+              <a href="{% url 'core:grant_coupon_admin' %}" class="btn btn-primary">クーポン付与</a>
+              <a href="{% url 'core:ecoproduct_list' %}" class="btn btn-primary">エコ商品管理</a>
+            {% endif %}
+            {% if user.role == 'store' %}
+              <a href="{% url 'core:staff_inquiry' %}" class="btn btn-primary">お問い合わせ</a>
+              <a href="{% url 'core:store_help' %}" class="btn btn-primary">ヘルプFAQ</a>
+              <a href="{% url 'core:ecoproduct_list' %}" class="btn btn-primary">エコ商品管理</a>
             {% endif %}
           </div>
         </div>
@@ -168,62 +60,57 @@
     </div>
   </div>
 
+  <!-- クーポン統計セクション -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h2>クーポン利用統計</h2>
+        </div>
+        <div class="card-body">
+          {% if coupon_stats %}
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>クーポン名</th>
+                    <th>発行数</th>
+                    <th>利用数</th>
+                    <th>利用率</th>
+                    {% if user.role == 'store' %}
+                      <th>自店利用数</th>
+                    {% endif %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for stat in coupon_stats %}
+                    <tr data-href="{% url 'core:coupon_stats_detail' stat.coupon.id %}" class="clickable-row">
+                      <td>{{ stat.coupon.title }}</td>
+                      <td>{{ stat.issued_count }}</td>
+                      <td>{{ stat.usage_count }}</td>
+                      <td>{{ stat.usage_ratio }}%</td>
+                      {% if user.role == 'store' %}
+                        <td>{{ stat.used_at_my_store }}</td>
+                      {% endif %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p>現在、クーポンの統計データはありません。</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
   <style>
-    /* Dashboard Grid (Tiles) */
-    .dashboard-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-top: 15px;
-    }
-    
-    .dashboard-tile {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background-color: #fff;
-      border: 1px solid #eee;
-      border-radius: 12px;
-      padding: 30px 15px;
-      text-decoration: none;
-      color: #555;
-      transition: all 0.2s ease-in-out;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      flex: 1 1 180px; /* Grow, Shrink, Basis */
-      min-width: 180px;
-      max-width: 250px; 
-      min-height: 160px;
-    }
-    
-    .dashboard-tile:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      color: #27ae60;
-      border-color: #27ae60;
-      background-color: #fcfdfc;
-    }
-    
-    .dashboard-tile i {
-      font-size: 2.5rem;
-      margin-bottom: 15px;
-      color: #27ae60;
-    }
-    
-    .dashboard-tile span {
-      font-size: 1rem;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    /* Announcement List */
-    .announcement-item:hover {
-        background-color: #e9ecef !important;
-    }
-
-    /* Table */
     .clickable-row {
       cursor: pointer;
+    }
+    .clickable-row:hover {
+      background-color: #f5f5f5;
     }
   </style>
 

@@ -272,6 +272,7 @@ class Report(models.Model):
     # レポート時点のスナップショット
     rank = models.CharField(max_length=20, blank=True, null=True, verbose_name='会員ランク')
     monthly_points = models.IntegerField(default=0, verbose_name='月間獲得ポイント')
+    held_points = models.IntegerField(default=0, verbose_name='その月の所持ポイント')
 
     def __str__(self):
         return f"Report for {self.user} at {self.generated_at}"

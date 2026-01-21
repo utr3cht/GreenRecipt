@@ -252,12 +252,12 @@
             <!-- Stats -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">今月のランク</div>
+                    <div class="stat-label">現在のランク</div>
                     <div class="stat-value">{{ rank }}</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">月間獲得ポイント</div>
-                    <div class="stat-value">{{ monthly_points }} pt</div>
+                    <div class="stat-value">{{ held_points }} pt</div>
                 </div>
             </div>
 
@@ -273,6 +273,16 @@
                     <div class="advice-content">
                         {{ report_text|linebreaksbr }}
                     </div>
+                    {% if is_latest_month %}
+                        <div style="margin-top: 20px; text-align: right;">
+                            <form method="post" style="display: inline; background:none; border:none; padding:0; box-shadow:none;">
+                                {% csrf_token %}
+                                <button type="submit" name="generate" class="btn btn-sm" style="background:#059669; color:white;">
+                                    レポートを更新する
+                                </button>
+                            </form>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -324,16 +334,22 @@
             <div class="empty-icon-circle">
                 <span style="font-size: 40px;">📊</span>
             </div>
-            <h2 class="empty-title">レポート未作成</h2>
+            <h2 class="empty-title">{% if is_latest_month %}レポート未作成{% else %}レポートはありません{% endif %}</h2>
             <p class="empty-desc">
-                今月の購入履歴をAIが分析し、<br>あなただけのエコスコアとアドバイスを作成します。
+                {% if is_latest_month %}
+                    今月の購入履歴をAIが分析し、<br>あなただけのエコスコアとアドバイスを作成します。
+                {% else %}
+                    この月のレポートは生成されていません。<br>過去のレポートを遡って生成することはできません。
+                {% endif %}
             </p>
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" name="generate" class="btn-generate">
-                    <span></span> レポートを作成する
-                </button>
-            </form>
+            {% if is_latest_month %}
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" name="generate" class="btn-generate">
+                        レポートを作成する
+                    </button>
+                </form>
+            {% endif %}
         </div>
     {% endif %}
 

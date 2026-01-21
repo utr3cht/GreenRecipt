@@ -44,6 +44,7 @@ class CustomUser(AbstractUser):
         max_length=10, choices=ROLE_CHOICES, default='user', verbose_name='役割')
     store = models.ForeignKey(
         'core.Store', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='所属店舗')
+    last_reset_month = models.DateField(null=True, blank=True, verbose_name='最後にポイントリセットした月')
 
     new_email = models.EmailField(
         _("new email address"), blank=True, null=True)
