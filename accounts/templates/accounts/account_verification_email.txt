@@ -4,7 +4,7 @@
 GreenReciptにご登録いただきありがとうございます。
 アカウントを有効にするには、以下のリンクをクリックしてください。
 
-http://{{ domain }}{% url 'accounts:activate' uidb64=uid token=token %}
+https://{{ domain }}{% url 'accounts:activate' uidb64=uid token=token %}
 
 このメールに心当たりがない場合は、このメールを無視してください。
 

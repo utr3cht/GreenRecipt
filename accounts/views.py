@@ -72,6 +72,7 @@ class RegisterConfirmView(TemplateView):
             context = {
                 'user': user,
                 'domain': current_site.domain,
+                'protocol': request.scheme,  # プロトコルを追加 (http/https)
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                 'token': user.verification_token,
             }
@@ -132,6 +133,7 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
             context = {
                 'user': user_instance,
                 'domain': current_site.domain,
+                'protocol': self.request.scheme, # プロトコルを追加
                 'token': user_instance.email_change_token,
             }
 
