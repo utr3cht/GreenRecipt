@@ -91,39 +91,38 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
   }
 
-  // グラデーション色の生成関数
-  function generateGradientColors(count) {
-    const colors = [];
-    for (let i = 0; i < count; i++) {
-      // 緑(0, 255, 0) から 青(0, 0, 255) へのグラデーション
-      // 比率計算 (0.0 to 1.0)
-      const ratio = count > 1 ? i / (count - 1) : 0;
-      
-      const r = 0;
-      const g = Math.round(255 * (1 - ratio));
-      const b = Math.round(255 * ratio);
-      
-      colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`);
-    }
-    return colors;
-  }
+      // グラデーション色の生成関数
+      function generateGradientColors(count) {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+          // エメラルドグリーン(#79ca69) から ティール(#0f766e) へのグラデーション
+          const ratio = count > 1 ? i / (count - 1) : 0;
+          
+          const r = Math.round(121 * (1 - ratio) + 15 * ratio);
+          const g = Math.round(202 * (1 - ratio) + 118 * ratio);
+          const b = Math.round(105 * (1 - ratio) + 110 * ratio);
+          
+          colors.push(`rgba(${r}, ${g}, ${b}, 0.85)`);
+        }
+        return colors;
+      }
 
-  const backgroundColors = generateGradientColors(labels.length);
-  const issuedData = {{ issued_chart_data|safe }};
+      const backgroundColors = generateGradientColors(labels.length);
+      const issuedData = {{ issued_chart_data|safe }};
 
-  // 1. 発行状況チャート (左側)
-  new Chart(document.getElementById('issuedChart').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: ['利用済み', '未利用'],
-      datasets: [{
-        data: issuedData,
-        backgroundColor: ['#4CAF50', '#E0E0E0'], // 緑: 利用済み, グレー: 未利用
-        borderWidth: 0,
-        borderRadius: 10,
-        hoverOffset: 10
-      }]
-    },
+      // 1. 発行状況チャート (左側)
+      new Chart(document.getElementById('issuedChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: ['利用済み', '未利用'],
+          datasets: [{
+            data: issuedData,
+            backgroundColor: ['#79ca69', '#f1f5f9'], // 鮮やかな緑: 利用済み, 薄いグレー: 未利用
+            borderWidth: 0,
+            borderRadius: 10,
+            hoverOffset: 12
+          }]
+        },
     options: {
       responsive: true,
       cutout: '85%',

@@ -11,8 +11,9 @@
     </title>
 
     <!-- 統一デザイン -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
-    <link rel="stylesheet" href="{% static 'css/admin.css' %}" />
+    <!-- 統一デザイン -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.10" />
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v=2.10" />
 
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="57x57" href="{% static 'favicon/apple-icon-57x57.png' %}" />
@@ -39,7 +40,9 @@
       <header class="admin-header">
         <div class="admin-header-inner">
           <div class="logo-container">
-            <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" class="logo small" />
+            <a href="{% url 'core:index' %}">
+              <img src="{% static 'img/logo.png' %}" alt="GreenReceipt ロゴ" class="logo small" />
+            </a>
           </div>
 
           <div class="user-info desktop-only">
@@ -56,6 +59,26 @@
                 <button type="submit" class="btn-secondary logout-button">ログアウト</button>
               </form>
             {% endif %}
+          </div>
+          
+          <!-- Hamburger Menu (Mobile Only) -->
+          <div class="hamburger-menu mobile-only">
+             <button class="hamburger-icon" onclick="toggleMenu()">&#9776;</button>
+             <div class="menu-items" id="menu-items">
+                {% if user.is_authenticated %}
+                  <span class="welcome" style="display:block; padding: 10px; font-weight:bold; color:#0f766e;">
+                    {% if user.role == 'store' %}
+                      店舗ページ
+                    {% else %}
+                      管理者ページ
+                    {% endif %}
+                  </span>
+                  <form method="post" action="{% url 'core:staff_logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-button" style="width:100%; text-align:left; padding: 10px;">ログアウト</button>
+                  </form>
+                {% endif %}
+             </div>
           </div>
         </div>
       </header>
@@ -78,5 +101,15 @@
         <p>© 2025 GreenReceipt 管理システム</p>
       </footer>
     </div>
+    <script>
+      function toggleMenu() {
+        var menu = document.getElementById("menu-items");
+        if (menu.style.display === "block") {
+          menu.style.display = "none";
+        } else {
+          menu.style.display = "block";
+        }
+      }
+    </script>
   </body>
 </html>

@@ -1,4 +1,5 @@
-/* ========================
+admiin
+ /* ========================
    Admin modern styling
    ======================== */
 :root {
@@ -16,9 +17,9 @@
   --radius-md: 12px;
   --radius-sm: 10px;
 }
-
+ 
 * { box-sizing: border-box; }
-html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+html, body { height: 100%; width: 100%; margin: 0; padding: 0 !important; overflow-x: hidden; }
 body {
   font-family: "Poppins", "Segoe UI", "\u30E1\u30A4\u30EA\u30AA", sans-serif;
   color: var(--text);
@@ -31,11 +32,11 @@ body {
     linear-gradient(135deg, var(--bg-1), var(--bg-2));
   -webkit-font-smoothing: antialiased;
 }
-
+ 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideLeft { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-
+ 
 /* ===== コンテナ ===== */
 .admin-container {
   flex: 1;
@@ -43,15 +44,16 @@ body {
   flex-direction: column;
   align-items: stretch;
   background: var(--panel);
-  max-width: 95%;
-  margin: 22px auto;
+  /* backdrop-filter: blur(10px); REMOVED to fix position:fixed context */
+  max-width: 100%;
+  margin: 0;
   width: 100%;
   box-shadow: var(--shadow);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   animation: fadeUp 0.5s ease-out;
 }
-
+ 
 /* ===== ヘッダー ===== */
 .admin-header {
   background: #ffffff;
@@ -72,7 +74,7 @@ body {
   transition: 0.25s ease;
 }
 .logout-button:hover { background: rgba(14, 165, 233, 0.08); box-shadow: 0 10px 26px rgba(14, 165, 233, 0.18); }
-
+ 
 /* ===== メイン ===== */
 .admin-main {
   flex: 1;
@@ -88,10 +90,9 @@ body {
   margin-bottom: 26px;
   animation: slideLeft 0.5s ease-out;
 }
-
+ 
 /* ===== カード ===== */
 .card {
-  width : 100%;
   background: #ffffff;
   border: 1px solid #dce6f5;
   border-radius: var(--radius-md);
@@ -103,7 +104,7 @@ body {
 }
 .card:hover { transform: translateY(-6px); box-shadow: var(--shadow-strong); border-color: rgba(14, 165, 233, 0.28); }
 .card h2, .card h3 { color: var(--accent-2); margin-bottom: 15px; }
-
+ 
 /* ===== テーブル ===== */
 .table-responsive { overflow-x: hidden; border-radius: 12px; border: 1px solid #dce6f5; box-shadow: 0 12px 32px rgba(0,0,0,.06); }
 table { width: 100%; border-collapse: collapse; }
@@ -117,7 +118,7 @@ th {
 td { padding: 11px; border-top: 1px solid #e4ecf7; }
 tr { transition: background 0.25s ease, transform 0.25s ease; }
 tr:hover { background: #f4faff; transform: translateX(4px); }
-
+ 
 /* ===== ボタン ===== */
 .admin-container button,
 .admin-container .btn,
@@ -151,10 +152,10 @@ tr:hover { background: #f4faff; transform: translateX(4px); }
   color: var(--accent-2);
 }
 .admin-container .btn-secondary:hover { background: var(--accent-2); color: #fff; transform: translateY(-2px); box-shadow: 0 12px 28px rgba(15, 118, 110, 0.24); }
-
+ 
 .actions { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-top: 30px; }
 .actions .btn, .actions button { width: auto; min-width: 140px; }
-
+ 
 /* ===== フォーム ===== */
 form {
   background: #ffffff;
@@ -186,13 +187,13 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
 }
-
+ 
 /* ===== メッセージ ===== */
 .messages { padding: 0 20px; margin: 15px 0; animation: fadeUp 0.4s ease-out; }
 .alert { padding: 15px; margin-bottom: 20px; border-radius: var(--radius-md); text-align: center; }
 .alert-success { background: #e6fff1; color: #0f5132; border: 1px solid #b7f0cd; }
 .alert-error { background: #fff1f2; color: #b91c1c; border: 1px solid #fbcfe8; }
-
+ 
 /* ===== フッター ===== */
 .admin-footer {
   background: #ffffff;
@@ -202,17 +203,27 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.92rem;
   color: var(--muted);
 }
-
+ 
 /* ===== モバイル対応 ===== */
 @media (max-width: 767px) {
   .admin-container { margin: 0; border-radius: 0; box-shadow: none; }
-  .admin-header-inner { flex-direction: column; align-items: flex-start; gap: 6px; }
-  .admin-main { padding: 24px 16px 90px; }
+  .admin-header { position: fixed; width: 100%; top: 0; left: 0; z-index: 1000; margin-top: 0; padding: 10px 16px; }
+  .admin-header-inner { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+  .admin-header img.logo { width: 140px; } /* Slightly smaller logo on mobile */
+  .admin-main { padding: 80px 16px 80px; } /* Adjust padding for compact header */
   .actions { flex-direction: column; gap: 12px; }
   .btn, .btn-primary, .btn-secondary { width: 100%; text-align: center; }
-  table, th, td { font-size: 0.85rem; }
+  table, th, td { font-size: 0.8rem; padding: 8px; } /* Compact table */
+  .card { padding: 20px; } /* Reduce card padding */
 }
-
+ 
+/* ===== Container Override for Admin ===== */
+/* style.cssの.container設定(margin-top:80px)が管理者画面に影響しないようにリセット */
+.container {
+  margin-top: 0 !important;
+  max-width: 100%;
+}
+ 
 /* ===== パスワード表示 ===== */
 .password-container { position: relative; }
 .password-container input { padding-right: 72px; }
@@ -235,7 +246,7 @@ input:focus, select:focus, textarea:focus {
   box-shadow: none !important;
   background: rgba(0,0,0,0.05);
 }
-
+ 
 /* ===== Utility Classes (Bootstrap-like) ===== */
 .d-flex { display: flex; }
 .justify-content-between { justify-content: space-between; }
@@ -245,11 +256,12 @@ input:focus, select:focus, textarea:focus {
 .mb-4 { margin-bottom: 1.5rem; }
 .mt-4 { margin-top: 1.5rem; }
 .d-grid { display: grid; }
+.dashboard-grid { justify-content: center; }
 .list-group { list-style: none; padding: 0; }
 .list-group-item { padding: 10px 15px; border-bottom: 1px solid #eee; }
 .list-group-item:last-child { border-bottom: none; }
 .list-group-flush .list-group-item { border-right: 0; border-left: 0; border-radius: 0; }
-
+ 
 /* ===== お知らせグリッド ===== */
 .announcement-grid {
   display: grid;
@@ -280,7 +292,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--muted);
   font-size: 0.85rem;
 }
-
+ 
 /* ===== タブ ===== */
 .nav-tabs {
   display: flex;
@@ -303,7 +315,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--accent-2);
   border-bottom-color: var(--accent-2);
 }
-
+ 
 /* ===== バッジ ===== */
 .badge {
   display: inline-block;
@@ -317,3 +329,23 @@ input:focus, select:focus, textarea:focus {
 .bg-success { background-color: #22c55e; }
 .bg-warning { background-color: #f59e0b; }
 .bg-danger { background-color: #ef4444; }
+
+/* ===== 問い合わせダッシュボード調整 ===== */
+@media (max-width: 767px) {
+  .header-with-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+  .header-with-button h1 { margin-bottom: 10px; }
+  .header-with-button ul { justify-content: center; }
+  .nav-tabs { justify-content: center; }
+  
+  .header-with-button h1 { margin-bottom: 10px; }
+  .header-with-button ul { justify-content: center; }
+  .nav-tabs { justify-content: center; }
+}
+ 
+ 
