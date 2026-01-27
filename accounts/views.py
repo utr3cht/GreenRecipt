@@ -50,6 +50,33 @@ class RegisterView(FormView):
 class RegisterConfirmView(TemplateView):
     template_name = 'accounts/register_confirm.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        # セッションにデータがない場合は登録画面へリダイレクト
+        form_data = request.session.get('form_data')
+        if not form_data:
+            return redirect('accounts:register')
+        
+        # データのバリデーションチェック (文字数制限や重複チェックなど)
+        # フォームを初期化してバリデーションを実行
+        # 注意: form_dataはcleaned_data形式だが、UserCreationFormが正しく認識できる前提
+        # postメソッドでも同様にCustomUserCreationForm(form_data)を行っているためそれに倣う
+        form = CustomUserCreationForm(form_data)
+        if not form.is_valid():
+            # バリデーションエラーがある場合はメッセージを追加して戻す
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
+            return redirect('accounts:register')
+
+        response = super().dispatch(request, *args, **kwargs)
+        
+        # ブラウザの「戻る」ボタン対策（キャッシュ無効化）
+        response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['form_data'] = self.request.session.get('form_data')

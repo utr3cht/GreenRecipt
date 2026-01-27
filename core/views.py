@@ -23,7 +23,9 @@ from .forms import (
 )
 from yomitoku.document_analyzer import DocumentAnalyzer
 import cv2
-import re
+import os
+import logging
+from pathlib import Path
 from datetime import datetime
 from django.utils import timezone
 import json
@@ -31,12 +33,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 import requests  # Add this import
 from django.core.files.base import ContentFile  # fs.saveエラーを修正するために追加
 import uuid  # Add this
-import os   # Add this
 import numpy as np  # Add this line
 import google.generativeai as genai
 import calendar
 
-from django.db import transaction, models
+from django.db import transaction, models, IntegrityError
+
+# ロガーの設定
+logger = logging.getLogger('core')
 
 # Forms
 from .forms import InquiryForm, ReplyForm, StoreForm, AnnouncementForm, CouponForm, GrantCouponForm, EcoProductForm
@@ -172,7 +176,7 @@ def reject_item(request, type, id):
         # 通常の承認申請の却下
         item.status = 'rejected'
         reason = request.POST.get('rejection_reason', '').strip()
-        print(f"Rejecting item {item} with reason: '{reason}'")  # Debug Logging
+        # print(f"Rejecting item {item} with reason: '{reason}'")  # Debug Logging
         if reason:
             item.rejection_reason = reason
         item.save()
@@ -1225,7 +1229,7 @@ def inquiry_detail(request, inquiry_id):
                 return redirect('core:inquiry_detail', inquiry_id=inquiry.id)
 
             except Exception as e:
-                print(f"Email send error: {e}")
+                logger.error(f"Email send error: {e}")
                 messages.error(request, 'メール送信に失敗しました。')
 
     else:
@@ -1364,14 +1368,23 @@ def store_create(request):
         store_form = StoreForm(request.POST)
         user_form = StoreUserCreationForm(request.POST)
         if store_form.is_valid() and user_form.is_valid():
-            store = store_form.save()
-            user = user_form.save(commit=False)
-            user.role = 'store'
-            user.store = store
-            user.is_staff = True
-            user.save()
-            messages.success(request, '店舗とアカウントが正常に登録されました。')
-            return redirect('core:store_list')
+            try:
+                with transaction.atomic():
+                    store = store_form.save()
+                    user = user_form.save(commit=False)
+                    user.role = 'store'
+                    user.store = store
+                    user.is_staff = True
+                    user.save()
+                messages.success(request, '店舗とアカウントが正常に登録されました。')
+                return redirect('core:store_list')
+            except IntegrityError:
+                # ユーザーが重複している場合、トランザクションはロールバックされるため、
+                # 店舗情報も保存されません。
+                messages.error(request, 'エラーが発生しました。入力情報（メールアドレス等）が既存のデータと重複している可能性があります。')
+            except Exception as e:
+                # その他のエラーでもロールバック
+                messages.error(request, f'予期せぬエラーが発生しました: {e}')
     else:
         store_form = StoreForm()
         user_form = StoreUserCreationForm()
@@ -1420,6 +1433,14 @@ def store_delete_user(request, user_id):
         messages.success(request, '店舗アカウントが正常に削除されました。')
         return redirect('core:store_edit', store_id=store_id)
     return redirect('core:store_edit', store_id=store_id)
+
+
+@staff_member_required
+def store_delete(request, store_id):
+    store = get_object_or_404(Store, store_id=store_id)
+    store.delete()
+    messages.success(request, '店舗を削除しました。')
+    return redirect('core:store_list')
 
 
 # EcoProduct管理ビュー
@@ -1576,6 +1597,109 @@ class StoreEcoProductCreateView(CreateView):
         form.instance.status = 'pending'
         messages.success(self.request, 'エコ商品の登録申請を行いました。承認をお待ちください。')
         return super().form_valid(form)
+
+
+import csv
+import io
+
+@staff_member_required
+def ecoproduct_import(request):
+    if request.method == 'POST':
+        csv_file = request.FILES.get('csv_file')
+        if not csv_file:
+            messages.error(request, 'ファイルが選択されていません。')
+            return redirect('core:ecoproduct_import')
+        
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'CSVファイルのみアップロード可能です。')
+            return redirect('core:ecoproduct_import')
+        
+        try:
+            # ファイルの内容を読み込む
+            decoded_file = csv_file.read().decode('utf-8-sig').splitlines()
+        except UnicodeDecodeError:
+            try:
+                # Shift-JISでの読み込みを試行
+                csv_file.seek(0)
+                decoded_file = csv_file.read().decode('shift_jis').splitlines()
+            except UnicodeDecodeError:
+                messages.error(request, 'ファイルのエンコーディングが不正です。UTF-8またはShift-JISで保存してください。')
+                return redirect('core:ecoproduct_import')
+
+        reader = csv.reader(decoded_file)
+        
+        # ヘッダー行をスキップ（簡易実装：1行目を無視）
+        next(reader, None)
+        
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        for i, row in enumerate(reader, start=2): # 行番号は2から開始（ヘッダー考慮）
+            if not row: continue
+            
+            try:
+                # カラムマッピング: 0=name, 1=jan_code, 2=points, 3=remarks
+                name = row[0].strip() if len(row) > 0 else ''
+                jan_code = row[1].strip() if len(row) > 1 else None
+                points_str = row[2].strip() if len(row) > 2 else '10'
+                remarks = row[3].strip() if len(row) > 3 else ''
+                
+                if not name:
+                    raise ValueError('商品名は必須です')
+                
+                try:
+                    points = int(points_str) if points_str else 10
+                except ValueError:
+                    points = 10
+                
+                if not jan_code:
+                    jan_code = None # 空文字ならNoneにする（Unique制約対策）
+
+                # 既存チェック (JANコード優先、なければ名前)
+                if jan_code and EcoProduct.objects.filter(jan_code=jan_code).exists():
+                     raise ValueError(f'JANコード {jan_code} は既に登録されています')
+                if EcoProduct.objects.filter(name=name).exists():
+                     raise ValueError(f'商品名 {name} は既に登録されています')
+
+                product = EcoProduct(
+                    name=name,
+                    jan_code=jan_code,
+                    points=points,
+                    remarks=remarks
+                )
+
+                # 権限による分岐
+                if request.user.role == 'store' and request.user.store:
+                    product.store = request.user.store
+                    product.status = 'pending'
+                    product.is_common = False
+                else:
+                     # 管理者など
+                    product.status = 'approved'
+                    product.is_common = True
+                
+                product.save()
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                errors.append(f'{i}行目: {str(e)}')
+        
+        if success_count > 0:
+            messages.success(request, f'{success_count}件のエコ商品を登録しました。')
+        
+        if error_count > 0:
+            messages.warning(request, f'{error_count}件の登録に失敗しました。')
+            # エラー詳細を表示（数が多い場合は制限するなど考慮）
+            for err in errors[:5]:
+                messages.error(request, err)
+            if len(errors) > 5:
+                 messages.error(request, f'他 {len(errors) - 5} 件のエラーがあります。')
+        
+        return redirect('core:ecoproduct_list')
+
+    return render(request, 'admin/ecoproduct_import.html')
 
 
 @method_decorator(login_required, name='dispatch')

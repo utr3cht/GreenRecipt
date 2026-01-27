@@ -81,7 +81,7 @@ body {
   padding: 40px 60px 70px;
   background: linear-gradient(180deg, rgba(14, 165, 233, 0.05), transparent 30%);
   text-align: left;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 .admin-main h1 {
   font-size: 1.65rem;
@@ -99,8 +99,6 @@ body {
   padding: 26px 30px;
   box-shadow: var(--shadow);
   margin-bottom: 26px;
-  animation: fadeUp 0.5s ease-out;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .card:hover { transform: translateY(-6px); box-shadow: var(--shadow-strong); border-color: rgba(14, 165, 233, 0.28); }
 .card h2, .card h3 { color: var(--accent-2); margin-bottom: 15px; }
@@ -220,7 +218,7 @@ input:focus, select:focus, textarea:focus {
 /* ===== Container Override for Admin ===== */
 /* style.cssの.container設定(margin-top:80px)が管理者画面に影響しないようにリセット */
 .container {
-  margin-top: 0 !important;
+  margin-top: 60px;
   max-width: 100%;
 }
  
@@ -268,6 +266,28 @@ input:focus, select:focus, textarea:focus {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
+
+/* ===== お知らせリスト（ダッシュボード用） ===== */
+.announcement-list {
+  max-height: 280px; /* 約3つ分 */
+  overflow-y: auto;
+  padding-right: 5px; /* スクロールバーとの被り防止 */
+}
+.announcement-list::-webkit-scrollbar {
+  width: 6px;
+}
+.announcement-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+.announcement-list::-webkit-scrollbar-thumb {
+  background: #aaa;
+  border-radius: 3px;
+}
+.announcement-list::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+
 .announcement-card {
   display: block;
   background: #fff;

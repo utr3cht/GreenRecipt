@@ -21,6 +21,7 @@
                     <th>住所</th>
                     <th>開店時間</th>
                     <th>閉店時間</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,6 +33,9 @@
                     <td>{{ store.address }}</td>
                     <td>{{ store.open_time|time:"H:i" }}</td>
                     <td>{{ store.close_time|time:"H:i" }}</td>
+                    <td>
+                        <a href="{% url 'core:store_delete' store.store_id %}" class="btn btn-sm btn-danger delete-btn" onclick="return confirm('本当に削除しますか？');">削除</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -43,7 +47,11 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
       document.querySelectorAll('tr[data-href]').forEach((row) => {
-        row.addEventListener('click', () => (location.href = row.dataset.href))
+        row.addEventListener('click', (e) => {
+            if (!e.target.closest('a') && !e.target.closest('button')) {
+                location.href = row.dataset.href
+            }
+        })
       })
     })
 </script>

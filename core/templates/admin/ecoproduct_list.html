@@ -8,9 +8,11 @@
       <h1>エコ商品一覧</h1>
       <div class="d-flex gap-2">
         {% if user.role == 'store' %}
+          <a href="{% url 'core:ecoproduct_import' %}" class="btn btn-success me-2"><i class="fas fa-file-csv"></i> CSV一括登録</a>
           <a href="{% url 'core:store_product_create' %}" class="btn btn-success">+ 商品申請</a>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'system' or user.is_superuser %}
+          <a href="{% url 'core:ecoproduct_import' %}" class="btn btn-success me-2"><i class="fas fa-file-csv"></i> CSV一括登録</a>
           <a href="{% url 'core:ecoproduct_create' %}" class="btn btn-primary">新規作成</a>
         {% endif %}
       </div>
