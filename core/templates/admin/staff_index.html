@@ -217,8 +217,22 @@
     }
  
     /* Announcement List */
+    .announcement-list {
+        max-height: 220px;
+        overflow-y: auto;
+        padding-right: 5px;
+        border-bottom: 1px solid #eee; /* Visual separation */
+    }
+    .announcement-item {
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 0 !important; /* Remove margin to make list tighter */
+        border-radius: 0 !important; /* Remove radius for list look */
+    }
+    .announcement-item:last-child {
+        border-bottom: none;
+    }
     .announcement-item:hover {
-        background-color: #e9ecef !important;
+        background-color: #f8f9fa !important;
     }
  
     /* Table */

@@ -1,4 +1,4 @@
-admiin
+/* Admin CSS */
  /* ========================
    Admin modern styling
    ======================== */
@@ -269,9 +269,10 @@ input:focus, select:focus, textarea:focus {
 
 /* ===== お知らせリスト（ダッシュボード用） ===== */
 .announcement-list {
-  max-height: 280px; /* 約3つ分 */
-  overflow-y: auto;
-  padding-right: 5px; /* スクロールバーとの被り防止 */
+  max-height: 200px !important; /* 強制的に高さを制限 */
+  overflow-y: auto !important;
+  padding-right: 5px;
+  display: block; /* 安全のため明示 */
 }
 .announcement-list::-webkit-scrollbar {
   width: 6px;
