@@ -55,10 +55,14 @@ MIDDLEWARE = [
     'core.middleware.MonthlyPointResetMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.SecurityHeadersMiddleware', # X-XSS-Protection強制
     'csp.middleware.CSPMiddleware', # CSP Middleware added
 ]
 
 # セキュリティヘッダー (DEBUGモードに関わらず有効化)
+# セキュリティヘッダー (DEBUGモードに関わらず有効化)
+# Proxy環境下でのHSTS対応
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # HSTS設定 (1年 = 31536000秒)
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True

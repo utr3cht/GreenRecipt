@@ -1,7 +1,6 @@
 # Django Imports
 from django.conf import settings
 from django.contrib.auth import login, logout
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.admin.views.decorators import staff_member_required
@@ -1824,9 +1823,8 @@ def fetch_emails(request):
         messages.success(request, message)
     else:
         messages.error(request, message)
-    
     # 元のページに戻る（なければダッシュボード）
     referer = request.META.get('HTTP_REFERER')
-    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
+    if referer:
         return redirect(referer)
     return redirect('core:admin_inquiry_dashboard')
