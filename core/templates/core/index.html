@@ -30,25 +30,14 @@
 
       <div class="section">
         <p>初めてご利用の方はこちら</p>
-        <button onclick="location.href='{% url 'accounts:register' %}'" style="margin-top: 16px;">新規登録</button>
+        <a href="{% url 'accounts:register' %}" class="btn" style="width: 100%; box-sizing: border-box; display: inline-block; padding: 10px; background-color: #27ae60; color: white; text-align: center; text-decoration: none; border-radius: 5px; margin-top: 16px;">新規登録</a>
       </div>
 
       <div class="section">
         <p>既にアカウントをお持ちの方はこちら</p>
-        <button onclick="location.href='{% url 'accounts:login' %}'" style="margin-top: 16px;">ログイン</button>
+        <a href="{% url 'accounts:login' %}" class="btn" style="width: 100%; box-sizing: border-box; display: inline-block; padding: 10px; background-color: #27ae60; color: white; text-align: center; text-decoration: none; border-radius: 5px; margin-top: 16px;">ログイン</a>
       </div>
     </div>
-    <script>
-      const splashScreen = document.getElementById('splash-screen');
-      // 2秒後にアニメーションを終了
-      const splashDuration = 2000;
-
-      setTimeout(() => {
-        splashScreen.classList.add('hidden');
-        setTimeout(() => {
-          splashScreen.style.display = 'none';
-        }, 800); 
-      }, splashDuration);
-    </script>
+    <script src="{% static 'js/main.js' %}?v=1.0"></script>
     </body>
 </html>

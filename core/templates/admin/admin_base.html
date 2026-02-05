@@ -63,7 +63,7 @@
           
           <!-- Hamburger Menu (Mobile Only) -->
           <div class="hamburger-menu mobile-only">
-             <button class="hamburger-icon" onclick="toggleMenu()">&#9776;</button>
+             <button class="hamburger-icon">&#9776;</button>
              <div class="menu-items" id="menu-items">
                 {% if user.is_authenticated %}
                   <span class="welcome" style="display:block; padding: 10px; font-weight:bold; color:#0f766e;">
@@ -101,15 +101,6 @@
         <p>© 2025 GreenReceipt 管理システム</p>
       </footer>
     </div>
-    <script>
-      function toggleMenu() {
-        var menu = document.getElementById("menu-items");
-        if (menu.style.display === "block") {
-          menu.style.display = "none";
-        } else {
-          menu.style.display = "block";
-        }
-      }
-    </script>
+    <script src="{% static 'js/main.js' %}?v=1.1"></script>
   </body>
 </html>
