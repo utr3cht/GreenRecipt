@@ -1,6 +1,7 @@
 # Django Imports
 from django.conf import settings
 from django.contrib.auth import login, logout
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.admin.views.decorators import staff_member_required
@@ -10,7 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -38,6 +39,16 @@ import google.generativeai as genai
 import calendar
 
 from django.db import transaction, models, IntegrityError
+
+def security_txt(request):
+    """
+    RFC 9116 security.txt
+    """
+    content = """Contact: mailto:admin@greenrecipt.f5.si
+Expires: 2026-12-31T23:59:59z
+Preferred-Languages: ja, en
+"""
+    return HttpResponse(content, content_type="text/plain")
 
 # ロガーの設定
 logger = logging.getLogger('core')
@@ -1816,6 +1827,6 @@ def fetch_emails(request):
     
     # 元のページに戻る（なければダッシュボード）
     referer = request.META.get('HTTP_REFERER')
-    if referer:
+    if referer and url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}):
         return redirect(referer)
     return redirect('core:admin_inquiry_dashboard')

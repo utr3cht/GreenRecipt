@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.urls import path, include
+from core import views as core_views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path(".well-known/security.txt", core_views.security_txt, name="security_txt"),
     path("", include(("core.urls", "core"), namespace="core")),
     path("accounts/", include(("accounts.urls", "accounts"), namespace="accounts")),
     path('accounts/password_reset/', auth_views.PasswordResetView.as_view(
