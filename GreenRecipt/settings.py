@@ -101,6 +101,7 @@ CSP_IMG_SRC = (
     "https://raw.githubusercontent.com", # Leaflet markers
     "https://cdnjs.cloudflare.com", # Leaflet marker shadows
     "https://*.tile.openstreetmap.org", # OpenStreetMap tiles
+    "https://unpkg.com", # Leaflet images (referenced by CSS)
 )
 CSP_FONT_SRC = (
     "'self'", 
@@ -111,6 +112,7 @@ CSP_FONT_SRC = (
 CSP_CONNECT_SRC = (
     "'self'",
     "https://maps.googleapis.com",
+    "https://*.tile.openstreetmap.org", # Just in case
 )
 
 ROOT_URLCONF = 'GreenRecipt.urls'
