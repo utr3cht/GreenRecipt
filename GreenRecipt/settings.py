@@ -58,17 +58,16 @@ MIDDLEWARE = [
     'csp.middleware.CSPMiddleware', # CSP Middleware added
 ]
 
-# セキュリティヘッダー
-if not DEBUG:
-    # HSTS設定 (1年 = 31536000秒)
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+# セキュリティヘッダー (DEBUGモードに関わらず有効化)
+# HSTS設定 (1年 = 31536000秒)
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
-    # X-XSS-Protection (ブラウザ互換性のため維持するが主用途はCSP)
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+# X-XSS-Protection (ブラウザ互換性のため維持するが主用途はCSP)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 # Content Security Policy (CSP) 設定
 CSP_DEFAULT_SRC = ("'self'",)
