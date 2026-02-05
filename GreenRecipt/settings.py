@@ -55,13 +55,59 @@ MIDDLEWARE = [
     'core.middleware.MonthlyPointResetMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'csp.middleware.CSPMiddleware', # CSP Middleware added
 ]
 
 # セキュリティヘッダー
 if not DEBUG:
+    # HSTS設定 (1年 = 31536000秒)
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # X-XSS-Protection (ブラウザ互換性のため維持するが主用途はCSP)
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+
+# Content Security Policy (CSP) 設定
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "https://maps.googleapis.com", 
+    "https://maps.gstatic.com",
+    "https://code.jquery.com",
+    "https://cdn.jsdelivr.net",
+    "https://fonts.googleapis.com",
+    "https://cdnjs.cloudflare.com", # Font Awesome etc
+)
+CSP_STYLE_SRC = (
+    "'self'", 
+    "'unsafe-inline'", # 必要に応じて (Google Fontsや動的スタイル適用のため)
+    "https://fonts.googleapis.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdnjs.cloudflare.com",
+)
+CSP_IMG_SRC = (
+    "'self'", 
+    "data:", # 画像アップロードプレビュー(b64)等
+    "https://maps.googleapis.com", 
+    "https://maps.gstatic.com",
+    "https://*.googleapis.com", 
+    "https://*.ggpht.com", # Google Maps photos
+)
+CSP_FONT_SRC = (
+    "'self'", 
+    "https://fonts.gstatic.com",
+    "https://cdn.jsdelivr.net",
+    "https://cdnjs.cloudflare.com",
+)
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://maps.googleapis.com",
+)
+# X-XSS-Protection ヘッダーを明示的に送出したい場合はミドルウェア追加検討が必要だが
+# Django built-inのSECURE_BROWSER_XSS_FILTERが "1; mode=block" を出す。
 
 ROOT_URLCONF = 'GreenRecipt.urls'
 
