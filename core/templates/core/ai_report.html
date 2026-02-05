@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 {# Force reload #}
 
 {% block title %}AIエコスコアレポート | GreenReceipt{% endblock %}
@@ -288,44 +289,13 @@
 
             <!-- JavaScript -->
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const ctx = document.getElementById('scoreChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: ['あなたのスコア', '平均スコア'],
-                            datasets: [{
-                                label: 'エコスコア',
-                                data: [{{ score }}, {{ average_score }}],
-                                backgroundColor: [
-                                    'rgba(16, 185, 129, 0.8)',
-                                    'rgba(209, 213, 219, 0.8)'
-                                ],
-                                borderRadius: 8,
-                                barPercentage: 0.5,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    grid: { color: '#f3f4f6', drawBorder: false }
-                                },
-                                x: {
-                                    grid: { display: false }
-                                }
-                            }
-                        }
-                    });
-                });
+            <script id="chart-data" type="application/json">
+            {
+                "score": {{ score|default:0 }},
+                "average_score": {{ average_score|default:0 }}
+            }
             </script>
+            <script src="{% static 'js/ai_report.js' %}?v=1.0"></script>
         </div>
 
     {% else %}

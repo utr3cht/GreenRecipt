@@ -11,3 +11,4 @@ db.sqlite3-wal
 *.key
 db.sqbpro
 db.sqlite3
+staticfiles/
