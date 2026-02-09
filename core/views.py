@@ -35,6 +35,7 @@ from django.core.files.base import ContentFile  # fs.saveエラーを修正す�
 import uuid  # Add this
 import numpy as np  # Add this line
 import google.generativeai as genai
+import re  # Add this import
 import calendar
 
 from django.db import transaction, models, IntegrityError
