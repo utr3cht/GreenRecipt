@@ -75,6 +75,7 @@ X_FRAME_OPTIONS = 'DENY'
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = (
     "'self'",
+    "'unsafe-inline'", # Added to allow inline scripts
     "https://maps.googleapis.com", 
     "https://maps.gstatic.com",
     "https://code.jquery.com",
