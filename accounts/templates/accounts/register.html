@@ -32,4 +32,73 @@
     <button type="submit">確認</button>
   </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameField = document.getElementById('id_username');
+    const emailField = document.getElementById('id_email');
+    const submitBtn = document.querySelector('button[type="submit"]');
+
+    function updateSubmitButton() {
+        // Check if any field has is-invalid class
+        const hasError = document.querySelectorAll('.is-invalid').length > 0;
+        submitBtn.disabled = hasError;
+    }
+
+    function checkAvailability(field, value, element) {
+        if (!value) return;
+        
+        // Clear previous custom error
+        const errorDiv = element.parentNode.querySelector('.invalid-feedback-custom');
+        if (errorDiv) errorDiv.remove();
+        element.classList.remove('is-invalid');
+        
+        // Check status immediately (cleared error might make it valid)
+        updateSubmitButton();
+
+        fetch(`/accounts/check-availability/?field=${field}&value=${encodeURIComponent(value)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_taken) {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'invalid-feedback-custom text-danger';
+                    errorMsg.style.fontSize = '0.875em';
+                    errorMsg.style.marginTop = '0.25rem';
+                    errorMsg.textContent = data.error_message;
+                    element.parentNode.appendChild(errorMsg);
+                    element.classList.add('is-invalid');
+                }
+            })
+            .catch(error => console.error('Error:', error))
+            .finally(() => {
+                updateSubmitButton();
+            });
+    }
+
+    if (usernameField) {
+        usernameField.addEventListener('blur', function() {
+            checkAvailability('username', this.value, this);
+        });
+        // Clear error on input to avoid getting stuck
+        usernameField.addEventListener('input', function() {
+             const errorDiv = this.parentNode.querySelector('.invalid-feedback-custom');
+             if (errorDiv) errorDiv.remove();
+             this.classList.remove('is-invalid');
+             updateSubmitButton();
+        });
+    }
+
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+             checkAvailability('email', this.value, this);
+        });
+        emailField.addEventListener('input', function() {
+             const errorDiv = this.parentNode.querySelector('.invalid-feedback-custom');
+             if (errorDiv) errorDiv.remove();
+             this.classList.remove('is-invalid');
+             updateSubmitButton();
+        });
+    }
+});
+</script>
 {% endblock %}

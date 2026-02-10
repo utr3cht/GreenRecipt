@@ -337,6 +337,39 @@ class ConfirmWithdrawalView(LoginRequiredMixin, TemplateView):
             messages.success(request, '退会処理が完了しました。ご利用ありがとうございました。')
             return redirect('core:index') # トップページへ
         except Exception as e:
-            logger.error(f"Failed to delete user {request.user.id}: {e}")
             messages.error(request, '退会処理中にエラーが発生しました。管理者にお問い合わせください。')
             return redirect('accounts:confirm_withdrawal')
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+@require_GET
+def check_availability(request):
+    """
+    ユーザー名またはメールアドレスの重複を確認するAPI
+    GET params:
+        field: 'username' or 'email'
+        value: value to check
+    """
+    field = request.GET.get('field')
+    value = request.GET.get('value')
+    
+    is_taken = False
+    error_message = ""
+    
+    if field and value:
+        if field == 'username':
+            if CustomUser.objects.filter(username__iexact=value).exists():
+                is_taken = True
+                error_message = "このユーザー名は既に使用されています。"
+        elif field == 'email':
+            if CustomUser.objects.filter(email__iexact=value).exists():
+                is_taken = True
+                error_message = "このメールアドレスは既に使用されています。"
+    
+    return JsonResponse({
+        'is_taken': is_taken,
+        'error_message': error_message
+    })
+

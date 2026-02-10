@@ -19,4 +19,5 @@ urlpatterns = [
     path('profile/email_change_confirm/<str:token>/', views.EmailChangeConfirmView.as_view(), name='email_change_confirm'),
     path('withdrawal/request/', views.RequestWithdrawalView.as_view(), name='request_withdrawal'),
     path('withdrawal/confirm/', views.ConfirmWithdrawalView.as_view(), name='confirm_withdrawal'),
+    path('check-availability/', views.check_availability, name='check_availability'),
 ]

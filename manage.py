@@ -14,6 +14,13 @@ if venv_site_packages not in sys.path:
 
 def main():
     """管理タスクを実行。"""
+    # Load .env file
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+    except ImportError:
+        pass
+
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'GreenRecipt.settings')
     try:
         from django.core.management import execute_from_command_line  # type: ignore

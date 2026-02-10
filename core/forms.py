@@ -39,7 +39,11 @@ class StoreForm(forms.ModelForm):
     class Meta:
         model = Store
         fields = ['store_name', 'category', 'tel',
-                  'address', 'open_time', 'close_time']
+                  'address', 'open_time', 'close_time', 'lat', 'lng']
+        widgets = {
+            'lat': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lng': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+        }
 
 
 class CouponForm(forms.ModelForm):
