@@ -1,5 +1,6 @@
 # core/models.py
 from django.db import models
+from django.core.validators import MinValueValidator, RegexValidator
 from django.conf import settings
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
@@ -208,10 +209,10 @@ class Coupon(models.Model):
     requirement = models.CharField(max_length=255, blank=True, verbose_name='利用条件')
     type = models.CharField(max_length=64, verbose_name='タイプ', choices=TYPE_CHOICES)
     discount_value = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name='割引量')
+        max_digits=12, decimal_places=2, verbose_name='割引量',validators=[MinValueValidator(1)])
     available_stores = models.ManyToManyField(
         Store, verbose_name='利用可能店舗', blank=True)
-    required_points = models.IntegerField(default=0, verbose_name='必要ポイント数')
+    required_points = models.IntegerField(default=0, verbose_name='必要ポイント数', validators=[MinValueValidator(0)])
     
     # 承認フロー用
     STATUS_CHOICES = [
@@ -337,8 +338,10 @@ class EcoProduct(models.Model):
     name = models.CharField(
         max_length=255, unique=True, verbose_name='エコ商品名/キーワード')
     jan_code = models.CharField(
-        max_length=13, blank=True, null=True, unique=True, verbose_name='JANコード')
-    points = models.IntegerField(default=10, verbose_name='付与ポイント')
+        max_length=13, blank=True, null=True, unique=True, verbose_name='JANコード',
+        validators=[RegexValidator(r'^\d+$', 'JANコードは数字のみ入力してください。')]
+        )
+    points = models.IntegerField(default=10, verbose_name='付与ポイント', validators=[MinValueValidator(1)])
     
     # 申請用フィールド
     store = models.ForeignKey(Store, on_delete=models.CASCADE, null=True, blank=True, verbose_name='店舗')

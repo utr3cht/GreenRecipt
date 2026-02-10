@@ -129,6 +129,9 @@ class EcoProductForm(forms.ModelForm):
     class Meta:
         model = EcoProduct
         fields = ['name', 'jan_code', 'points', 'is_common']
+        widgets = {
+            'jan_code': forms.TextInput(attrs={'pattern': r'\d*', 'inputmode': 'numeric'}),
+        }
 
 
 class StoreEcoProductForm(forms.ModelForm):
@@ -137,8 +140,8 @@ class StoreEcoProductForm(forms.ModelForm):
         fields = ['name', 'jan_code', 'points', 'remarks']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'jan_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'points': forms.NumberInput(attrs={'class': 'form-control'}),
+            'jan_code': forms.TextInput(attrs={'class': 'form-control', 'pattern': r'\d*', 'inputmode': 'numeric'}),
+            'points': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': '承認者への申し送り事項など'}),
         }
 
@@ -149,9 +152,9 @@ class StoreCouponForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'type': forms.Select(attrs={'class': 'form-control'}),
-            'discount_value': forms.NumberInput(attrs={'class': 'form-control'}),
+            'discount_value': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'requirement': forms.TextInput(attrs={'class': 'form-control'}),
-            'required_points': forms.NumberInput(attrs={'class': 'form-control'}),
+            'required_points': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }

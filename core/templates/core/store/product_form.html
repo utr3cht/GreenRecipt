@@ -8,7 +8,6 @@
         <div class="card shadow-sm">
           <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h2 class="h4 mb-0">{% if form.instance.pk %}エコ商品編集{% else %}エコ商品登録申請{% endif %}</h2>
-            <a href="{% url 'core:store_dashboard' %}" class="btn btn-outline-secondary btn-sm">戻る</a>
           </div>
           <div class="card-body">
             <form method="post" enctype="multipart/form-data">
@@ -31,7 +30,7 @@
 
               <div class="d-flex justify-content-between mt-4">
                 <a href="{% url 'core:store_dashboard' %}" class="btn btn-outline-secondary">戻る</a>
-                <button type="submit" class="btn btn-success px-4">{% if form.instance.pk %}更新する{% else %}申請する{% endif %}</button>
+                <button type="submit" class="btn btn-success px-4"style="margin-left: 16px;">{% if form.instance.pk %}更新する{% else %}申請する{% endif %}</button>
               </div>
             </form>
           </div>

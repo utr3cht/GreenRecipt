@@ -8,7 +8,6 @@
         <div class="card shadow-sm">
           <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <h2 class="h4 mb-0">{% if form.instance.pk %}クーポン編集{% else %}クーポン新規発行申請{% endif %}</h2>
-            <a href="{% url 'core:store_dashboard' %}" class="btn btn-outline-secondary btn-sm">戻る</a>
           </div>
           <div class="card-body">
             <form method="post">

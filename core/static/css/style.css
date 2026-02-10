@@ -403,7 +403,7 @@ button {
 }
 
 .btn {
-  width: 50%;
+  width: 100%;
   padding: 13px;
   border-radius: 14px;
   text-decoration: none;
@@ -496,7 +496,6 @@ footer {
 main {
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
@@ -676,7 +675,8 @@ form {
   max-width: 100%;
 }
 
-.logout-form {
+.logout-form,
+.inline-form {
   background: none;
   padding: 0;
   margin: 0;

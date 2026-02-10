@@ -9,7 +9,6 @@
     <div class="dashboard-container">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>{{ store.store_name }}</h1>
-        <a href="{% url 'core:store_list' %}" class="btn-1 btn-secondary">戻る</a>
       </div>
 
       <div class="card">
@@ -26,8 +25,8 @@
       </div>
 
       <div class="mt-4 d-flex gap-2 align-items-center">
-        <a href="{% url 'core:store_edit' store.store_id %}" class="btn btn-primary">編集</a>
         <a href="{% url 'core:store_list' %}" class="btn btn-secondary">店舗一覧に戻る</a>
+        <a href="{% url 'core:store_edit' store.store_id %}" class="btn btn-primary">編集</a>
       </div>
 
     </div>

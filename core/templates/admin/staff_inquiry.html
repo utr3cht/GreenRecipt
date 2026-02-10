@@ -13,8 +13,8 @@
         {% csrf_token %}
         {{ form.as_p }}
         <div class="actions d-flex justify-content-around">
-          <button type="submit" class="staff_btn btn-primary w-50">送信する</button>
           <a href="{% url 'core:staff_index' %}" class="staff_btn btn-secondary w-50">スタッフ専用ページに戻る</a>
+          <button type="submit" class="staff_btn btn-primary w-50">送信する</button>
         </div>
       </form>
     </div>
