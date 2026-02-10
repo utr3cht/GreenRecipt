@@ -85,10 +85,12 @@
                   <i class="fas fa-question-circle"></i>
                   <span>お問い合わせ</span>
                 </a>
+                {% if user.store %}
                 <a href="{% url 'core:store_detail' user.store.store_id %}" class="dashboard-tile">
                   <i class="fas fa-store"></i>
                   <span>店舗情報</span>
                 </a>
+                {% endif %}
                 <a href="{% url 'core:store_dashboard' %}" class="dashboard-tile">
                   <i class="fas fa-clipboard-list"></i>
                   <span>申請ダッシュボード</span>
