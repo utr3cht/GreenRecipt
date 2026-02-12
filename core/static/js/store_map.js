@@ -53,25 +53,25 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentPosition) {
             map.flyTo(currentPosition, 16, { animate: true, duration: 0.8 });
         } else {
-            alert('現在地を取得中です。少しお待ちください。');
+            // 現在地がない場合、再度取得を試みる
+            if (navigator.geolocation) {
+                alert('現在地を取得中です...');
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        onGeoSuccess(pos);
+                    },
+                    function(err) {
+                        onGeoError(err);
+                    },
+                    geoOptions
+                );
+            } else {
+                alert('お使いのブラウザは位置情報をサポートしていません。');
+            }
         }
     }
     
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(
-            function (pos) {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                const acc = pos.coords.accuracy;
-                if (!currentPosition || Math.abs(currentPosition[0] - lat) > 0.00005 || Math.abs(currentPosition[1] - lon) > 0.00005) {
-                    currentPosition = [lat, lon];
-                    showCurrentLocation(lat, lon, acc);
-                }
-            },
-            function (err) { console.warn('位置情報取得エラー:', err); },
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 5000 }
-        );
-    }
+    // 旧 watchPosition ブロックを削除 (initブロックに統合済み)
     
     const LocateControl = L.Control.extend({
         options: { position: 'topright' },
@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initAutocomplete();
     
     // イベントリスナー設定
+    // イベントリスナー設定
     const keywordInput = document.getElementById('keyword-input');
     if (keywordInput) keywordInput.addEventListener('input', filterMarkers);
     
@@ -174,18 +175,78 @@ document.addEventListener('DOMContentLoaded', function() {
     const filterButton = document.getElementById('filter-button');
     if (filterButton) filterButton.addEventListener('click', filterMarkers);
 
+    // 位置情報取得のオプション設定
+    // スマホの個体差（GPS起動の遅さなど）に対応するため、タイムアウトを長めに設定
+    const geoOptions = {
+        enableHighAccuracy: true, // 高精度を要求
+        timeout: 15000,           // 15秒（以前は5秒だったが、GPS測位に時間がかかる端末に対応）
+        maximumAge: 10000         // 10秒以内のキャッシュを許容
+    };
+
+    function onGeoSuccess(pos) {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const acc = pos.coords.accuracy;
+        
+        // 初回のみ移動、または大きく動いた場合のみ移動するロジックは維持
+        if (!currentPosition) {
+            currentPosition = [lat, lon];
+            showCurrentLocation(lat, lon, acc);
+            map.setView([lat, lon], 14, { animate: true });
+            // 初回取得成功のフィードバック（必要なら）
+            // console.log(`位置情報取得成功: 精度 ${acc}m`);
+        } else {
+            // 移動更新
+            if (Math.abs(currentPosition[0] - lat) > 0.00005 || Math.abs(currentPosition[1] - lon) > 0.00005) {
+                currentPosition = [lat, lon];
+                showCurrentLocation(lat, lon, acc);
+            }
+        }
+    }
+
+    function onGeoError(err) {
+        console.warn('位置情報取得エラー:', err);
+        let errorMsg = '現在地を取得できませんでした。';
+        switch(err.code) {
+            case err.PERMISSION_DENIED:
+                errorMsg = '位置情報の利用が許可されていません。設定をご確認ください。';
+                break;
+            case err.POSITION_UNAVAILABLE:
+                errorMsg = '位置情報が利用できません。電波状況の良い場所で再度お試しください。';
+                break;
+            case err.TIMEOUT:
+                errorMsg = '位置情報の取得がタイムアウトしました。';
+                break;
+        }
+        // ユーザーに通知（頻繁に出ないように制御するか、初回のみAlertなどが望ましいが、デバッグのため表示）
+        // ただし、watchPositionのエラーは頻発する可能性があるため、コンソールまたはToast通知がベター。
+        // ここでは、ユーザーが明示的に現在地ボタンを押したわけではない自動取得のエラーなので、
+        // 控えめにコンソールに出すか、一度だけ表示するなどの工夫が必要。
+        // 今回は「スマホによって個体差がある」とのことで、原因特定のため明確にエラーを出す。
+        if (!currentPosition) { // まだ一度も取れていない場合のみ通知
+             alert(errorMsg + ` (Code: ${err.code}, Message: ${err.message})`);
+        }
+    }
+
+    // 初回取得（getCurrentPositionはタイムアウトまで待つ）
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            function (pos) {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                currentPosition = [lat, lon];
-                showCurrentLocation(lat, lon, pos.coords.accuracy);
-                map.setView([lat, lon], 14, { animate: true });
-            },
-            function (err) { console.warn('初回位置取得エラー:', err); },
-            { enableHighAccuracy: true, timeout: 5000 }
+            onGeoSuccess,
+            onGeoError, // 初回のエラーは表示する
+            geoOptions
         );
+
+        // 継続監視
+        const watchId = navigator.geolocation.watchPosition(
+            onGeoSuccess,
+            function(err) {
+                console.warn('位置情報監視エラー:', err);
+                 // 監視中のエラーはAlertを出さない（うっとうしいため）
+            },
+            geoOptions
+        );
+    } else {
+        alert('お使いのブラウザは位置情報をサポートしていません。');
     }
     
     setTimeout(function(){ map.invalidateSize(); }, 200);

@@ -219,6 +219,13 @@ if SEND_EMAIL:
 else:
     # 開発用コンソールバックエンド
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# IMAP設定 (受信) - 送信設定とは独立して設定可能にする
+EMAIL_IMAP_HOST = os.environ.get('EMAIL_IMAP_HOST', 'imap.gmail.com')
+EMAIL_IMAP_USER = os.environ.get('EMAIL_IMAP_USER', EMAIL_HOST_USER)
+EMAIL_IMAP_PASSWORD = os.environ.get('EMAIL_IMAP_PASSWORD', EMAIL_HOST_PASSWORD)
 
 LOGIN_URL = '/'
 

@@ -671,6 +671,11 @@ def scan(request):
                 if existing_receipt:
                     return JsonResponse({'success': False, 'error': 'このレシートは既に登録済みです。'})
 
+            # OCRテキストによる重複チェック (店舗や日時が不明な場合でも内容が同じなら弾く)
+            # 完全一致は厳しすぎる可能性があるが、同じ画像の再アップロードを防ぐには有効
+            if ocr_text and Receipt.objects.filter(user=request.user, ocr_text=ocr_text).exists():
+                 return JsonResponse({'success': False, 'error': 'このレシート（画像内容）は既に登録済みです。'})
+
             try:
                 with transaction.atomic():
                     # parsed_dataからdatetimeオブジェクトを削除または文字列に変換
